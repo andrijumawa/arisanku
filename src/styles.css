@@ -663,9 +663,7 @@ input[type='checkbox'] {
   width: 300%;
   height: 100%;
   border-radius: 150px;
-  background:
-    radial-gradient(ellipse at 68% 28%, rgba(255, 255, 255, 0.13), transparent 28rem),
-    linear-gradient(135deg, #f20b70, #b8004a);
+  background: #c6004f;
   content: '';
   transition: left 1.2s ease-in-out;
 }
