@@ -13,7 +13,6 @@ export default function Browse() {
   const { session } = useAuth();
   const uid = session.user.id;
   const toast = useToast();
-  const [filter, setFilter] = useState('semua');
   const [joining, setJoining] = useState(null);
   const [slots, setSlots] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -28,7 +27,7 @@ export default function Browse() {
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
   const { groups, mine } = data;
-  const list = groups.filter((g) => (filter === 'semua' || g.type === filter) && (g.is_open || mine[g.id]));
+  const list = groups.filter((g) => g.is_open || mine[g.id]);
 
   async function join() {
     setBusy(true);
@@ -47,18 +46,6 @@ export default function Browse() {
   return (
     <>
       <h2>Pilih Arisan</h2>
-      <div className="tabs">
-        {[
-          ['semua', 'Semua'],
-          ['uang', 'Arisan Uang'],
-          ['paket', 'Paket Lebaran'],
-        ].map(([k, label]) => (
-          <button key={k} className={`tab ${filter === k ? 'on' : ''}`} onClick={() => setFilter(k)}>
-            {label}
-          </button>
-        ))}
-      </div>
-
       {list.length === 0 ? (
         <Empty icon="🔎" title="Belum ada arisan yang dibuka">
           Admin akan membuka kelompok baru. Cek lagi nanti.
