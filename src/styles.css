@@ -666,7 +666,7 @@ input[type='checkbox'] {
   background: #c6004f;
   content: '';
   pointer-events: none;
-  transition: left 1.2s ease-in-out;
+  transition: left 1.8s ease-in-out;
 }
 .auth-shell.is-login::before {
   left: -250%;
@@ -817,12 +817,12 @@ input[type='checkbox'] {
 .auth-panel-content--login {
   right: 0;
   visibility: visible;
-  transition-delay: 1.2s, 0s, 0s;
+  transition-delay: 0s, 1.2s, 1.2s;
 }
 .auth-panel-content--register {
   left: -50%;
   visibility: hidden;
-  transition-delay: 0s, 0s, 600ms;
+  transition-delay: 600ms, 0s, 1.2s;
 }
 .auth-panel-content img {
   display: block;
@@ -835,12 +835,12 @@ input[type='checkbox'] {
 .auth-shell.is-login .auth-panel-content--login {
   right: -50%;
   visibility: hidden;
-  transition-delay: 0s, 0s, 600ms;
+  transition-delay: 0s, 600ms, 1.2s;
 }
 .auth-shell.is-login .auth-panel-content--register {
   left: 0;
   visibility: visible;
-  transition-delay: 1.2s, 0s, 0s;
+  transition-delay: 1.2s, 0s, 1.2s;
 }
 .auth-panel-kicker {
   margin-bottom: 8px;
@@ -905,7 +905,7 @@ input[type='checkbox'] {
     width: 100%;
     height: 300%;
     border-radius: 20vw;
-    transition: top 1.2s ease-in-out;
+    transition: top 1.8s ease-in-out;
   }
   .auth-shell.is-login::before {
     top: -270%;
@@ -980,41 +980,31 @@ input[type='checkbox'] {
     transition:
       top 600ms ease-in-out,
       bottom 600ms ease-in-out,
-      visibility 0s linear 600ms,
-      transform 600ms ease-in-out,
-      opacity 400ms ease-in-out;
+      visibility 0s linear 1.2s;
   }
   .auth-panel-content--login {
     top: auto;
     bottom: 0;
     visibility: visible;
-    transform: translateY(0);
-    opacity: 1;
-    transition-delay: 1.2s, 0s, 0s, 1.2s, 1.2s;
+    transition-delay: 0s, 1.2s, 1.2s;
   }
   .auth-panel-content--register {
     top: -30%;
     bottom: auto;
     visibility: hidden;
-    transform: translateY(-20px);
-    opacity: 0;
-    transition-delay: 0s, 0s, 600ms, 0s, 0s;
+    transition-delay: 600ms, 0s, 1.2s;
   }
   .auth-shell.is-login .auth-panel-content--login {
     top: auto;
     bottom: -30%;
     visibility: hidden;
-    transform: translateY(-20px);
-    opacity: 0;
-    transition-delay: 0s, 0s, 600ms, 0s, 0s;
+    transition-delay: 0s, 600ms, 1.2s;
   }
   .auth-shell.is-login .auth-panel-content--register {
     top: 0;
     bottom: auto;
     visibility: visible;
-    transform: translateY(0);
-    opacity: 1;
-    transition-delay: 0s, 0s, 0s, 0s, 0s;
+    transition-delay: 1.2s, 0s, 1.2s;
   }
   .auth-panel-content img {
     width: 92px;
