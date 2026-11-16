@@ -33,31 +33,30 @@ export default function Register() {
   }
 
   return (
-    <div className="auth">
-      <div className="auth-brand">
-        <div className="big">◎</div>
-        <h1>Daftar Peserta</h1>
-        <p>Cukup nomor telepon &amp; password</p>
+    <form className="auth-form auth-form--register" onSubmit={submit}>
+      <div className="auth-form-heading">
+        <p className="auth-form-kicker">Mulai ikut arisan</p>
+        <h1>Daftar peserta</h1>
+        <p className="muted">Buat akun dengan nomor telepon kamu.</p>
       </div>
-      <form className="card" onSubmit={submit}>
-        {err && <div className="alert err">{err}</div>}
-        <label className="field">
-          <span>Nama lengkap</span>
-          <input value={form.fullName} onChange={set('fullName')} autoComplete="name" required />
-        </label>
-        <label className="field">
-          <span>Nomor telepon</span>
-          <input
-            type="tel"
-            inputMode="tel"
-            placeholder="08xxxxxxxxxx"
-            value={form.phone}
-            onChange={set('phone')}
-            autoComplete="username"
-            required
-          />
-          <div className="hint">Nomor ini dipakai untuk masuk. Gunakan nomor aktif (sebaiknya WhatsApp).</div>
-        </label>
+      {err && <div className="alert err">{err}</div>}
+      <label className="field">
+        <span>Nama lengkap</span>
+        <input value={form.fullName} onChange={set('fullName')} autoComplete="name" required />
+      </label>
+      <label className="field">
+        <span>Nomor telepon</span>
+        <input
+          type="tel"
+          inputMode="tel"
+          placeholder="08xxxxxxxxxx"
+          value={form.phone}
+          onChange={set('phone')}
+          autoComplete="username"
+          required
+        />
+      </label>
+      <div className="auth-form-fields">
         <label className="field">
           <span>Password</span>
           <input type="password" value={form.password} onChange={set('password')} autoComplete="new-password" required />
@@ -66,13 +65,13 @@ export default function Register() {
           <span>Ulangi password</span>
           <input type="password" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" required />
         </label>
-        <button className="btn primary block" disabled={busy}>
-          {busy ? 'Memproses…' : 'Daftar'}
-        </button>
-        <p className="center muted" style={{ marginTop: 14 }}>
-          Sudah punya akun? <Link to="/masuk">Masuk</Link>
-        </p>
-      </form>
-    </div>
+      </div>
+      <button className="btn primary block auth-submit" disabled={busy}>
+        {busy ? 'Memproses…' : 'Daftar'}
+      </button>
+      <p className="auth-form-footer">
+        Sudah punya akun? <Link to="/masuk">Masuk</Link>
+      </p>
+    </form>
   );
 }

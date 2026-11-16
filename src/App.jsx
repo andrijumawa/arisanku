@@ -3,6 +3,7 @@ import { useAuth } from './lib/auth.jsx';
 import { configured } from './lib/supabase';
 import Layout from './components/Layout.jsx';
 import { Spinner } from './components/Ui.jsx';
+import AuthShell from './components/AuthShell.jsx';
 import Login from './pages/Login.jsx';
 import Register from './pages/Register.jsx';
 import Home from './pages/Home.jsx';
@@ -44,8 +45,10 @@ export default function App() {
   if (!configured) return <SetupNotice />;
   return (
     <Routes>
-      <Route path="/masuk" element={<Login />} />
-      <Route path="/daftar" element={<Register />} />
+      <Route element={<AuthShell />}>
+        <Route path="/masuk" element={<Login />} />
+        <Route path="/daftar" element={<Register />} />
+      </Route>
       <Route
         element={
           <Guard>

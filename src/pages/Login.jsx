@@ -29,44 +29,41 @@ export default function Login() {
   }
 
   return (
-    <div className="auth">
-      <div className="auth-brand">
-        <div className="big">◎</div>
-        <h1>Arisan</h1>
-        <p>Arisan Uang &amp; Paket Lebaran</p>
+    <form className="auth-form auth-form--login" onSubmit={submit}>
+      <div className="auth-form-heading">
+        <p className="auth-form-kicker">Arisan Uang &amp; Paket Lebaran</p>
+        <h1>Masuk</h1>
+        <p className="muted">Lanjutkan ke akun Arisan kamu.</p>
       </div>
-      <form className="card" onSubmit={submit}>
-        <h2>Masuk</h2>
-        {err && <div className="alert err">{err}</div>}
-        <label className="field">
-          <span>Nomor telepon</span>
-          <input
-            type="tel"
-            inputMode="tel"
-            autoComplete="username"
-            placeholder="08xxxxxxxxxx"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-          />
-        </label>
-        <label className="field">
-          <span>Password</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-        <button className="btn primary block" disabled={busy}>
-          {busy ? 'Memproses…' : 'Masuk'}
-        </button>
-        <p className="center muted" style={{ marginTop: 14 }}>
-          Belum punya akun? <Link to="/daftar">Daftar</Link>
-        </p>
-      </form>
-    </div>
+      {err && <div className="alert err">{err}</div>}
+      <label className="field">
+        <span>Nomor telepon</span>
+        <input
+          type="tel"
+          inputMode="tel"
+          autoComplete="username"
+          placeholder="08xxxxxxxxxx"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          required
+        />
+      </label>
+      <label className="field">
+        <span>Password</span>
+        <input
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+      </label>
+      <button className="btn primary block auth-submit" disabled={busy}>
+        {busy ? 'Memproses…' : 'Masuk'}
+      </button>
+      <p className="auth-form-footer">
+        Belum punya akun? <Link to="/daftar">Daftar</Link>
+      </p>
+    </form>
   );
 }
