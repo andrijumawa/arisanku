@@ -935,16 +935,14 @@ input[type='checkbox'] {
     justify-content: center;
     overflow-y: auto;
     padding: calc(20px + env(safe-area-inset-top)) 24px 20px;
-    transition:
-      top 600ms ease-in-out 1.2s,
-      visibility 0s linear 1s;
+    transition: none;
   }
   .auth-form--register {
     top: 0;
     visibility: visible;
   }
   .auth-form--login {
-    top: 70%;
+    top: 30%;
     left: 0;
     visibility: hidden;
   }
@@ -952,13 +950,15 @@ input[type='checkbox'] {
     left: 0;
     top: 30%;
     visibility: visible;
-    transition-delay: 1.2s, 1s;
+    animation: auth-login-form-enter 600ms ease-in-out 1.2s both;
   }
   .auth-shell.is-login .auth-form--register {
-    top: -70%;
+    top: 0;
     left: 0;
     visibility: hidden;
-    transition-delay: 1.2s, 1s;
+  }
+  .auth-shell:not(.is-login) .auth-form--register {
+    animation: auth-register-form-enter 600ms ease-in-out 1.2s both;
   }
   .auth-form-heading {
     margin-bottom: 7px;
@@ -1046,6 +1046,22 @@ input[type='checkbox'] {
     min-width: 176px;
     padding: 10px 20px;
     font-size: 18px;
+  }
+}
+@keyframes auth-login-form-enter {
+  from {
+    top: 0;
+  }
+  to {
+    top: 30%;
+  }
+}
+@keyframes auth-register-form-enter {
+  from {
+    top: 30%;
+  }
+  to {
+    top: 0;
   }
 }
 @media (max-width: 380px) {
@@ -1145,6 +1161,10 @@ input[type='checkbox'] {
   .auth-panel-content {
     transition-duration: 0.01ms;
     transition-delay: 0ms;
+  }
+  .auth-form {
+    animation-duration: 0.01ms;
+    animation-delay: 0ms;
   }
 }
 
