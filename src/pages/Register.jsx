@@ -6,7 +6,7 @@ import { isValidPhone } from '../lib/supabase';
 export default function Register() {
   const { signUp, session } = useAuth();
   const nav = useNavigate();
-  const [form, setForm] = useState({ fullName: '', phone: '', password: '', confirm: '' });
+  const [form, setForm] = useState({ fullName: '', phone: '', password: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
@@ -20,7 +20,6 @@ export default function Register() {
     if (form.fullName.trim().length < 3) return setErr('Nama lengkap minimal 3 huruf.');
     if (!isValidPhone(form.phone)) return setErr('Nomor telepon tidak valid. Contoh: 081234567890');
     if (form.password.length < 6) return setErr('Password minimal 6 karakter.');
-    if (form.password !== form.confirm) return setErr('Konfirmasi password tidak sama.');
     setBusy(true);
     try {
       await signUp({ phone: form.phone, password: form.password, fullName: form.fullName });
@@ -69,20 +68,13 @@ export default function Register() {
           <path d="M8 10V7a4 4 0 1 1 8 0v3" />
         </svg>
       </label>
-      <label className="field auth-field">
-        <span>Ulangi password</span>
-        <input type="password" placeholder="Ulangi password" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" required />
-        <svg className="auth-field-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4.5" y="10" width="15" height="11" rx="2" />
-          <path d="M8 10V7a4 4 0 1 1 8 0v3" />
-        </svg>
-      </label>
       <button className="btn primary block auth-submit" disabled={busy}>
         {busy ? 'Memproses…' : 'Daftar'}
       </button>
       <p className="auth-form-footer">
         Sudah punya akun? <Link to="/masuk">Masuk</Link>
       </p>
+      <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="ArisanKu" />
     </form>
   );
 }

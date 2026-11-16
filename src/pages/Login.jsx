@@ -64,12 +64,14 @@ export default function Login() {
           <path d="M8 10V7a4 4 0 1 1 8 0v3" />
         </svg>
       </label>
+      <p className="auth-forgot-password">Lupa password?</p>
       <button className="btn primary block auth-submit" disabled={busy}>
         {busy ? 'Memproses…' : 'Masuk'}
       </button>
       <p className="auth-form-footer">
         Belum punya akun? <Link to="/daftar">Daftar</Link>
       </p>
+      <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="ArisanKu" />
     </form>
   );
 }
