@@ -50,13 +50,13 @@ Admin berikutnya bisa dijadikan dari menu **Admin → Peserta**.
 ## 4. Deploy ke GitHub Pages
 
 1. Buat repository GitHub, lalu push seluruh isi folder ini ke branch `main`
-2. **Settings → Pages → Source**: pilih **GitHub Actions**
+2. **Settings → Pages → Build and deployment → Source**: pilih **GitHub Actions**
 3. **Settings → Secrets and variables → Actions → New repository secret**, tambahkan:
    - `VITE_SUPABASE_URL`
    - `VITE_SUPABASE_ANON_KEY`
    - `VITE_VAPID_PUBLIC_KEY` (setelah langkah 5)
    - `VITE_EMAIL_DOMAIN` (isi `arisan.app`, atau domain lain yang kamu pilih)
-4. Setiap push ke `main` akan membangun dan men-deploy otomatis (`.github/workflows/deploy.yml`)
+4. Workflow `.github/workflows/deploy.yml` akan membangun folder `dist/` dan men-deploy otomatis setiap push ke `main`. Jangan gunakan sumber deploy branch `main` langsung, karena aplikasi harus dibangun dulu oleh Vite.
 
 Aplikasi memakai `HashRouter` dan `base: './'`, jadi tidak perlu pengaturan tambahan untuk subfolder repo.
 
