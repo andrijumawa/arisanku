@@ -1049,19 +1049,31 @@ input[type='checkbox'] {
   }
 }
 @keyframes auth-login-form-enter {
-  from {
+  0% {
     top: 0;
+    visibility: hidden;
+  }
+  1% {
+    top: 0;
+    visibility: visible;
   }
   to {
     top: 30%;
+    visibility: visible;
   }
 }
 @keyframes auth-register-form-enter {
-  from {
+  0% {
     top: 30%;
+    visibility: hidden;
+  }
+  1% {
+    top: 30%;
+    visibility: visible;
   }
   to {
     top: 0;
+    visibility: visible;
   }
 }
 @media (max-width: 380px) {
