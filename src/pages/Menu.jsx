@@ -1,14 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useOutletContext } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
+import { supabase } from '../lib/supabase';
 import Icon from '../components/Icon.jsx';
+import { signedUrl } from '../components/SignedImage.jsx';
 import { useToast } from '../components/Toast.jsx';
 
 export default function Menu() {
-  const { profile, isAdmin, signOut } = useAuth();
+  const { profile, session, isAdmin, signOut, refreshProfile } = useAuth();
   const { unread = 0 } = useOutletContext() || {};
   const toast = useToast();
   const [signingOut, setSigningOut] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const photoInput = useRef(null);
+  const selfieInput = useRef(null);
   const accountPending = !isAdmin
     && profile?.account_status !== 'disetujui'
     && profile?.account_status !== 'ditolak';
@@ -24,6 +30,75 @@ export default function Menu() {
     { action: 'logout', icon: 'logout', label: signingOut ? 'Keluar…' : 'Keluar', description: 'Akhiri sesi akun' },
   ];
 
+  useEffect(() => {
+    let active = true;
+    if (!profile?.avatar_path) {
+      setAvatarUrl('');
+      return () => { active = false; };
+    }
+    signedUrl('profile-avatars', profile.avatar_path)
+      .then((url) => {
+        if (active) setAvatarUrl(url);
+      })
+      .catch((error) => {
+        console.error('Gagal memuat foto profil:', error);
+        if (active) {
+          setAvatarUrl('');
+          toast('Foto profil tidak dapat dimuat.', 'error');
+        }
+      });
+    return () => { active = false; };
+  }, [profile?.avatar_path, toast]);
+
+  async function handleAvatarChange(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    const extensions = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+    const extension = extensions[file.type];
+    if (!extension) return toast('Gunakan foto JPG, PNG, atau WebP.', 'error');
+    if (file.size > 5 * 1024 * 1024) return toast('Ukuran foto maksimal 5 MB.', 'error');
+
+    setUploadingAvatar(true);
+    const path = `${session.user.id}/${Date.now()}.${extension}`;
+    let uploaded = false;
+    try {
+      const storage = supabase.storage.from('profile-avatars');
+      const { error: uploadError } = await storage.upload(path, file, {
+        cacheControl: '3600',
+        contentType: file.type,
+        upsert: false,
+      });
+      if (uploadError) throw uploadError;
+      uploaded = true;
+
+      const { data: signedData, error: signedError } = await storage.createSignedUrl(path, 3600);
+      if (signedError) throw signedError;
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_path: path })
+        .eq('id', session.user.id);
+      if (profileError) throw profileError;
+
+      setAvatarUrl(signedData.signedUrl);
+      await refreshProfile();
+      if (profile?.avatar_path) {
+        const { error: removeError } = await storage.remove([profile.avatar_path]);
+        if (removeError) console.error('Gagal menghapus foto profil lama:', removeError);
+      }
+      toast('Foto profil diperbarui.', 'success');
+    } catch (error) {
+      if (uploaded) {
+        const { error: removeError } = await supabase.storage.from('profile-avatars').remove([path]);
+        if (removeError) console.error('Gagal membersihkan foto profil yang tidak tersimpan:', removeError);
+      }
+      console.error('Gagal memperbarui foto profil:', error);
+      toast(error.message || 'Foto profil gagal diperbarui.', 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
   async function handleSignOut() {
     setSigningOut(true);
     try {
@@ -37,6 +112,47 @@ export default function Menu() {
 
   return (
     <section className="menu-page">
+      <div className="menu-avatar-wrap">
+        <button
+          type="button"
+          className="menu-avatar"
+          aria-label="Pilih foto profil dari galeri"
+          onClick={() => photoInput.current?.click()}
+          disabled={uploadingAvatar}
+        >
+          {avatarUrl
+            ? <img className="menu-avatar-image" src={avatarUrl} alt="" />
+            : <Icon name="user" size={76} />}
+          {uploadingAvatar && <span className="menu-avatar-loading">Menyimpan…</span>}
+        </button>
+        <button
+          type="button"
+          className="menu-avatar-camera"
+          aria-label="Ambil selfie untuk foto profil"
+          title="Ambil selfie"
+          onClick={() => selfieInput.current?.click()}
+          disabled={uploadingAvatar}
+        >
+          <Icon name="camera" size={21} />
+        </button>
+        <input
+          ref={photoInput}
+          className="visually-hidden"
+          type="file"
+          accept="image/*"
+          onChange={handleAvatarChange}
+          tabIndex={-1}
+        />
+        <input
+          ref={selfieInput}
+          className="visually-hidden"
+          type="file"
+          accept="image/*"
+          capture="user"
+          onChange={handleAvatarChange}
+          tabIndex={-1}
+        />
+      </div>
       <div className="menu-heading">
         <span className="menu-heading-kicker">AKSES CEPAT</span>
         <h1>Menu</h1>

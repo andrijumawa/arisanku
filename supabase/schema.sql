@@ -12,6 +12,7 @@ create table public.profiles (
   id          uuid primary key references auth.users(id) on delete cascade,
   phone       text not null unique,
   full_name   text not null,
+  avatar_path text,
   role        text not null default 'peserta' check (role in ('peserta','admin')),
   account_status text not null default 'menunggu'
               check (account_status in ('menunggu','disetujui','ditolak')),
@@ -365,8 +366,33 @@ alter publication supabase_realtime add table public.profiles;
 -- ---------------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('bukti-transfer','bukti-transfer', false),
-       ('chat-images','chat-images', false)
+       ('chat-images','chat-images', false),
+       ('profile-avatars','profile-avatars', false)
 on conflict (id) do nothing;
+
+update storage.buckets
+set file_size_limit = 5242880,
+    allowed_mime_types = array['image/jpeg', 'image/png', 'image/webp']
+where id = 'profile-avatars';
+
+create policy "avatar: upload sendiri" on storage.objects
+  for insert to authenticated
+  with check (bucket_id = 'profile-avatars'
+              and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "avatar: lihat sendiri" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'profile-avatars'
+         and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "avatar: ubah sendiri" on storage.objects
+  for update to authenticated
+  using (bucket_id = 'profile-avatars'
+         and (storage.foldername(name))[1] = auth.uid()::text)
+  with check (bucket_id = 'profile-avatars'
+              and (storage.foldername(name))[1] = auth.uid()::text);
+create policy "avatar: hapus sendiri" on storage.objects
+  for delete to authenticated
+  using (bucket_id = 'profile-avatars'
+         and (storage.foldername(name))[1] = auth.uid()::text);
 
 -- Bukti transfer: file disimpan di folder <user_id>/<nama-file>
 create policy "bukti: upload ke folder sendiri" on storage.objects
