@@ -12,6 +12,7 @@ import GroupDetail from './pages/GroupDetail.jsx';
 import Chat from './pages/Chat.jsx';
 import Account from './pages/Account.jsx';
 import Menu from './pages/Menu.jsx';
+import Roulette from './pages/Roulette.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import GroupForm from './pages/admin/GroupForm.jsx';
 import AdminGroup from './pages/admin/AdminGroup.jsx';
@@ -63,6 +64,7 @@ export default function App() {
         <Route path="g/:id" element={<GroupDetail />} />
         <Route path="chat" element={<Chat />} />
         <Route path="akun" element={<Account />} />
+        <Route path="rolet" element={<Roulette />} />
         <Route
           path="admin"
           element={

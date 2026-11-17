@@ -90,6 +90,12 @@ const shapes = {
       <circle cx="16" cy="16" r=".7" fill="currentColor" />
     </>
   ),
+  shuffle: (
+    <>
+      <path d="m18 14 4 4-4 4M18 2l4 4-4 4" />
+      <path d="M2 18h2.5a6 6 0 0 0 4.2-1.7L17 8M2 6h2.5a6 6 0 0 1 4.2 1.7l1.1 1.1M14 14l3.1 3.1a6 6 0 0 0 4.2 1.7H22M14 10l3.1-3.1A6 6 0 0 1 21.3 5H22" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 24, className = '' }) {
