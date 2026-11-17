@@ -244,6 +244,8 @@ code {
   --menu-avatar-camera-size: 42px;
   --menu-content-top: clamp(54px, 10dvh, 85px);
   --menu-heading-height: clamp(94px, 15dvh, 164px);
+  --menu-heading-mark-size: 54px;
+  --menu-heading-bottom-padding: clamp(12px, 2dvh, 24px);
   --menu-tile-padding: clamp(8px, 1.5dvh, 18px);
   --menu-tile-icon-size: clamp(32px, 5.5dvh, 46px);
   position: relative;
@@ -315,9 +317,8 @@ code {
   top: calc(
     var(--menu-content-top)
     + var(--menu-heading-height)
-    + var(--menu-card-gap)
-    + var(--menu-tile-padding)
-    + (var(--menu-tile-icon-size) - var(--menu-avatar-camera-size)) / 2
+    - var(--menu-heading-bottom-padding)
+    - (var(--menu-heading-mark-size) + var(--menu-avatar-camera-size)) / 2
   );
   left: calc(50% + var(--menu-avatar-size) / 2 - var(--menu-avatar-camera-size) / 2);
   z-index: 1;
@@ -350,7 +351,7 @@ code {
   align-items: flex-end;
   justify-content: space-between;
   margin: 0 0 var(--menu-card-gap);
-  padding: 16px clamp(14px, 4vw, 24px) clamp(12px, 2dvh, 24px);
+  padding: 16px clamp(14px, 4vw, 24px) var(--menu-heading-bottom-padding);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 22px;
@@ -390,9 +391,9 @@ code {
 .menu-heading-mark {
   z-index: 1;
   display: grid;
-  width: 54px;
-  height: 54px;
-  flex: 0 0 54px;
+  width: var(--menu-heading-mark-size);
+  height: var(--menu-heading-mark-size);
+  flex: 0 0 var(--menu-heading-mark-size);
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 17px;
@@ -759,6 +760,7 @@ code {
     --menu-avatar-camera-size: clamp(34px, 5.2dvh, 40px);
     --menu-content-top: clamp(44px, 8dvh, 60px);
     --menu-heading-height: clamp(82px, 13dvh, 96px);
+    --menu-heading-bottom-padding: 10px;
     --menu-tile-padding: 7px;
     --menu-tile-icon-size: clamp(30px, 5dvh, 38px);
   }
@@ -797,6 +799,7 @@ code {
     --menu-avatar-size: min(32vw, 180px, 18dvh);
     --menu-content-top: 40px;
     --menu-heading-height: 76px;
+    --menu-heading-bottom-padding: 8px;
     --menu-tile-padding: 5px;
     --menu-tile-icon-size: 28px;
   }
