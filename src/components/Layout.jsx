@@ -60,10 +60,11 @@ export default function Layout() {
 
   return (
     <div className="app">
-      <div
+      <img
         className="app-watermark"
+        src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`}
         aria-hidden="true"
-        style={{ '--app-watermark-image': `url("${import.meta.env.BASE_URL}icons/arisanku-mark.png")` }}
+        alt=""
       />
       <header className="hdr">
         <img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="ArisanKu" />

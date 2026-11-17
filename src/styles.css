@@ -103,14 +103,12 @@ code {
   z-index: 0;
   top: 50%;
   left: 50%;
-  width: min(112vw, 760px);
-  aspect-ratio: 918 / 768;
-  background: linear-gradient(115deg, var(--brand-d), var(--brand));
-  opacity: 0.11;
+  width: min(126vw, 900px);
+  height: auto;
+  opacity: 0.36;
+  filter: brightness(0.72) saturate(1.15);
   pointer-events: none;
   transform: translate(-50%, -42%);
-  -webkit-mask: var(--app-watermark-image) center / contain no-repeat;
-  mask: var(--app-watermark-image) center / contain no-repeat;
 }
 .hdr {
   position: sticky;
@@ -172,6 +170,8 @@ code {
   padding-left: clamp(12px, 3.5vw, 26px);
 }
 .main-chat {
+  position: relative;
+  z-index: 1;
   flex: 1;
   width: 100%;
   max-width: 640px;
