@@ -458,14 +458,20 @@ code {
 .menu-tile-logout {
   appearance: none;
   width: 100%;
-  border: 1px solid rgba(169, 57, 57, 0.14);
-  background: linear-gradient(145deg, #d17a83, #b85b68);
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background:
+    radial-gradient(ellipse at 90% 5%, rgba(255, 255, 255, 0.22), transparent 42%),
+    linear-gradient(145deg, #f15b68, #dc304b);
   color: #fff;
+  box-shadow: 0 12px 25px rgba(205, 38, 67, 0.26), inset 0 1px rgba(255, 255, 255, 0.28);
   cursor: pointer;
 }
 .menu-tile-logout:hover {
   color: #fff;
-  background: linear-gradient(145deg, #c8707a, #a84e5c);
+  background:
+    radial-gradient(ellipse at 90% 5%, rgba(255, 255, 255, 0.26), transparent 42%),
+    linear-gradient(145deg, #f64d5e, #d92744);
+  box-shadow: 0 15px 30px rgba(205, 38, 67, 0.34), inset 0 1px rgba(255, 255, 255, 0.32);
 }
 .menu-tile-logout::after {
   border-color: rgba(255, 255, 255, 0.2);
@@ -484,8 +490,11 @@ code {
   color: rgba(255, 255, 255, 0.78);
 }
 .menu-tile-logout:disabled {
-  background: linear-gradient(145deg, #d17a83, #b85b68);
+  background:
+    radial-gradient(ellipse at 90% 5%, rgba(255, 255, 255, 0.22), transparent 42%),
+    linear-gradient(145deg, #f15b68, #dc304b);
   color: #fff;
+  box-shadow: 0 12px 25px rgba(205, 38, 67, 0.26), inset 0 1px rgba(255, 255, 255, 0.28);
   opacity: 1;
   cursor: wait;
 }
