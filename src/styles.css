@@ -16,7 +16,7 @@
   --amber: #a8700f;
   --amber-l: #fdf0d3;
   --hdr: 54px;
-  --nav: calc(64px + env(safe-area-inset-bottom));
+  --nav: calc(76px + env(safe-area-inset-bottom));
   --radius: 16px;
 }
 
@@ -128,35 +128,108 @@ code {
   max-width: 640px;
   margin: 0 auto;
 }
-.nav {
+.app-back {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 20;
   height: var(--nav);
-  padding-bottom: env(safe-area-inset-bottom);
   background: #fff;
   border-top: 1px solid var(--line);
-  display: flex;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
 }
-.nav a {
-  flex: 1;
+.app-back-button {
+  width: min(100%, 608px);
+  height: 100%;
+  margin: 0 auto;
+  border-radius: 12px;
+  background: var(--brand);
+  color: #fff;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  font-size: 11px;
-  color: var(--muted);
+  gap: 8px;
+  font-weight: 700;
+  transition: background 160ms ease, transform 160ms ease;
 }
-.nav a span {
-  font-size: 20px;
+.app-back-button:hover {
+  background: var(--brand-d);
+}
+.app-back-button:active {
+  transform: scale(0.985);
+}
+.menu-page {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.menu-heading {
+  margin: 8px 2px 18px;
+}
+.menu-heading h1 {
+  margin: 2px 0 6px;
+  font-size: clamp(28px, 8vw, 36px);
+  letter-spacing: -0.04em;
+}
+.menu-heading p:last-child {
+  margin: 0;
+}
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.menu-tile {
+  position: relative;
+  min-height: 126px;
+  padding: 16px 12px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(145deg, var(--brand), var(--brand-d));
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(62, 91, 165, 0.16);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.menu-tile::after {
+  position: absolute;
+  top: -30px;
+  right: -34px;
+  width: 110px;
+  height: 110px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  content: '';
+}
+.menu-tile:hover {
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 22px rgba(62, 91, 165, 0.22);
+}
+.menu-tile:active {
+  transform: scale(0.98);
+}
+.menu-tile-icon {
+  align-self: flex-end;
+  font-size: 38px;
   line-height: 1;
 }
-.nav a.active {
-  color: var(--brand);
-  font-weight: 600;
+.menu-tile-count {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
+  background: var(--red);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
 }
 .ico-wrap {
   position: relative;
@@ -177,6 +250,11 @@ code {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+@media (max-width: 360px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ---------- komponen dasar ---------- */

@@ -11,6 +11,7 @@ import Browse from './pages/Browse.jsx';
 import GroupDetail from './pages/GroupDetail.jsx';
 import Chat from './pages/Chat.jsx';
 import Account from './pages/Account.jsx';
+import Menu from './pages/Menu.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import GroupForm from './pages/admin/GroupForm.jsx';
 import AdminGroup from './pages/admin/AdminGroup.jsx';
@@ -56,7 +57,8 @@ export default function App() {
           </Guard>
         }
       >
-        <Route index element={<Home />} />
+        <Route index element={<Menu />} />
+        <Route path="beranda" element={<Home />} />
         <Route path="arisan" element={<Browse />} />
         <Route path="g/:id" element={<GroupDetail />} />
         <Route path="chat" element={<Chat />} />

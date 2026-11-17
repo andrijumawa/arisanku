@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase } from '../lib/supabase';
 import { useToast } from './Toast.jsx';
@@ -65,31 +65,16 @@ export default function Layout() {
       </header>
 
       <main className={onChat ? 'main-chat' : 'main'}>
-        <Outlet />
+        <Outlet context={{ unread }} />
       </main>
 
-      <nav className="nav">
-        <NavLink to="/" end>
-          <span>🏠</span>Beranda
-        </NavLink>
-        <NavLink to="/arisan">
-          <span>🎯</span>Arisan
-        </NavLink>
-        <NavLink to="/chat">
-          <span className="ico-wrap">
-            💬{unread > 0 && <i className="dot">{unread > 9 ? '9+' : unread}</i>}
-          </span>
-          Chat
-        </NavLink>
-        {isAdmin && (
-          <NavLink to="/admin">
-            <span>🛠️</span>Admin
-          </NavLink>
-        )}
-        <NavLink to="/akun">
-          <span>👤</span>Akun
-        </NavLink>
-      </nav>
+      {loc.pathname !== '/' && (
+        <footer className="app-back">
+          <Link to="/" className="app-back-button">
+            <span aria-hidden="true">←</span> Kembali ke Menu
+          </Link>
+        </footer>
+      )}
     </div>
   );
 }

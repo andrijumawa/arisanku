@@ -7,6 +7,7 @@ Stack: React + Vite + Supabase, deploy ke GitHub Pages.
 
 **Peserta**
 - Daftar dengan nomor telepon + password (tanpa kode undangan, tanpa OTP)
+- Buka Beranda, Arisan, Chat, dan Akun dari halaman Menu; tiap halaman menyediakan tombol tetap untuk kembali ke Menu
 - Pilih arisan sendiri; satu peserta boleh ikut banyak kelompok
 - Arisan Uang: bisa memegang lebih dari 1 slot
 - Bayar per periode dengan unggah foto bukti transfer, lalu menunggu persetujuan admin
