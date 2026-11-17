@@ -25,7 +25,16 @@ export function AuthProvider({ children }) {
       setProfile(null);
       return;
     }
-    const { data } = await supabase.from('profiles').select('id,phone,full_name,role').eq('id', uid).maybeSingle();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id,phone,full_name,role,account_status')
+      .eq('id', uid)
+      .maybeSingle();
+    if (error) {
+      console.error('Gagal memuat profil akun:', error);
+      setProfile(null);
+      return;
+    }
     setProfile(data || null);
   }, []);
 

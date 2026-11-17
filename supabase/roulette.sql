@@ -47,11 +47,11 @@ alter table public.roulette_draws enable row level security;
 drop policy if exists "rolet: admin lihat sesi" on public.roulette_sessions;
 drop policy if exists "rolet: peserta pantau sesi" on public.roulette_sessions;
 create policy "rolet: peserta pantau sesi" on public.roulette_sessions
-  for select to authenticated using (true);
+  for select to authenticated using (public.is_verified());
 
 drop policy if exists "rolet: peserta lihat hasil" on public.roulette_draws;
 create policy "rolet: peserta lihat hasil" on public.roulette_draws
-  for select to authenticated using (true);
+  for select to authenticated using (public.is_verified());
 
 grant select on public.roulette_sessions, public.roulette_draws to authenticated;
 

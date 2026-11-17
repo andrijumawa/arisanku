@@ -13,6 +13,8 @@ create table public.profiles (
   phone       text not null unique,
   full_name   text not null,
   role        text not null default 'peserta' check (role in ('peserta','admin')),
+  account_status text not null default 'menunggu'
+              check (account_status in ('menunggu','disetujui','ditolak')),
   created_at  timestamptz not null default now()
 );
 
@@ -40,9 +42,30 @@ returns boolean language sql stable security definer set search_path = public as
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
 
+create or replace function public.is_verified()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and (account_status = 'disetujui' or role = 'admin')
+  );
+$$;
+
+create or replace function public.prevent_self_account_verification()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.account_status is distinct from old.account_status and not public.is_admin() then
+    raise exception 'Hanya admin yang dapat mengubah status verifikasi akun.';
+  end if;
+  return new;
+end $$;
+
+create trigger protect_profile_verification
+  before update of account_status on public.profiles
+  for each row execute function public.prevent_self_account_verification();
+
 -- Nama peserta yang boleh dilihat semua (untuk chat, daftar pemenang)
 create view public.public_profiles as
-  select id, full_name from public.profiles;
+  select id, full_name from public.profiles where public.is_verified();
 
 -- ---------------------------------------------------------------------
 -- 2. GROUPS (kelompok arisan, dibuat admin)
@@ -255,48 +278,49 @@ create policy "profil: ubah nama sendiri" on public.profiles
 create policy "profil: admin ubah semua" on public.profiles
   for update to authenticated using (public.is_admin());
 
--- groups: semua yang login boleh lihat; admin kelola
+-- groups: akun terverifikasi boleh lihat; admin kelola
 create policy "grup: lihat" on public.groups
-  for select to authenticated using (true);
+  for select to authenticated using (public.is_verified());
 create policy "grup: admin kelola" on public.groups
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- memberships
 create policy "member: lihat sendiri / admin" on public.memberships
-  for select to authenticated using (user_id = auth.uid() or public.is_admin());
+  for select to authenticated using (public.is_admin() or (public.is_verified() and user_id = auth.uid()));
 create policy "member: daftar sendiri" on public.memberships
   for insert to authenticated
   with check (user_id = auth.uid() and status = 'menunggu'
+              and public.is_verified()
               and exists (select 1 from public.groups g where g.id = group_id and g.is_open));
 create policy "member: batal pendaftaran menunggu" on public.memberships
-  for delete to authenticated using (user_id = auth.uid() and status = 'menunggu');
+  for delete to authenticated using (public.is_verified() and user_id = auth.uid() and status = 'menunggu');
 create policy "member: admin ubah" on public.memberships
   for update to authenticated using (public.is_admin());
 
 -- slots
 create policy "slot: lihat sendiri / admin" on public.slots
   for select to authenticated using (
-    public.is_admin() or exists (
+    public.is_admin() or (public.is_verified() and exists (
       select 1 from public.memberships m where m.id = membership_id and m.user_id = auth.uid())
-  );
+  ));
 create policy "slot: admin kelola" on public.slots
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
--- rounds: hasil undian transparan untuk semua peserta
+-- rounds: hasil undian transparan untuk peserta terverifikasi
 create policy "putaran: lihat" on public.rounds
-  for select to authenticated using (true);
+  for select to authenticated using (public.is_verified());
 create policy "putaran: admin kelola" on public.rounds
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
 -- payments
 create policy "bayar: lihat sendiri / admin" on public.payments
   for select to authenticated using (
-    public.is_admin() or exists (
+    public.is_admin() or (public.is_verified() and exists (
       select 1 from public.memberships m where m.id = membership_id and m.user_id = auth.uid())
-  );
+  ));
 create policy "bayar: upload sendiri" on public.payments
   for insert to authenticated with check (
-    status = 'menunggu' and exists (
+    status = 'menunggu' and public.is_verified() and exists (
       select 1 from public.memberships m
       where m.id = membership_id and m.user_id = auth.uid()
         and m.group_id = payments.group_id and m.status = 'aktif')
@@ -307,8 +331,9 @@ create policy "bayar: admin review" on public.payments
 -- chat: hanya peserta aktif (atau admin) yang boleh baca/kirim
 create or replace function public.can_chat()
 returns boolean language sql stable security definer set search_path = public as $$
-  select public.is_admin() or exists (
-    select 1 from public.memberships where user_id = auth.uid() and status = 'aktif');
+  select public.is_admin() or (public.is_verified() and exists (
+    select 1 from public.memberships where user_id = auth.uid() and status = 'aktif'
+  ));
 $$;
 
 create policy "chat: baca" on public.chat_messages
@@ -320,7 +345,9 @@ create policy "chat: admin hapus" on public.chat_messages
 
 -- push subscriptions
 create policy "push: kelola sendiri" on public.push_subscriptions
-  for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+  for all to authenticated
+  using (public.is_admin() or (public.is_verified() and user_id = auth.uid()))
+  with check (public.is_admin() or (public.is_verified() and user_id = auth.uid()));
 
 -- Hak akses view nama
 grant select on public.public_profiles to authenticated;
@@ -331,6 +358,7 @@ grant select on public.public_profiles to authenticated;
 alter publication supabase_realtime add table public.chat_messages;
 alter publication supabase_realtime add table public.memberships;
 alter publication supabase_realtime add table public.payments;
+alter publication supabase_realtime add table public.profiles;
 
 -- ---------------------------------------------------------------------
 -- 11. STORAGE (bucket privat)
@@ -343,11 +371,13 @@ on conflict (id) do nothing;
 -- Bukti transfer: file disimpan di folder <user_id>/<nama-file>
 create policy "bukti: upload ke folder sendiri" on storage.objects
   for insert to authenticated
-  with check (bucket_id = 'bukti-transfer' and (storage.foldername(name))[1] = auth.uid()::text);
+  with check (bucket_id = 'bukti-transfer' and public.is_verified()
+              and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "bukti: lihat sendiri / admin" on storage.objects
   for select to authenticated
   using (bucket_id = 'bukti-transfer'
-         and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin()));
+         and (public.is_admin() or (public.is_verified()
+              and (storage.foldername(name))[1] = auth.uid()::text)));
 
 -- Foto chat: folder <user_id>/<nama-file>, terbaca oleh anggota chat
 create policy "chat-img: upload ke folder sendiri" on storage.objects

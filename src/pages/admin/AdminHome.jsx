@@ -12,30 +12,39 @@ const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
 
 export default function AdminHome() {
   const [params, setParams] = useSearchParams();
-  const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0 });
+  const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0, accounts: 0 });
   const tab = params.get('tab') || 'daftar';
   const { data, loading, error, reload } = useAsync(async () => {
-    const [pendingMem, pendingPay] = await Promise.all([
+    const [pendingMem, pendingPay, pendingAccounts] = await Promise.all([
       supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
       supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_status', 'menunggu'),
     ]);
     if (pendingMem.error) throw pendingMem.error;
     if (pendingPay.error) throw pendingPay.error;
-    return { mem: pendingMem.count || 0, pay: pendingPay.count || 0 };
+    if (pendingAccounts.error) throw pendingAccounts.error;
+    return { mem: pendingMem.count || 0, pay: pendingPay.count || 0, accounts: pendingAccounts.count || 0 };
   }, []);
   const onRealtimeChange = useCallback((tables) => {
     setListRevisions((current) => ({
       registrations: current.registrations + Number(tables.includes('memberships')),
       payments: current.payments + Number(tables.includes('payments')),
+      accounts: current.accounts + Number(tables.includes('profiles')),
     }));
   }, []);
-  useRealtimeRefresh(reload, 'admin-counts', [{ table: 'memberships' }, { table: 'payments' }], true, onRealtimeChange);
+  useRealtimeRefresh(
+    reload,
+    'admin-counts',
+    [{ table: 'memberships' }, { table: 'payments' }, { table: 'profiles' }],
+    true,
+    onRealtimeChange
+  );
 
   const tabs = [
     ['daftar', 'Pendaftaran', data?.mem],
     ['bayar', 'Pembayaran', data?.pay],
     ['kelompok', 'Kelompok'],
-    ['peserta', 'Peserta'],
+    ['peserta', 'Peserta', data?.accounts],
   ];
 
   return (
@@ -54,7 +63,7 @@ export default function AdminHome() {
       {tab === 'daftar' && <Registrations revision={listRevisions.registrations} />}
       {tab === 'bayar' && <Payments revision={listRevisions.payments} />}
       {tab === 'kelompok' && <Groups />}
-      {tab === 'peserta' && <People />}
+      {tab === 'peserta' && <People revision={listRevisions.accounts} />}
     </>
   );
 }
@@ -235,19 +244,24 @@ function Groups() {
 }
 
 /* ---------------- Peserta ---------------- */
-function People() {
+function People({ revision }) {
   const { session } = useAuth();
   const toast = useToast();
   const [search, setSearch] = useState('');
   const { data, loading, error, reload } = useAsync(
-    () => q(supabase.from('profiles').select('id,full_name,phone,role,created_at').order('created_at', { ascending: false })),
-    []
+    () => q(supabase
+      .from('profiles')
+      .select('id,full_name,phone,role,account_status,created_at')
+      .order('created_at', { ascending: false })),
+    [revision]
   );
   useRealtimeRefresh(reload, 'admin-people', [{ table: 'profiles' }]);
 
   const list = useMemo(() => {
     const s = search.trim().toLowerCase();
-    return (data || []).filter((p) => !s || p.full_name.toLowerCase().includes(s) || p.phone.includes(s));
+    return (data || [])
+      .filter((p) => !s || p.full_name.toLowerCase().includes(s) || p.phone.includes(s))
+      .sort((a, b) => Number(b.account_status === 'menunggu') - Number(a.account_status === 'menunggu'));
   }, [data, search]);
 
   async function toggleRole(p) {
@@ -255,6 +269,16 @@ function People() {
     if (!window.confirm(`${next === 'admin' ? 'Jadikan' : 'Cabut hak admin'} ${p.full_name}?`)) return;
     const { error } = await supabase.from('profiles').update({ role: next }).eq('id', p.id);
     if (error) return toast(error.message, 'error');
+  }
+
+  async function reviewAccount(p, accountStatus) {
+    if (accountStatus === 'ditolak' && !window.confirm(`Tolak verifikasi akun ${p.full_name}?`)) return;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ account_status: accountStatus })
+      .eq('id', p.id);
+    if (error) return toast(error.message, 'error');
+    toast(accountStatus === 'disetujui' ? 'Akun peserta disetujui.' : 'Verifikasi akun ditolak.', 'success');
   }
 
   if (loading) return <Spinner />;
@@ -274,13 +298,34 @@ function People() {
               <b>{p.full_name}</b>
               <div className="muted small">{p.phone}</div>
             </div>
-            {p.role === 'admin' && <span className="badge gold">Admin</span>}
-            {p.id !== session.user.id && (
-              <button className="btn sm" onClick={() => toggleRole(p)}>
-                {p.role === 'admin' ? 'Cabut admin' : 'Jadikan admin'}
-              </button>
-            )}
           </div>
+          <div className="person-badges">
+            {p.role === 'admin' && <span className="badge gold">Admin</span>}
+            <span className={`badge ${p.account_status === 'disetujui' ? 'ok' : p.account_status === 'ditolak' ? 'bad' : 'wait'}`}>
+              {p.account_status === 'disetujui' ? 'Terverifikasi' : p.account_status === 'ditolak' ? 'Ditolak' : 'Menunggu verifikasi'}
+            </span>
+          </div>
+          {(p.account_status !== 'disetujui' || p.id !== session.user.id) && (
+            <div className="actions">
+              {p.account_status !== 'disetujui' && (
+                <>
+                <button className="btn primary sm" onClick={() => reviewAccount(p, 'disetujui')}>
+                  Setujui akun
+                </button>
+                {p.account_status !== 'ditolak' && (
+                  <button className="btn danger sm" onClick={() => reviewAccount(p, 'ditolak')}>
+                    Tolak
+                  </button>
+                )}
+                </>
+              )}
+              {p.id !== session.user.id && (
+                <button className="btn sm" onClick={() => toggleRole(p)}>
+                  {p.role === 'admin' ? 'Cabut admin' : 'Jadikan admin'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ))}
     </>

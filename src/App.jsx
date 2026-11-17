@@ -18,10 +18,14 @@ import AdminHome from './pages/admin/AdminHome.jsx';
 import GroupForm from './pages/admin/GroupForm.jsx';
 import AdminGroup from './pages/admin/AdminGroup.jsx';
 
-function Guard({ children, admin = false }) {
+function Guard({ children, admin = false, verified = false }) {
   const { session, profile, ready } = useAuth();
   if (!ready) return <Spinner />;
   if (!session) return <Navigate to="/masuk" replace />;
+  if (verified && !profile) return <Spinner />;
+  if (verified && profile.account_status !== 'disetujui' && profile.role !== 'admin') {
+    return <Navigate to="/" replace />;
+  }
   if (admin) {
     if (!profile) return <Spinner />;
     if (profile.role !== 'admin') return <Navigate to="/" replace />;
@@ -60,13 +64,13 @@ export default function App() {
         }
       >
         <Route index element={<Menu />} />
-        <Route path="beranda" element={<Home />} />
-        <Route path="arisan" element={<Browse />} />
-        <Route path="g/:id" element={<GroupDetail />} />
-        <Route path="chat" element={<Chat />} />
-        <Route path="akun" element={<Account />} />
-        <Route path="rolet" element={<Roulette />} />
-        <Route path="hasil-rolet" element={<RouletteResults />} />
+        <Route path="beranda" element={<Guard verified><Home /></Guard>} />
+        <Route path="arisan" element={<Guard verified><Browse /></Guard>} />
+        <Route path="g/:id" element={<Guard verified><GroupDetail /></Guard>} />
+        <Route path="chat" element={<Guard verified><Chat /></Guard>} />
+        <Route path="akun" element={<Guard verified><Account /></Guard>} />
+        <Route path="rolet" element={<Guard verified><Roulette /></Guard>} />
+        <Route path="hasil-rolet" element={<Guard verified><RouletteResults /></Guard>} />
         <Route
           path="admin"
           element={
