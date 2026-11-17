@@ -96,6 +96,12 @@ const shapes = {
       <path d="M2 18h2.5a6 6 0 0 0 4.2-1.7L17 8M2 6h2.5a6 6 0 0 1 4.2 1.7l1.1 1.1M14 14l3.1 3.1a6 6 0 0 0 4.2 1.7H22M14 10l3.1-3.1A6 6 0 0 1 21.3 5H22" />
     </>
   ),
+  logout: (
+    <>
+      <path d="M10 17l5-5-5-5M15 12H3" />
+      <path d="M12 3h6a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3h-6" />
+    </>
+  ),
 };
 
 export default function Icon({ name, size = 24, className = '' }) {
