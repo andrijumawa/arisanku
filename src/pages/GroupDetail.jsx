@@ -9,6 +9,7 @@ import { Badge, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
+import Icon from '../components/Icon.jsx';
 
 export default function GroupDetail() {
   const { id } = useParams();
@@ -132,7 +133,7 @@ export default function GroupDetail() {
   return (
     <>
       <Link to="/" className="small">
-        ← Kembali
+        <Icon name="back" size={16} /> Kembali
       </Link>
       <div className="card" style={{ marginTop: 8 }}>
         <div className="card-head">
@@ -144,7 +145,7 @@ export default function GroupDetail() {
           {mem && <Badge status={mem.status} />}
         </div>
         {g.description && <p className="muted small">{g.description}</p>}
-        {g.type === 'paket' && g.package_detail && <p className="small">🎁 {g.package_detail}</p>}
+        {g.type === 'paket' && g.package_detail && <p className="small item-detail"><Icon name="gift" size={16} /> {g.package_detail}</p>}
         <GroupInfo g={g} />
       </div>
 
@@ -200,7 +201,7 @@ export default function GroupDetail() {
               const canPay = !p || p.status === 'ditolak';
               return (
                 <div key={n} className={`period-row ${p?.status === 'disetujui' ? 'done' : ''}`}>
-                  <div className="period-no">{p?.status === 'disetujui' ? '✓' : n}</div>
+                  <div className="period-no">{p?.status === 'disetujui' ? <Icon name="check" size={18} /> : n}</div>
                   <div style={{ flex: 1 }}>
                     <b>
                       {label} ke-{n}
@@ -230,7 +231,7 @@ export default function GroupDetail() {
                 <div className="period-no">{r.round_no}</div>
                 <div style={{ flex: 1 }}>
                   <b>{names[r.winner_user_id] || 'Peserta'}</b>
-                  {r.winner_user_id === uid && <span className="badge gold" style={{ marginLeft: 6 }}>Kamu 🎉</span>}
+                  {r.winner_user_id === uid && <span className="badge gold" style={{ marginLeft: 6 }}>Kamu</span>}
                   <div className="muted small">Pengambilan: {fmtDate(r.pickup_date)}</div>
                 </div>
                 <Badge status={r.status} />

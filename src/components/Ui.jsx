@@ -1,4 +1,5 @@
 import { STATUS } from '../lib/format';
+import Icon from './Icon.jsx';
 
 export function Badge({ status, children }) {
   const s = STATUS[status] || { label: status, cls: 'off' };
@@ -14,10 +15,10 @@ export function Spinner({ text = 'Memuat…' }) {
   );
 }
 
-export function Empty({ icon = '📭', title, children }) {
+export function Empty({ icon = 'inbox', title, children }) {
   return (
     <div className="empty">
-      <div className="empty-ico">{icon}</div>
+      <Icon name={icon} size={40} className="empty-ico" />
       <strong>{title}</strong>
       {children && <p className="muted">{children}</p>}
     </div>

@@ -98,7 +98,7 @@ function Registrations({ revision }) {
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  if (!data.length) return <Empty icon="✅" title="Tidak ada pendaftaran menunggu" />;
+  if (!data.length) return <Empty icon="check" title="Tidak ada pendaftaran menunggu" />;
 
   return data.map((m) => (
     <div key={m.id} className="card">
@@ -167,7 +167,7 @@ function Payments({ revision }) {
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  if (!data.length) return <Empty icon="✅" title="Tidak ada pembayaran menunggu" />;
+  if (!data.length) return <Empty icon="check" title="Tidak ada pembayaran menunggu" />;
 
   return data.map((p) => {
     const who = p.memberships?.profiles;
@@ -214,7 +214,7 @@ function Groups() {
       <Link to="/admin/kelompok/baru" className="btn primary block" style={{ marginBottom: 12 }}>
         + Kelompok baru
       </Link>
-      {data.length === 0 && <Empty icon="🗂️" title="Belum ada kelompok">Buat kelompok arisan uang atau paket lebaran.</Empty>}
+      {data.length === 0 && <Empty icon="folder" title="Belum ada kelompok">Buat kelompok arisan uang atau paket lebaran.</Empty>}
       {data.map((g) => (
         <Link key={g.id} to={`/admin/kelompok/${g.id}`} className="card link">
           <div className="card-head">

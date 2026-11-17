@@ -5,6 +5,7 @@ import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
+import Icon from '../components/Icon.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -56,7 +57,7 @@ export default function Browse() {
     <>
       <h2>Pilih Arisan</h2>
       {list.length === 0 ? (
-        <Empty icon="🔎" title="Belum ada arisan yang dibuka">
+        <Empty icon="search" title="Belum ada arisan yang dibuka">
           Admin akan membuka kelompok baru. Cek lagi nanti.
         </Empty>
       ) : (
@@ -73,7 +74,7 @@ export default function Browse() {
                 {st && <Badge status={st} />}
               </div>
               {g.description && <p className="muted small">{g.description}</p>}
-              {g.type === 'paket' && g.package_detail && <p className="small">🎁 {g.package_detail}</p>}
+              {g.type === 'paket' && g.package_detail && <p className="small item-detail"><Icon name="gift" size={16} /> {g.package_detail}</p>}
               <GroupInfo g={g} />
               <div className="actions">
                 {!st && (

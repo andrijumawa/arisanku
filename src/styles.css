@@ -215,8 +215,8 @@ code {
 }
 .menu-tile-icon {
   align-self: flex-end;
-  font-size: 38px;
-  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.94;
 }
 .menu-tile-count {
   position: absolute;
@@ -568,8 +568,30 @@ input[type='checkbox'] {
   padding: 36px 12px;
 }
 .empty-ico {
-  font-size: 40px;
+  display: block;
+  color: var(--brand);
   margin-bottom: 6px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.item-detail {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.item-detail svg {
+  flex: 0 0 auto;
+  color: var(--brand);
+  margin-top: 2px;
+}
+.chat-empty {
+  margin-top: 40px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+}
+.chat-empty svg {
+  color: var(--brand);
 }
 .err-box {
   border-color: #efc7c3;

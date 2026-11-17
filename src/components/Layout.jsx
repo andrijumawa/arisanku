@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase } from '../lib/supabase';
 import { useToast } from './Toast.jsx';
+import Icon from './Icon.jsx';
 
 export default function Layout() {
   const { isAdmin, session } = useAuth();
@@ -30,7 +31,7 @@ export default function Layout() {
           (p) => {
             if (p.new.user_id === uid) return;
             setUnread((n) => n + 1);
-            toast('💬 Pesan baru di grup chat');
+            toast('Pesan baru di grup chat');
           }
         )
         .subscribe((status) => {
@@ -71,7 +72,7 @@ export default function Layout() {
       {loc.pathname !== '/' && (
         <footer className="app-back">
           <Link to="/" className="app-back-button">
-            <span aria-hidden="true">←</span> Kembali ke Menu
+            <Icon name="back" size={19} /> Kembali ke Menu
           </Link>
         </footer>
       )}

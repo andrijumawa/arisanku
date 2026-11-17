@@ -40,7 +40,7 @@ export default function Home() {
 
   return (
     <>
-      <h2>Halo, {profile?.full_name?.split(' ')[0] || 'Peserta'} 👋</h2>
+      <h2>Halo, {profile?.full_name?.split(' ')[0] || 'Peserta'}</h2>
 
       <div className="stats">
         <div className="stat">
@@ -67,7 +67,7 @@ export default function Home() {
       </div>
 
       {ms.length === 0 ? (
-        <Empty icon="🎯" title="Belum ikut arisan">
+        <Empty icon="target" title="Belum ikut arisan">
           Pilih arisan uang atau paket lebaran di menu <b>Arisan</b>, lalu tunggu persetujuan admin.
         </Empty>
       ) : (

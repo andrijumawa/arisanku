@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import Icon from './Icon.jsx';
 
 const cache = new Map();
 
@@ -67,7 +68,7 @@ export default function SignedImage({ bucket, path, alt = '', className = '' }) 
         <div className="lightbox" onClick={() => setOpen(false)}>
           <img src={url} alt={alt} />
           <button className="icon-btn light" aria-label="Tutup">
-            ✕
+            <Icon name="close" size={24} />
           </button>
         </div>
       )}

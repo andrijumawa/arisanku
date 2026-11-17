@@ -6,6 +6,7 @@ import { periodName, typeLabel } from '../../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../../components/Ui.jsx';
 import GroupInfo from '../../components/GroupInfo.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import Icon from '../../components/Icon.jsx';
 
 export default function AdminGroup() {
   const { id } = useParams();
@@ -86,7 +87,7 @@ export default function AdminGroup() {
     const { data: r, error } = await supabase.rpc('draw_next_round', { p_group: id, p_pickup: pickup || null });
     setBusyId(null);
     if (error) return toast(error.message, 'error');
-    toast(`Putaran ${r.round_no}: ${nameOf[r.winner_user_id] || 'peserta'} 🎉`, 'success');
+    toast(`Putaran ${r.round_no}: ${nameOf[r.winner_user_id] || 'peserta'}`, 'success');
     setPickup('');
   }
 
@@ -109,7 +110,7 @@ export default function AdminGroup() {
   return (
     <>
       <Link to="/admin?tab=kelompok" className="small">
-        ← Semua kelompok
+        <Icon name="back" size={16} /> Semua kelompok
       </Link>
 
       <div className="card" style={{ marginTop: 8 }}>
@@ -122,7 +123,7 @@ export default function AdminGroup() {
           <span className={`badge ${g.is_open ? 'ok' : 'off'}`}>{g.is_open ? 'Dibuka' : 'Ditutup'}</span>
         </div>
         {g.description && <p className="muted small">{g.description}</p>}
-        {!isUang && g.package_detail && <p className="small">🎁 {g.package_detail}</p>}
+        {!isUang && g.package_detail && <p className="small item-detail"><Icon name="gift" size={16} /> {g.package_detail}</p>}
         <GroupInfo g={g} />
         <div className="actions">
           <Link to={`/admin/kelompok/${id}/ubah`} className="btn sm">
@@ -151,7 +152,14 @@ export default function AdminGroup() {
                   <input type="date" value={pickup} onChange={(e) => setPickup(e.target.value)} />
                 </label>
                 <button className="btn gold block" disabled={busyId === 'draw' || activeSlots === 0} onClick={draw}>
-                  {busyId === 'draw' ? 'Mengundi…' : g.draw_mode === 'acak' ? `🎲 Undi putaran ke-${nextRound}` : `Tentukan penerima putaran ke-${nextRound}`}
+                  {busyId === 'draw' ? (
+                    'Mengundi…'
+                  ) : (
+                    <>
+                      {g.draw_mode === 'acak' && <Icon name="dice" size={18} />}
+                      {g.draw_mode === 'acak' ? `Undi putaran ke-${nextRound}` : `Tentukan penerima putaran ke-${nextRound}`}
+                    </>
+                  )}
                 </button>
               </>
             ) : (
@@ -189,7 +197,7 @@ export default function AdminGroup() {
       )}
 
       <div className="section-title">Peserta ({members.length})</div>
-      {members.length === 0 && <Empty icon="👥" title="Belum ada pendaftar" />}
+      {members.length === 0 && <Empty icon="users" title="Belum ada pendaftar" />}
       {members.map((m) => (
         <div key={m.id} className="card">
           <div className="person">

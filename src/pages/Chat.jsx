@@ -6,6 +6,7 @@ import { compressImage } from '../lib/image';
 import { Spinner } from '../components/Ui.jsx';
 import SignedImage from '../components/SignedImage.jsx';
 import { useToast } from '../components/Toast.jsx';
+import Icon from '../components/Icon.jsx';
 
 export default function Chat() {
   const { session, isAdmin } = useAuth();
@@ -228,7 +229,7 @@ export default function Chat() {
     return (
       <div className="main" style={{ paddingTop: 40 }}>
         <div className="empty">
-          <div className="empty-ico">💬</div>
+          <Icon name="message" size={40} className="empty-ico" />
           <strong>Chat grup belum tersedia</strong>
           <p className="muted">Chat terbuka setelah pendaftaranmu di salah satu arisan disetujui admin.</p>
         </div>
@@ -239,7 +240,12 @@ export default function Chat() {
   return (
     <div className="chat">
       <div className="chat-list">
-        {msgs.length === 0 && <div className="center muted" style={{ marginTop: 40 }}>Belum ada pesan. Sapa peserta lain 👋</div>}
+        {msgs.length === 0 && (
+          <div className="chat-empty center muted">
+            <Icon name="message" size={32} />
+            <span>Belum ada pesan. Sapa peserta lain.</span>
+          </div>
+        )}
         {msgs.map((m, i) => {
           const mine = m.user_id === uid;
           const newDay = i === 0 || !sameDay(msgs[i - 1].created_at, m.created_at);
@@ -289,10 +295,10 @@ export default function Chat() {
           }}
         />
         <button type="button" className="round-btn" disabled={busy} onClick={() => camRef.current?.click()} aria-label="Ambil foto">
-          📷
+          <Icon name="camera" size={20} />
         </button>
         <button type="button" className="round-btn" disabled={busy} onClick={() => galRef.current?.click()} aria-label="Pilih dari galeri">
-          🖼️
+          <Icon name="image" size={20} />
         </button>
         <textarea
           rows={1}
@@ -302,7 +308,7 @@ export default function Chat() {
           onKeyDown={onKey}
         />
         <button className="round-btn send" disabled={busy || !text.trim()} aria-label="Kirim">
-          ➤
+          <Icon name="send" size={19} />
         </button>
       </form>
     </div>

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, q } from '../../lib/supabase';
 import { Spinner } from '../../components/Ui.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import Icon from '../../components/Icon.jsx';
 
 const EMPTY = {
   type: 'uang',
@@ -89,7 +90,7 @@ export default function GroupForm() {
   return (
     <>
       <Link to={editing ? `/admin/kelompok/${id}` : '/admin?tab=kelompok'} className="small">
-        ← Kembali
+        <Icon name="back" size={16} /> Kembali
       </Link>
       <h2 style={{ marginTop: 8 }}>{editing ? 'Ubah kelompok' : 'Kelompok baru'}</h2>
 
