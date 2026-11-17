@@ -1074,32 +1074,10 @@ input[type='checkbox'] {
     font-weight: 600;
     line-height: 1;
   }
-  .auth-social-icon--google {
-    background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 25% 48%, #fbbc05 48% 72%, #ea4335 72% 86%, #4285f4 86%);
-    background-clip: text;
-    color: transparent;
-    -webkit-background-clip: text;
-  }
-  .auth-social-icon--facebook,
-  .auth-social-icon--linkedin {
-    color: #1877f2;
-  }
-  .auth-social-icon--github svg {
+  .auth-social-icon svg {
     width: 24px;
     height: 24px;
     fill: #333;
-    stroke: #333;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.4;
-  }
-  .auth-social-icon--github svg path + path {
-    fill: none;
-    stroke: #fff;
-  }
-  .auth-social-icon--linkedin {
-    font-size: 20px;
-    letter-spacing: -0.06em;
   }
   .auth-panels {
     inset: 0;
@@ -1247,7 +1225,7 @@ input[type='checkbox'] {
     width: 40px;
     height: 40px;
   }
-  .auth-social-icon--github svg {
+  .auth-social-icon svg {
     width: 22px;
     height: 22px;
   }
