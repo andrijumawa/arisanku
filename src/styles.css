@@ -211,11 +211,11 @@ code {
   transform: scale(0.985);
 }
 .menu-page {
-  --menu-avatar-top: 24px;
-  --menu-avatar-size: min(50vw, 380px);
+  --menu-avatar-top: 20px;
+  --menu-avatar-size: min(46vw, 350px);
   position: relative;
   width: 100%;
-  padding-top: 240px;
+  padding-top: 190px;
 }
 .visually-hidden {
   position: absolute;
