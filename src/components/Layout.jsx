@@ -59,7 +59,7 @@ export default function Layout() {
   }, [onChat, uid, toast]);
 
   return (
-    <div className="app">
+    <div className={`app${loc.pathname === '/' ? ' is-menu' : ''}`}>
       <div
         className="app-watermark"
         aria-hidden="true"
