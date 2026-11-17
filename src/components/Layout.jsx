@@ -36,7 +36,7 @@ export default function Layout() {
   return (
     <div className="app">
       <header className="hdr">
-        <img className="brand-logo" src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="ArisanKu" />
+        <img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="ArisanKu" />
         {isAdmin && <span className="badge gold">Admin</span>}
       </header>
 
