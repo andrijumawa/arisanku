@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { isValidPhone } from '../lib/supabase';
+import AuthSocialIcons from '../components/AuthSocialIcons.jsx';
 
 export default function Register() {
   const { signUp, session } = useAuth();
@@ -9,6 +10,14 @@ export default function Register() {
   const [form, setForm] = useState({ fullName: '', phone: '', password: '' });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 650px)').matches);
+
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 650px)');
+    const update = () => setIsMobile(query.matches);
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
   if (session) return <Navigate to="/" replace />;
 
@@ -34,23 +43,23 @@ export default function Register() {
   return (
     <form className="auth-form auth-form--register" onSubmit={submit}>
       <div className="auth-form-heading">
-        <h1>Daftar peserta</h1>
+        <h1><span className="auth-copy-desktop">Daftar peserta</span><span className="auth-copy-mobile">Registration</span></h1>
       </div>
       {err && <div className="alert err">{err}</div>}
       <label className="field auth-field">
-        <span>Nama lengkap</span>
-        <input placeholder="Nama lengkap" value={form.fullName} onChange={set('fullName')} autoComplete="name" required />
+        <span><span className="auth-copy-desktop">Nama lengkap</span><span className="auth-copy-mobile">Username</span></span>
+        <input placeholder={isMobile ? 'Username' : 'Nama lengkap'} value={form.fullName} onChange={set('fullName')} autoComplete="name" required />
         <svg className="auth-field-icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="8" r="3.5" />
           <path d="M5 20a7 7 0 0 1 14 0" />
         </svg>
       </label>
       <label className="field auth-field">
-        <span>Nomor telepon</span>
+        <span><span className="auth-copy-desktop">Nomor telepon</span><span className="auth-copy-mobile">Phone number</span></span>
         <input
           type="tel"
           inputMode="tel"
-          placeholder="Nomor telepon"
+          placeholder={isMobile ? 'Phone number' : 'Nomor telepon'}
           value={form.phone}
           onChange={set('phone')}
           autoComplete="username"
@@ -69,12 +78,14 @@ export default function Register() {
         </svg>
       </label>
       <button className="btn primary block auth-submit" disabled={busy}>
-        {busy ? 'Memproses…' : 'Daftar'}
+        <span className="auth-copy-desktop">{busy ? 'Memproses…' : 'Daftar'}</span>
+        <span className="auth-copy-mobile">{busy ? 'Processing...' : 'Register'}</span>
       </button>
       <p className="auth-form-footer">
         Sudah punya akun? <Link to="/masuk">Masuk</Link>
       </p>
       <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="ArisanKu" />
+      <AuthSocialIcons mode="register" />
     </form>
   );
 }

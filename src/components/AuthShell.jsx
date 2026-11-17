@@ -11,17 +11,35 @@ export default function AuthShell() {
           <section className="auth-panel-content auth-panel-content--register">
             <div>
               <p className="auth-panel-kicker">ARISANKU</p>
-              <h2>Senang bertemu denganmu</h2>
-              <p>Belum punya akun?</p>
-              <Link className="auth-switch" to="/daftar">Daftar sekarang</Link>
+              <h2>
+                <span className="auth-copy-desktop">Senang bertemu denganmu</span>
+                <span className="auth-copy-mobile">Hello, Welcome!</span>
+              </h2>
+              <p>
+                <span className="auth-copy-desktop">Belum punya akun?</span>
+                <span className="auth-copy-mobile">Don't have an account?</span>
+              </p>
+              <Link className="auth-switch" to="/daftar">
+                <span className="auth-copy-desktop">Daftar sekarang</span>
+                <span className="auth-copy-mobile">Register</span>
+              </Link>
             </div>
           </section>
           <section className="auth-panel-content auth-panel-content--login">
             <div>
               <p className="auth-panel-kicker">ARISANKU</p>
-              <h2>Selamat datang kembali</h2>
-              <p>Sudah punya akun?</p>
-              <Link className="auth-switch" to="/masuk">Masuk</Link>
+              <h2>
+                <span className="auth-copy-desktop">Selamat datang kembali</span>
+                <span className="auth-copy-mobile">Welcome Back!</span>
+              </h2>
+              <p>
+                <span className="auth-copy-desktop">Sudah punya akun?</span>
+                <span className="auth-copy-mobile">Already have an account?</span>
+              </p>
+              <Link className="auth-switch" to="/masuk">
+                <span className="auth-copy-desktop">Masuk</span>
+                <span className="auth-copy-mobile">Login</span>
+              </Link>
             </div>
           </section>
         </aside>

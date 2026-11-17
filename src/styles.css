@@ -37,6 +37,12 @@ body {
   font-size: 15px;
   line-height: 1.45;
 }
+.auth-copy-mobile {
+  display: none;
+}
+.auth-social {
+  display: none;
+}
 h1,
 h2,
 h3 {
@@ -907,6 +913,8 @@ input[type='checkbox'] {
     align-items: center;
     padding: 20px;
     background: linear-gradient(90deg, #e2e8f5, #c9d6ff);
+    color: #333;
+    font-family: Poppins, sans-serif;
   }
   .auth-shell::before {
     background: #7494ec;
@@ -914,7 +922,12 @@ input[type='checkbox'] {
   .auth-form .auth-submit {
     background: #7494ec;
     border: 0;
+    border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    color: #fff;
+    font-family: inherit;
+    font-weight: 600;
+    transition: background 300ms;
   }
   .auth-form .auth-submit:hover:not(:disabled) {
     background: #5f80e0;
@@ -924,6 +937,12 @@ input[type='checkbox'] {
   }
   .auth-form-footer a {
     color: #333;
+  }
+  .auth-copy-desktop {
+    display: none;
+  }
+  .auth-copy-mobile {
+    display: inline;
   }
   .auth-switch:focus-visible {
     outline-color: #7494ec;
@@ -988,6 +1007,8 @@ input[type='checkbox'] {
   }
   .auth-form h1 {
     font-size: 32px;
+    font-weight: 700;
+    letter-spacing: 0;
   }
   .auth-form .field {
     margin: 10px 0;
@@ -1004,6 +1025,10 @@ input[type='checkbox'] {
     margin: -10px 0 15px;
     font-size: 14.5px;
     text-align: right;
+    color: #333;
+  }
+  .auth-forgot-password .auth-copy-mobile {
+    color: #333;
   }
   .auth-submit {
     min-height: 48px;
@@ -1013,6 +1038,64 @@ input[type='checkbox'] {
   .auth-form-footer {
     margin: 15px 0 10px;
     font-size: 14.5px;
+  }
+  .auth-form-footer,
+  .auth-form-brand {
+    display: none;
+  }
+  .auth-social {
+    display: block;
+    text-align: center;
+  }
+  .auth-social > p {
+    margin: 15px 0 10px;
+    color: #333;
+    font-size: 14.5px;
+  }
+  .auth-social-icons {
+    display: flex;
+    justify-content: center;
+  }
+  .auth-social-icon {
+    display: inline-flex;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    margin: 0 4px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .auth-social-icon--google {
+    background: conic-gradient(from -45deg, #4285f4 0 25%, #34a853 25% 48%, #fbbc05 48% 72%, #ea4335 72% 86%, #4285f4 86%);
+    background-clip: text;
+    color: transparent;
+    -webkit-background-clip: text;
+  }
+  .auth-social-icon--facebook,
+  .auth-social-icon--linkedin {
+    color: #1877f2;
+  }
+  .auth-social-icon--github svg {
+    width: 24px;
+    height: 24px;
+    fill: #333;
+    stroke: #333;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.4;
+  }
+  .auth-social-icon--github svg path + path {
+    fill: none;
+    stroke: #fff;
+  }
+  .auth-social-icon--linkedin {
+    font-size: 20px;
+    letter-spacing: -0.06em;
   }
   .auth-panels {
     inset: 0;
@@ -1063,6 +1146,7 @@ input[type='checkbox'] {
     margin: 0 auto;
   }
   .auth-panel-kicker {
+    display: none;
     margin-bottom: 4px;
     font-size: 11px;
   }
@@ -1131,10 +1215,17 @@ input[type='checkbox'] {
   .auth-form-footer {
     margin: 8px 0 4px;
   }
-  .auth-form-brand {
-    width: 70px;
+  .auth-social > p {
+    margin-top: 8px;
+    margin-bottom: 6px;
+  }
+  .auth-social-icon {
+    width: 40px;
     height: 40px;
-    margin-top: 2px;
+  }
+  .auth-social-icon--github svg {
+    width: 22px;
+    height: 22px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
