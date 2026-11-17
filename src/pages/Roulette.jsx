@@ -5,6 +5,7 @@ import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import Icon from '../components/Icon.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { CustomSelect } from '../components/CustomSelect.jsx';
 
 const SPIN_MS = 5500;
 
@@ -145,28 +146,27 @@ export default function Roulette() {
         <div className="roulette-selectors">
           <label className="field">
             <span>Kelompok</span>
-            <select
+            <CustomSelect
               value={groupId}
-              onChange={(event) => {
-                setGroupId(event.target.value);
+              onValueChange={(value) => {
+                setGroupId(value);
                 setPeriodNo(1);
               }}
               disabled={groupsState.loading || !groups.length || spinning || busy}
-            >
-              {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
-            </select>
+              ariaLabel="Kelompok"
+              options={groups.map((group) => ({ value: group.id, label: group.name }))}
+            />
           </label>
           <label className="field">
             <span>Periode</span>
-            <select
+            <CustomSelect
               value={periodNo}
-              onChange={(event) => setPeriodNo(Number(event.target.value))}
+              onValueChange={(value) => setPeriodNo(Number(value))}
               disabled={!selectedGroup || spinning || busy}
-            >
-              {Array.from({ length: selectedGroup?.durasi || 0 }, (_, index) => index + 1).map((period) => (
-                <option key={period} value={period}>Periode {period}</option>
-              ))}
-            </select>
+              ariaLabel="Periode"
+              options={Array.from({ length: selectedGroup?.durasi || 0 }, (_, index) => index + 1)
+                .map((period) => ({ value: period, label: `Periode ${period}` }))}
+            />
           </label>
         </div>
 

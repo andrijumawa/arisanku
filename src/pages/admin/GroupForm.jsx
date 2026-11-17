@@ -4,6 +4,7 @@ import { supabase, q } from '../../lib/supabase';
 import { Spinner } from '../../components/Ui.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
+import { CustomCombobox, CustomSelect } from '../../components/CustomSelect.jsx';
 
 const EMPTY = {
   type: 'uang',
@@ -127,10 +128,16 @@ export default function GroupForm() {
       <form className="card" onSubmit={submit}>
         <label className="field">
           <span>Jenis arisan</span>
-          <select value={f.type} onChange={set('type')} disabled={editing}>
-            <option value="uang">Arisan Uang</option>
-            <option value="paket">Arisan Paket Lebaran</option>
-          </select>
+          <CustomSelect
+            value={f.type}
+            onValueChange={(value) => setF((current) => ({ ...current, type: value }))}
+            disabled={editing}
+            ariaLabel="Jenis arisan"
+            options={[
+              { value: 'uang', label: 'Arisan Uang' },
+              { value: 'paket', label: 'Arisan Paket Lebaran' },
+            ]}
+          />
         </label>
 
         <label className="field">
@@ -167,10 +174,15 @@ export default function GroupForm() {
           <>
             <label className="field">
               <span>Cara undian</span>
-              <select value={f.draw_mode} onChange={set('draw_mode')}>
-                <option value="acak">Acak (diundi)</option>
-                <option value="berurutan">Berurutan (sesuai nomor slot)</option>
-              </select>
+              <CustomSelect
+                value={f.draw_mode}
+                onValueChange={(value) => setF((current) => ({ ...current, draw_mode: value }))}
+                ariaLabel="Cara undian"
+                options={[
+                  { value: 'acak', label: 'Acak (diundi)' },
+                  { value: 'berurutan', label: 'Berurutan (sesuai nomor slot)' },
+                ]}
+              />
             </label>
             <label className="field">
               <span>Batas jumlah slot (opsional)</span>
@@ -182,21 +194,32 @@ export default function GroupForm() {
           <>
             <label className="field">
               <span>Skema pembayaran</span>
-              <select value={f.pay_period} onChange={set('pay_period')}>
-                <option value="harian">Harian</option>
-                <option value="mingguan">Mingguan</option>
-                <option value="bulanan">Bulanan</option>
-              </select>
+              <CustomSelect
+                value={f.pay_period}
+                onValueChange={(value) => setF((current) => ({ ...current, pay_period: value }))}
+                ariaLabel="Skema pembayaran"
+                options={[
+                  { value: 'harian', label: 'Harian' },
+                  { value: 'mingguan', label: 'Mingguan' },
+                  { value: 'bulanan', label: 'Bulanan' },
+                ]}
+              />
             </label>
             <label className="field">
               <span>Jenis paket</span>
-              <input list="paket-types" value={f.package_type} onChange={set('package_type')} placeholder="makanan / barang / …" required />
-              <datalist id="paket-types">
-                <option value="makanan" />
-                <option value="barang" />
-                <option value="sembako" />
-                <option value="pakaian" />
-              </datalist>
+              <CustomCombobox
+                value={f.package_type}
+                onValueChange={(value) => setF((current) => ({ ...current, package_type: value }))}
+                ariaLabel="Jenis paket"
+                placeholder="makanan / barang / …"
+                required
+                options={[
+                  { value: 'makanan', label: 'Makanan' },
+                  { value: 'barang', label: 'Barang' },
+                  { value: 'sembako', label: 'Sembako' },
+                  { value: 'pakaian', label: 'Pakaian' },
+                ]}
+              />
             </label>
             <label className="field">
               <span>Isi paket (opsional)</span>

@@ -3,11 +3,13 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { isValidPhone } from '../lib/supabase';
 import AuthSocialIcons from '../components/AuthSocialIcons.jsx';
+import Icon from '../components/Icon.jsx';
 
 export default function Register() {
   const { signUp, session } = useAuth();
   const nav = useNavigate();
   const [form, setForm] = useState({ fullName: '', phone: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 650px)').matches);
@@ -71,11 +73,23 @@ export default function Register() {
       </label>
       <label className="field auth-field">
         <span>Password</span>
-        <input type="password" placeholder="Password" value={form.password} onChange={set('password')} autoComplete="new-password" required />
-        <svg className="auth-field-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4.5" y="10" width="15" height="11" rx="2" />
-          <path d="M8 10V7a4 4 0 1 1 8 0v3" />
-        </svg>
+        <input
+          type={showPassword ? 'text' : 'password'}
+          placeholder="Password"
+          value={form.password}
+          onChange={set('password')}
+          autoComplete="new-password"
+          required
+        />
+        <button
+          type="button"
+          className="auth-password-toggle"
+          aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+          aria-pressed={showPassword}
+          onClick={() => setShowPassword((visible) => !visible)}
+        >
+          <Icon name={showPassword ? 'eyeOff' : 'eye'} size={20} />
+        </button>
       </label>
       <button className="btn primary block auth-submit" disabled={busy}>
         <span className="auth-copy-desktop">{busy ? 'Memproses…' : 'Daftar'}</span>

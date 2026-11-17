@@ -3,12 +3,14 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { isValidPhone } from '../lib/supabase';
 import AuthSocialIcons from '../components/AuthSocialIcons.jsx';
+import Icon from '../components/Icon.jsx';
 
 export default function Login() {
   const { signIn, session } = useAuth();
   const nav = useNavigate();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 650px)').matches);
@@ -61,17 +63,22 @@ export default function Login() {
       <label className="field auth-field">
         <span>Password</span>
         <input
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           autoComplete="current-password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <svg className="auth-field-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="4.5" y="10" width="15" height="11" rx="2" />
-          <path d="M8 10V7a4 4 0 1 1 8 0v3" />
-        </svg>
+        <button
+          type="button"
+          className="auth-password-toggle"
+          aria-label={showPassword ? 'Sembunyikan password' : 'Lihat password'}
+          aria-pressed={showPassword}
+          onClick={() => setShowPassword((visible) => !visible)}
+        >
+          <Icon name={showPassword ? 'eyeOff' : 'eye'} size={20} />
+        </button>
       </label>
       <p className="auth-forgot-password">
         <span className="auth-copy-desktop">Lupa password?</span>

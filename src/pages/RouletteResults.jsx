@@ -4,6 +4,7 @@ import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { fmtDate } from '../lib/format';
 import { Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import Icon from '../components/Icon.jsx';
+import { CustomSelect } from '../components/CustomSelect.jsx';
 
 const PAGE_SIZE = 30;
 
@@ -63,22 +64,29 @@ export default function RouletteResults() {
         <div className="roulette-filters">
           <label className="field">
             <span>Kelompok</span>
-            <select value={groupFilter} onChange={(event) => changeFilter(() => {
-              setGroupFilter(event.target.value);
+            <CustomSelect value={groupFilter} onValueChange={(value) => changeFilter(() => {
+              setGroupFilter(value);
               setPeriodFilter('');
-            })}>
-              <option value="">Semua kelompok</option>
-              {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
-            </select>
+            })}
+              ariaLabel="Filter kelompok"
+              options={[
+                { value: '', label: 'Semua kelompok' },
+                ...groups.map((group) => ({ value: group.id, label: group.name })),
+              ]}
+            />
           </label>
           <label className="field">
             <span>Periode</span>
-            <select value={periodFilter} onChange={(event) => changeFilter(() => setPeriodFilter(event.target.value))}>
-              <option value="">Semua periode</option>
-              {Array.from({ length: maxPeriods }, (_, index) => index + 1).map((period) => (
-                <option key={period} value={period}>Periode {period}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={periodFilter}
+              onValueChange={(value) => changeFilter(() => setPeriodFilter(value))}
+              ariaLabel="Filter periode"
+              options={[
+                { value: '', label: 'Semua periode' },
+                ...Array.from({ length: maxPeriods }, (_, index) => index + 1)
+                  .map((period) => ({ value: String(period), label: `Periode ${period}` })),
+              ]}
+            />
           </label>
         </div>
 
