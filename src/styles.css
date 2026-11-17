@@ -92,7 +92,8 @@ code {
   --brand-l: #e8efff;
   --gold: #7494ec;
   --gold-l: #e8efff;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--bg);
@@ -161,9 +162,12 @@ code {
   position: relative;
   z-index: 1;
   flex: 1;
+  min-height: 0;
   width: 100%;
   max-width: 640px;
   margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: 16px 16px calc(var(--nav) + 16px);
 }
 .main-menu {
@@ -175,9 +179,11 @@ code {
   position: relative;
   z-index: 1;
   flex: 1;
+  min-height: 0;
   width: 100%;
   max-width: 640px;
   margin: 0 auto;
+  overflow: hidden;
 }
 .app-back {
   position: fixed;
@@ -211,6 +217,7 @@ code {
   transform: scale(0.985);
 }
 .menu-page {
+  --menu-card-gap: clamp(10px, 2vw, 15px);
   --menu-avatar-top: 8px;
   --menu-avatar-size: min(40vw, 310px);
   position: relative;
@@ -304,7 +311,7 @@ code {
   min-height: 164px;
   align-items: flex-end;
   justify-content: space-between;
-  margin: 0 0 clamp(14px, 3vw, 22px);
+  margin: 0 0 var(--menu-card-gap);
   padding: 20px clamp(17px, 4vw, 24px) clamp(17px, 4vw, 24px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.72);
@@ -414,7 +421,7 @@ code {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: minmax(156px, auto);
-  gap: clamp(10px, 2vw, 15px);
+  gap: var(--menu-card-gap);
 }
 .menu-tile {
   position: relative;
@@ -1992,7 +1999,8 @@ input[type='checkbox'] {
 .chat {
   display: flex;
   flex-direction: column;
-  height: calc(100dvh - var(--hdr) - env(safe-area-inset-top) - var(--nav));
+  height: 100%;
+  min-height: 0;
   background: var(--bg);
 }
 .chat-list {
