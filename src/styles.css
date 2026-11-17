@@ -176,6 +176,7 @@ code {
 .main-menu {
   max-width: 880px;
   padding-right: clamp(12px, 3.5vw, 26px);
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
   padding-left: clamp(12px, 3.5vw, 26px);
 }
 .main-chat {
