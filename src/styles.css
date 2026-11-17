@@ -211,7 +211,8 @@ code {
   transform: scale(0.985);
 }
 .menu-page {
-  --menu-avatar-top: 88px;
+  --menu-avatar-top: 14px;
+  --menu-avatar-size: clamp(160px, 45vw, 350px);
   position: relative;
   width: 100%;
 }
@@ -235,7 +236,7 @@ code {
   top: var(--menu-avatar-top);
   left: 50%;
   display: grid;
-  width: clamp(140px, 38vw, 168px);
+  width: var(--menu-avatar-size);
   aspect-ratio: 1;
   place-items: center;
   overflow: hidden;
@@ -269,8 +270,8 @@ code {
 }
 .menu-avatar-camera {
   position: absolute;
-  top: calc(var(--menu-avatar-top) + clamp(112px, 31vw, 132px));
-  left: calc(50% + clamp(43px, 13vw, 55px));
+  top: calc(var(--menu-avatar-top) + var(--menu-avatar-size) - 23px);
+  left: calc(50% + var(--menu-avatar-size) / 2 - 22px);
   z-index: 1;
   display: grid;
   width: 42px;
@@ -296,10 +297,10 @@ code {
 .menu-heading {
   position: relative;
   display: flex;
-  min-height: 136px;
+  min-height: 164px;
   align-items: flex-end;
   justify-content: space-between;
-  margin: var(--menu-avatar-top) 0 clamp(14px, 3vw, 22px);
+  margin: 230px 0 clamp(14px, 3vw, 22px);
   padding: 20px clamp(17px, 4vw, 24px) clamp(17px, 4vw, 24px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.72);
