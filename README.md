@@ -25,8 +25,12 @@ Stack: React + Vite + Supabase, deploy ke GitHub Pages.
 
 1. Buat project di https://supabase.com
 2. **Authentication → Providers → Email**: matikan **Confirm email** (login memakai email teknis dari nomor telepon)
-3. **SQL Editor**: jalankan seluruh isi `supabase/schema.sql`
+3. **SQL Editor**: jalankan seluruh isi `supabase/schema.sql`, lalu jalankan `supabase/realtime.sql`
 4. **Project Settings → API**: salin `Project URL` dan `anon public key`
+
+`realtime.sql` aman dijalankan berulang kali. Untuk project yang sudah memakai aplikasi, jalankan file itu sekali agar perubahan kelompok, slot, putaran, dan profil juga tersedia lewat Realtime.
+
+Subscription hanya aktif untuk layar yang sedang dibuka dan dijeda saat aplikasi masuk ke latar. Event beruntun digabung sebelum data dimuat ulang; daftar chat dibatasi ke 150 pesan terakhir dan unggahan gambar dikompres di perangkat sebelum dikirim. Ini mengurangi query dan transfer yang tidak diperlukan, tetapi pemakaian egress aktual tetap bergantung pada jumlah pengguna, perubahan data, dan gambar yang dibuka.
 
 ## 2. Jalankan di komputer
 

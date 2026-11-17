@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../lib/auth.jsx';
 import { supabase, q } from '../../lib/supabase';
-import { useAsync } from '../../lib/hooks';
+import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
 import { fmtDate, rupiah, typeLabel } from '../../lib/format';
 import { Badge, Empty, ErrorBox, Spinner } from '../../components/Ui.jsx';
 import SignedImage from '../../components/SignedImage.jsx';
@@ -12,14 +12,24 @@ const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
 
 export default function AdminHome() {
   const [params, setParams] = useSearchParams();
+  const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0 });
   const tab = params.get('tab') || 'daftar';
   const { data, loading, error, reload } = useAsync(async () => {
     const [pendingMem, pendingPay] = await Promise.all([
-      q(supabase.from('memberships').select('id', { count: 'exact', head: false }).eq('status', 'menunggu')),
-      q(supabase.from('payments').select('id', { count: 'exact', head: false }).eq('status', 'menunggu')),
+      supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
+      supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
     ]);
-    return { mem: pendingMem.length, pay: pendingPay.length };
-  }, [tab]);
+    if (pendingMem.error) throw pendingMem.error;
+    if (pendingPay.error) throw pendingPay.error;
+    return { mem: pendingMem.count || 0, pay: pendingPay.count || 0 };
+  }, []);
+  const onRealtimeChange = useCallback((tables) => {
+    setListRevisions((current) => ({
+      registrations: current.registrations + Number(tables.includes('memberships')),
+      payments: current.payments + Number(tables.includes('payments')),
+    }));
+  }, []);
+  useRealtimeRefresh(reload, 'admin-counts', [{ table: 'memberships' }, { table: 'payments' }], true, onRealtimeChange);
 
   const tabs = [
     ['daftar', 'Pendaftaran', data?.mem],
@@ -41,8 +51,8 @@ export default function AdminHome() {
       </div>
       {error && <ErrorBox error={error} onRetry={reload} />}
       {loading && !data && <Spinner />}
-      {tab === 'daftar' && <Registrations onChange={reload} />}
-      {tab === 'bayar' && <Payments onChange={reload} />}
+      {tab === 'daftar' && <Registrations revision={listRevisions.registrations} />}
+      {tab === 'bayar' && <Payments revision={listRevisions.payments} />}
       {tab === 'kelompok' && <Groups />}
       {tab === 'peserta' && <People />}
     </>
@@ -50,7 +60,7 @@ export default function AdminHome() {
 }
 
 /* ---------------- Pendaftaran ---------------- */
-function Registrations({ onChange }) {
+function Registrations({ revision }) {
   const toast = useToast();
   const [busyId, setBusyId] = useState(null);
   const { data, loading, error, reload } = useAsync(
@@ -58,11 +68,16 @@ function Registrations({ onChange }) {
       q(
         supabase
           .from('memberships')
-          .select('*, profiles(full_name,phone), groups(name,type,nominal,package_type)')
+      .select('id,user_id,slot_count,status,created_at,profiles(full_name,phone),groups(name,type,nominal,package_type)')
           .eq('status', 'menunggu')
           .order('created_at')
       ),
-    []
+    [revision]
+  );
+  useRealtimeRefresh(
+    reload,
+    'admin-registrations',
+    [{ table: 'profiles' }, { table: 'groups' }]
   );
 
   async function approve(m) {
@@ -71,8 +86,6 @@ function Registrations({ onChange }) {
     setBusyId(null);
     if (error) return toast(error.message, 'error');
     toast(`${m.profiles?.full_name} disetujui.`, 'success');
-    reload();
-    onChange();
   }
 
   async function reject(m) {
@@ -81,8 +94,6 @@ function Registrations({ onChange }) {
     const { error } = await supabase.from('memberships').update({ status: 'ditolak' }).eq('id', m.id);
     setBusyId(null);
     if (error) return toast(error.message, 'error');
-    reload();
-    onChange();
   }
 
   if (loading) return <Spinner />;
@@ -117,7 +128,7 @@ function Registrations({ onChange }) {
 }
 
 /* ---------------- Pembayaran ---------------- */
-function Payments({ onChange }) {
+function Payments({ revision }) {
   const { session } = useAuth();
   const toast = useToast();
   const [busyId, setBusyId] = useState(null);
@@ -126,11 +137,16 @@ function Payments({ onChange }) {
       q(
         supabase
           .from('payments')
-          .select('*, groups(name,type,pay_period), memberships(slot_count, profiles(full_name,phone))')
+          .select('id,amount,period_no,created_at,proof_path,group_id,membership_id,status,groups(name,type,pay_period),memberships(slot_count,profiles(full_name,phone))')
           .eq('status', 'menunggu')
           .order('created_at')
       ),
-    []
+    [revision]
+  );
+  useRealtimeRefresh(
+    reload,
+    'admin-payments',
+    [{ table: 'groups' }, { table: 'profiles' }]
   );
 
   async function review(p, status) {
@@ -147,8 +163,6 @@ function Payments({ onChange }) {
     setBusyId(null);
     if (error) return toast(error.message, 'error');
     toast(status === 'disetujui' ? 'Pembayaran disetujui.' : 'Pembayaran ditolak.', 'success');
-    reload();
-    onChange();
   }
 
   if (loading) return <Spinner />;
@@ -187,9 +201,10 @@ function Payments({ onChange }) {
 /* ---------------- Kelompok ---------------- */
 function Groups() {
   const { data, loading, error, reload } = useAsync(
-    () => q(supabase.from('groups').select('*, memberships(count)').order('created_at', { ascending: false })),
+    () => q(supabase.from('groups').select('id,type,name,nominal,durasi,pay_period,package_type,is_open,created_at,memberships(count)').order('created_at', { ascending: false })),
     []
   );
+  useRealtimeRefresh(reload, 'admin-groups', [{ table: 'groups' }, { table: 'memberships' }]);
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
@@ -225,9 +240,10 @@ function People() {
   const toast = useToast();
   const [search, setSearch] = useState('');
   const { data, loading, error, reload } = useAsync(
-    () => q(supabase.from('profiles').select('*').order('created_at', { ascending: false })),
+    () => q(supabase.from('profiles').select('id,full_name,phone,role,created_at').order('created_at', { ascending: false })),
     []
   );
+  useRealtimeRefresh(reload, 'admin-people', [{ table: 'profiles' }]);
 
   const list = useMemo(() => {
     const s = search.trim().toLowerCase();
@@ -239,7 +255,6 @@ function People() {
     if (!window.confirm(`${next === 'admin' ? 'Jadikan' : 'Cabut hak admin'} ${p.full_name}?`)) return;
     const { error } = await supabase.from('profiles').update({ role: next }).eq('id', p.id);
     if (error) return toast(error.message, 'error');
-    reload();
   }
 
   if (loading) return <Spinner />;

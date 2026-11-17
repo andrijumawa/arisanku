@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, q } from '../../lib/supabase';
-import { useAsync } from '../../lib/hooks';
+import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
 import { periodName, typeLabel } from '../../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../../components/Ui.jsx';
 import GroupInfo from '../../components/GroupInfo.jsx';
@@ -15,15 +15,38 @@ export default function AdminGroup() {
   const [pickup, setPickup] = useState('');
 
   const { data, loading, error, reload } = useAsync(async () => {
-    const group = await q(supabase.from('groups').select('*').eq('id', id).single());
-    const members = await q(
-      supabase.from('memberships').select('*, profiles(full_name,phone)').eq('group_id', id).order('created_at')
+    const group = await q(
+      supabase
+        .from('groups')
+        .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
+        .eq('id', id)
+        .single()
     );
-    const slots = await q(supabase.from('slots').select('*').eq('group_id', id).order('slot_no'));
-    const rounds = await q(supabase.from('rounds').select('*').eq('group_id', id).order('round_no'));
+    const members = await q(
+      supabase.from('memberships').select('id,user_id,slot_count,status,profiles(full_name,phone)').eq('group_id', id).order('created_at')
+    );
+    const slots = await q(supabase.from('slots').select('id,membership_id,slot_no').eq('group_id', id).order('slot_no'));
+    const rounds = await q(
+      supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')
+    );
     const pays = await q(supabase.from('payments').select('membership_id,status').eq('group_id', id));
     return { group, members, slots, rounds, pays };
   }, [id]);
+  const realtimeSubscriptions = useMemo(
+    () => [
+      { table: 'groups', filter: `id=eq.${id}` },
+      { table: 'memberships', filter: `group_id=eq.${id}` },
+      { table: 'slots', filter: `group_id=eq.${id}` },
+      { table: 'rounds', filter: `group_id=eq.${id}` },
+      { table: 'payments', filter: `group_id=eq.${id}` },
+      ...[...new Set((data?.members || []).map((m) => m.user_id).filter(Boolean))].map((userId) => ({
+        table: 'profiles',
+        filter: `id=eq.${userId}`,
+      })),
+    ],
+    [data?.members, id]
+  );
+  useRealtimeRefresh(reload, `admin-group-${id}`, realtimeSubscriptions);
 
   const nameOf = useMemo(() => {
     const map = {};
@@ -46,7 +69,6 @@ export default function AdminGroup() {
       const { error } = await fn();
       if (error) throw error;
       if (okMsg) toast(okMsg, 'success');
-      reload();
     } catch (x) {
       toast(x.message || 'Gagal', 'error');
     } finally {
@@ -66,7 +88,6 @@ export default function AdminGroup() {
     if (error) return toast(error.message, 'error');
     toast(`Putaran ${r.round_no}: ${nameOf[r.winner_user_id] || 'peserta'} 🎉`, 'success');
     setPickup('');
-    reload();
   }
 
   const setRound = (r, patch, msg) =>

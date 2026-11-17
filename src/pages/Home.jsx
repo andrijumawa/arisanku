@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
-import { useAsync } from '../lib/hooks';
+import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { periodName, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
 
@@ -11,7 +11,11 @@ export default function Home() {
 
   const { data, loading, error, reload } = useAsync(async () => {
     const ms = await q(
-      supabase.from('memberships').select('*, groups(*)').eq('user_id', uid).order('created_at', { ascending: false })
+      supabase
+        .from('memberships')
+        .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,pay_period,package_type)')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
     );
     const ids = ms.map((m) => m.id);
     const pays = ids.length
@@ -19,6 +23,11 @@ export default function Home() {
       : [];
     return { ms, pays };
   }, [uid]);
+  const realtimeSubscriptions = [
+    { table: 'memberships', filter: `user_id=eq.${uid}` },
+    ...(data?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
+  ];
+  useRealtimeRefresh(reload, `home-${uid}`, realtimeSubscriptions);
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;

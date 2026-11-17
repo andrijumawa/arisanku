@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
-import { useAsync } from '../lib/hooks';
+import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
@@ -18,10 +18,20 @@ export default function Browse() {
   const [busy, setBusy] = useState(false);
 
   const { data, loading, error, reload } = useAsync(async () => {
-    const groups = await q(supabase.from('groups').select('*').order('created_at', { ascending: false }));
+    const groups = await q(
+      supabase
+        .from('groups')
+        .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
+        .order('created_at', { ascending: false })
+    );
     const mine = await q(supabase.from('memberships').select('group_id,status').eq('user_id', uid));
     return { groups, mine: Object.fromEntries(mine.map((m) => [m.group_id, m.status])) };
   }, [uid]);
+  useRealtimeRefresh(
+    reload,
+    `browse-${uid}`,
+    [{ table: 'groups' }, { table: 'memberships', filter: `user_id=eq.${uid}` }]
+  );
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
@@ -40,7 +50,6 @@ export default function Browse() {
     toast('Pendaftaran terkirim. Menunggu persetujuan admin.', 'success');
     setJoining(null);
     setSlots(1);
-    reload();
   }
 
   return (

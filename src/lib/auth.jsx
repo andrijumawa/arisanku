@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase, phoneToEmail, normalizePhone } from './supabase';
+import { useRealtimeRefresh } from './hooks';
 
 const Ctx = createContext(null);
 export const useAuth = () => useContext(Ctx);
@@ -24,7 +25,7 @@ export function AuthProvider({ children }) {
       setProfile(null);
       return;
     }
-    const { data } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle();
+    const { data } = await supabase.from('profiles').select('id,phone,full_name,role').eq('id', uid).maybeSingle();
     setProfile(data || null);
   }, []);
 
@@ -71,6 +72,13 @@ export function AuthProvider({ children }) {
   );
 
   const signOut = useCallback(() => supabase.auth.signOut(), []);
+  const refreshProfile = useCallback(() => loadProfile(session?.user.id), [loadProfile, session?.user.id]);
+  useRealtimeRefresh(
+    refreshProfile,
+    `profile-${session?.user.id || 'signed-out'}`,
+    session ? [{ table: 'profiles', filter: `id=eq.${session.user.id}` }] : [],
+    Boolean(session)
+  );
 
   const value = useMemo(
     () => ({
@@ -81,9 +89,9 @@ export function AuthProvider({ children }) {
       signIn,
       signUp,
       signOut,
-      refreshProfile: () => loadProfile(session?.user.id),
+      refreshProfile,
     }),
-    [session, profile, ready, signIn, signUp, signOut, loadProfile]
+    [session, profile, ready, signIn, signUp, signOut, refreshProfile]
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

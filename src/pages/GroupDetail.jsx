@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
-import { useAsync } from '../lib/hooks';
+import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { bestPaymentByPeriod, fmtDate, periodName, rupiah, typeLabel } from '../lib/format';
 import { compressImage } from '../lib/image';
 import { Badge, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
@@ -22,24 +22,32 @@ export default function GroupDetail() {
   const [busy, setBusy] = useState(false);
 
   const { data, loading, error, reload } = useAsync(async () => {
-    const group = await q(supabase.from('groups').select('*').eq('id', id).single());
+    const group = await q(
+      supabase
+        .from('groups')
+        .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date')
+        .eq('id', id)
+        .single()
+    );
     const mem = await q(
-      supabase.from('memberships').select('*').eq('group_id', id).eq('user_id', uid).maybeSingle()
+      supabase.from('memberships').select('id,slot_count,status').eq('group_id', id).eq('user_id', uid).maybeSingle()
     );
     let payments = [];
     let slots = [];
     if (mem) {
       payments = await q(
-        supabase.from('payments').select('*').eq('membership_id', mem.id).order('created_at', { ascending: false })
+        supabase.from('payments').select('period_no,status,note,created_at').eq('membership_id', mem.id).order('created_at', { ascending: false })
       );
       if (group.type === 'uang') {
-        slots = await q(supabase.from('slots').select('*').eq('membership_id', mem.id).order('slot_no'));
+        slots = await q(supabase.from('slots').select('id,slot_no').eq('membership_id', mem.id).order('slot_no'));
       }
     }
     let rounds = [];
     let names = {};
     if (group.type === 'uang') {
-      rounds = await q(supabase.from('rounds').select('*').eq('group_id', id).order('round_no'));
+      rounds = await q(
+        supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')
+      );
       const ids = [...new Set(rounds.map((r) => r.winner_user_id).filter(Boolean))];
       if (ids.length) {
         const ps = await q(supabase.from('public_profiles').select('id,full_name').in('id', ids));
@@ -49,18 +57,20 @@ export default function GroupDetail() {
     return { group, mem, payments, slots, rounds, names };
   }, [id, uid]);
 
-  // Status pembayaran / persetujuan berubah di sisi admin -> muat ulang otomatis
-  useEffect(() => {
-    const ch = supabase
-      .channel(`group-${id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, () => reload())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'memberships' }, () => reload())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'rounds' }, () => reload())
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [id, reload]);
+  const realtimeSubscriptions = useMemo(
+    () => [
+      { table: 'groups', filter: `id=eq.${id}` },
+      { table: 'memberships', filter: `user_id=eq.${uid}` },
+      ...(data?.mem ? [{ table: 'payments', filter: `membership_id=eq.${data.mem.id}` }, { table: 'slots', filter: `membership_id=eq.${data.mem.id}` }] : []),
+      { table: 'rounds', filter: `group_id=eq.${id}` },
+      ...[...new Set((data?.rounds || []).map((r) => r.winner_user_id).filter(Boolean))].map((winnerId) => ({
+        table: 'profiles',
+        filter: `id=eq.${winnerId}`,
+      })),
+    ],
+    [data?.mem, data?.rounds, id, uid]
+  );
+  useRealtimeRefresh(reload, `group-${id}`, realtimeSubscriptions);
 
   useEffect(() => {
     if (!file) return setPreview(null);
@@ -104,7 +114,6 @@ export default function GroupDetail() {
       if (error) throw error;
       toast('Bukti terkirim. Menunggu verifikasi admin.', 'success');
       closeUpload();
-      reload();
     } catch (x) {
       toast(x.message || 'Gagal mengunggah bukti', 'error');
     } finally {

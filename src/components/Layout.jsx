@@ -10,6 +10,7 @@ export default function Layout() {
   const loc = useLocation();
   const [unread, setUnread] = useState(0);
   const uid = session.user.id;
+  const onChat = loc.pathname.startsWith('/chat');
 
   useEffect(() => {
     if (loc.pathname.startsWith('/chat')) setUnread(0);
@@ -17,21 +18,44 @@ export default function Layout() {
 
   // Pesan baru saat aplikasi terbuka (RLS memastikan hanya anggota chat yang menerima)
   useEffect(() => {
-    const ch = supabase
-      .channel('layout-chat')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (p) => {
-        if (p.new.user_id === uid) return;
-        if (window.location.hash.startsWith('#/chat')) return;
-        setUnread((n) => n + 1);
-        toast('💬 Pesan baru di grup chat');
-      })
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
+    if (onChat) return undefined;
+    let ch = null;
+    const connect = () => {
+      if (ch || document.visibilityState === 'hidden') return;
+      ch = supabase
+        .channel('layout-chat')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `user_id=neq.${uid}` },
+          (p) => {
+            if (p.new.user_id === uid) return;
+            setUnread((n) => n + 1);
+            toast('💬 Pesan baru di grup chat');
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`Realtime channel "layout-chat" failed: ${status}`);
+          }
+        });
     };
-  }, [uid, toast]);
-
-  const onChat = loc.pathname.startsWith('/chat');
+    const disconnect = () => {
+      if (!ch) return;
+      const current = ch;
+      ch = null;
+      void supabase.removeChannel(current);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') disconnect();
+      else connect();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    connect();
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      disconnect();
+    };
+  }, [onChat, uid, toast]);
 
   return (
     <div className="app">

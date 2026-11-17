@@ -9,7 +9,7 @@ const isStandalone = () =>
   window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
 export default function Account() {
-  const { profile, session, signOut, refreshProfile } = useAuth();
+  const { profile, session, signOut } = useAuth();
   const toast = useToast();
   const [name, setName] = useState(profile?.full_name || '');
   const [saving, setSaving] = useState(false);
@@ -35,7 +35,6 @@ export default function Account() {
     const { error } = await supabase.from('profiles').update({ full_name: name.trim() }).eq('id', session.user.id);
     setSaving(false);
     if (error) return toast(error.message, 'error');
-    await refreshProfile();
     toast('Nama diperbarui.', 'success');
   }
 

@@ -20,7 +20,12 @@ export default function Chat() {
   const camRef = useRef(null);
   const galRef = useRef(null);
   const namesRef = useRef({});
+  const msgsRef = useRef(msgs);
+  const historyLoaded = useRef(false);
+  const allowedRef = useRef(null);
+  const syncingHistory = useRef(false);
   namesRef.current = names;
+  msgsRef.current = msgs;
 
   const ensureNames = useCallback(async (ids) => {
     const missing = [...new Set(ids)].filter((i) => i && !namesRef.current[i]);
@@ -31,44 +36,146 @@ export default function Chat() {
 
   useEffect(() => {
     let alive = true;
-    (async () => {
-      const { data: ok } = await supabase.rpc('can_chat');
-      if (!alive) return;
-      setAllowed(!!ok);
-      if (!ok) return;
-      const { data } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(150);
-      if (!alive) return;
-      const list = (data || []).reverse();
-      setMsgs(list);
-      ensureNames(list.map((m) => m.user_id));
-    })();
+    let ch = null;
+    const loadMessages = async () => {
+      if (syncingHistory.current) return;
+      syncingHistory.current = true;
+      try {
+        if (historyLoaded.current) {
+          const current = msgsRef.current;
+          if (current.length) {
+            const { data: existing, error } = await supabase
+              .from('chat_messages')
+              .select('id')
+              .in('id', current.map((m) => m.id));
+            if (!alive) return;
+            if (error) {
+              toast(error.message, 'error');
+              return;
+            }
+            const existingIds = new Set((existing || []).map((m) => m.id));
+            const currentIds = new Set(current.map((m) => m.id));
+            setMsgs((messages) => messages.filter((m) => !currentIds.has(m.id) || existingIds.has(m.id)));
+          }
 
-    const ch = supabase
-      .channel('chat-room')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, (p) => {
-        setMsgs((m) => (m.some((x) => x.id === p.new.id) ? m : [...m, p.new]));
-        ensureNames([p.new.user_id]);
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (p) => {
-        setMsgs((m) => m.filter((x) => x.id !== p.old.id));
-      })
-      .subscribe();
+          const lastId = current.reduce((latest, message) => Math.max(latest, Number(message.id)), 0);
+          const { data, error } = await supabase
+            .from('chat_messages')
+            .select('id,user_id,body,image_path,created_at')
+            .gt('id', lastId)
+            .order('id')
+            .limit(150);
+          if (!alive) return;
+          if (error) {
+            toast(error.message, 'error');
+            return;
+          }
+          const newMessages = data || [];
+          setMsgs((messages) => {
+            const ids = new Set(messages.map((message) => message.id));
+            return [...messages, ...newMessages.filter((message) => !ids.has(message.id))].slice(-150);
+          });
+          ensureNames(newMessages.map((message) => message.user_id));
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('id,user_id,body,image_path,created_at')
+          .order('created_at', { ascending: false })
+          .limit(150);
+        if (!alive) return;
+        if (error) {
+          toast(error.message, 'error');
+          return;
+        }
+        const list = (data || []).reverse();
+        historyLoaded.current = true;
+        setMsgs((messages) => {
+          const ids = new Set(list.map((message) => message.id));
+          return [...list, ...messages.filter((message) => !ids.has(message.id))];
+        });
+        ensureNames(list.map((m) => m.user_id));
+      } finally {
+        syncingHistory.current = false;
+      }
+    };
+    const checkAccess = async () => {
+      const { data: ok, error } = await supabase.rpc('can_chat');
+      if (!alive) return;
+      if (error) {
+        allowedRef.current = false;
+        setAllowed(false);
+        toast(error.message, 'error');
+        return;
+      }
+      allowedRef.current = !!ok;
+      setAllowed(!!ok);
+      if (ok) void loadMessages();
+      else {
+        historyLoaded.current = false;
+        setMsgs([]);
+      }
+    };
+    const connect = () => {
+      if (ch || document.visibilityState === 'hidden') return;
+      ch = supabase
+        .channel('chat-room')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'chat_messages' },
+          (p) => {
+            if (!allowedRef.current) return;
+            setMsgs((m) => (m.some((x) => x.id === p.new.id) ? m : [...m, p.new].slice(-150)));
+            ensureNames([p.new.user_id]);
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: 'DELETE', schema: 'public', table: 'chat_messages' },
+          (p) => setMsgs((m) => m.filter((x) => x.id !== p.old.id))
+        )
+        .on(
+          'postgres_changes',
+          { event: 'UPDATE', schema: 'public', table: 'memberships', filter: `user_id=eq.${uid}` },
+          () => void checkAccess()
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED' && allowedRef.current) void loadMessages();
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.error(`Realtime channel "chat-room" failed: ${status}`);
+          }
+        });
+    };
+    const disconnect = () => {
+      if (!ch) return;
+      const current = ch;
+      ch = null;
+      void supabase.removeChannel(current);
+    };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') disconnect();
+      else {
+        connect();
+        void checkAccess();
+      }
+    };
+    connect();
+    void checkAccess();
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       alive = false;
-      supabase.removeChannel(ch);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      disconnect();
     };
-  }, [ensureNames]);
+  }, [ensureNames, toast]);
 
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [msgs.length]);
 
-  const append = (row) => setMsgs((m) => (m.some((x) => x.id === row.id) ? m : [...m, row]));
+  const append = (row) => setMsgs((m) => (m.some((x) => x.id === row.id) ? m : [...m, row].slice(-150)));
 
   async function sendText(e) {
     e?.preventDefault();
