@@ -1,13 +1,25 @@
+import { useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Login from '../pages/Login.jsx';
 import Register from '../pages/Register.jsx';
 
 export default function AuthShell() {
-  const isLogin = useLocation().pathname === '/masuk';
+  const { pathname } = useLocation();
+  const isLogin = pathname === '/masuk';
+  const previousPath = useRef(pathname);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  useLayoutEffect(() => {
+    if (previousPath.current === pathname) return undefined;
+    previousPath.current = pathname;
+    setIsTransitioning(true);
+    const timeout = window.setTimeout(() => setIsTransitioning(false), 1800);
+    return () => window.clearTimeout(timeout);
+  }, [pathname]);
 
   return (
     <main className="auth">
-      <section className={`auth-shell${isLogin ? ' is-login' : ''}`} aria-label="Autentikasi Arisan">
+      <section className={`auth-shell${isLogin ? ' is-login' : ''}${isTransitioning ? ' is-transitioning' : ''}`} aria-label="Autentikasi Arisan">
         <Login />
         <Register />
         <aside className="auth-panels" aria-label="Pilihan akun">

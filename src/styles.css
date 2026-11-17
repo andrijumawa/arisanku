@@ -992,18 +992,22 @@ input[type='checkbox'] {
     left: 0;
     top: 30%;
     visibility: visible;
+  }
+  .auth-shell.is-transitioning.is-login .auth-form--login {
     animation: auth-login-form-enter 1.8s ease-in-out both;
   }
   .auth-shell.is-login .auth-form--register {
     top: 0;
     left: 0;
     visibility: hidden;
+  }
+  .auth-shell.is-transitioning.is-login .auth-form--register {
     animation: auth-register-form-exit 1.8s ease-in-out both;
   }
-  .auth-shell:not(.is-login) .auth-form--register {
+  .auth-shell.is-transitioning:not(.is-login) .auth-form--register {
     animation: auth-register-form-enter 1.8s ease-in-out both;
   }
-  .auth-shell:not(.is-login) .auth-form--login {
+  .auth-shell.is-transitioning:not(.is-login) .auth-form--login {
     animation: auth-login-form-exit 1.8s ease-in-out both;
   }
   .auth-form-heading {
