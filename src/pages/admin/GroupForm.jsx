@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, q } from '../../lib/supabase';
 import { Spinner } from '../../components/Ui.jsx';
@@ -24,6 +24,11 @@ const EMPTY = {
 
 const num = (v) => (v === '' || v === null || v === undefined ? null : Number(v));
 const str = (v) => (v && String(v).trim() ? String(v).trim() : null);
+const digitsOnly = (value) => String(value ?? '').replace(/\D/g, '');
+const formatNominal = (value) => {
+  const digits = digitsOnly(value);
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+};
 
 export default function GroupForm() {
   const { id } = useParams();
@@ -33,6 +38,8 @@ export default function GroupForm() {
   const [f, setF] = useState(EMPTY);
   const [loading, setLoading] = useState(editing);
   const [busy, setBusy] = useState(false);
+  const nominalInput = useRef(null);
+  const nominalCaret = useRef(null);
 
   useEffect(() => {
     if (!editing) return;
@@ -40,7 +47,7 @@ export default function GroupForm() {
       .then((g) =>
         setF({
           ...EMPTY,
-          ...Object.fromEntries(Object.entries(g).map(([k, v]) => [k, v ?? EMPTY[k] ?? ''])),
+          ...Object.fromEntries(Object.entries(g).map(([k, v]) => [k, k === 'nominal' ? digitsOnly(v) : v ?? EMPTY[k] ?? ''])),
         })
       )
       .catch((e) => toast(e.message, 'error'))
@@ -49,10 +56,33 @@ export default function GroupForm() {
 
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
 
+  useLayoutEffect(() => {
+    if (nominalCaret.current === null || !nominalInput.current) return;
+    const desiredDigits = nominalCaret.current;
+    nominalCaret.current = null;
+    const display = nominalInput.current.value;
+    let digits = 0;
+    let caret = 0;
+    while (caret < display.length && digits < desiredDigits) {
+      if (/\d/.test(display[caret])) digits += 1;
+      caret += 1;
+    }
+    nominalInput.current.setSelectionRange(caret, caret);
+  }, [f.nominal]);
+
+  function setNominal(event) {
+    const input = event.target;
+    nominalCaret.current = digitsOnly(input.value.slice(0, input.selectionStart)).length;
+    setF((current) => ({ ...current, nominal: digitsOnly(input.value) }));
+  }
+
   async function submit(e) {
     e.preventDefault();
     if (!f.name.trim()) return toast('Nama kelompok wajib diisi.', 'error');
-    if (!(Number(f.nominal) > 0)) return toast('Nominal harus lebih dari 0.', 'error');
+    const nominalDigits = digitsOnly(f.nominal);
+    if (nominalDigits.length > 14) return toast('Nominal maksimal 14 digit.', 'error');
+    const nominal = Number(nominalDigits);
+    if (!(nominal > 0)) return toast('Nominal harus lebih dari 0.', 'error');
     if (!(Number(f.durasi) > 0)) return toast('Durasi harus lebih dari 0.', 'error');
     if (f.type === 'paket' && !str(f.package_type)) return toast('Jenis paket wajib diisi (mis. makanan, barang).', 'error');
 
@@ -61,7 +91,7 @@ export default function GroupForm() {
       type: f.type,
       name: f.name.trim(),
       description: str(f.description),
-      nominal: Number(f.nominal),
+      nominal,
       durasi: Number(f.durasi),
       max_slots: num(f.max_slots),
       draw_mode: uang ? f.draw_mode : null,
@@ -116,7 +146,16 @@ export default function GroupForm() {
         <div className="grid2">
           <label className="field">
             <span>{uang ? 'Iuran per bulan (Rp)' : 'Cicilan per periode (Rp)'}</span>
-            <input type="number" min="1" inputMode="numeric" value={f.nominal} onChange={set('nominal')} required />
+            <input
+              ref={nominalInput}
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              value={formatNominal(f.nominal)}
+              onChange={setNominal}
+              placeholder="Contoh: 100.000"
+              required
+            />
           </label>
           <label className="field">
             <span>{uang ? 'Durasi (putaran)' : 'Jumlah cicilan'}</span>

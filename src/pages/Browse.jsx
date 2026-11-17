@@ -3,12 +3,103 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
-import { typeLabel } from '../lib/format';
+import { fmtDate, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import Icon from '../components/Icon.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
+
+function BrowseGroupCard({ group, status, onJoin }) {
+  const isMoney = group.type === 'uang';
+  const prize = Number(group.nominal) * (group.max_slots || group.durasi);
+  const dates = [
+    group.start_date && { label: 'Mulai', value: fmtDate(group.start_date), icon: 'calendar' },
+    group.end_date && { label: 'Batas pembayaran', value: fmtDate(group.end_date), icon: 'clock' },
+  ].filter(Boolean);
+
+  return (
+    <article className="browse-group">
+      <header className="browse-group-head">
+        <span className={`browse-group-icon ${isMoney ? 'money' : 'package'}`}>
+          <Icon name={isMoney ? 'coin' : 'gift'} size={25} />
+        </span>
+        <div className="browse-group-title">
+          <div className="browse-group-kicker">{isMoney ? 'Kelompok arisan uang' : 'Kelompok arisan paket'}</div>
+          <h3>{group.name}</h3>
+          <span className={`badge type ${group.type}`}>{typeLabel(group)}</span>
+        </div>
+        {status && <Badge status={status} />}
+      </header>
+
+      {group.description && <p className="browse-group-description">{group.description}</p>}
+      {!isMoney && group.package_detail && (
+        <p className="browse-package-detail"><Icon name="gift" size={16} />{group.package_detail}</p>
+      )}
+
+      <section className="browse-contribution" aria-label="Informasi iuran">
+        <span>{isMoney ? `Iuran per ${periodUnit(group)}` : `Cicilan per ${periodUnit(group)}`}</span>
+        <strong>{rupiah(group.nominal)}</strong>
+        <small>{isMoney ? 'Kontribusi setiap periode' : 'Pembayaran setiap periode'}</small>
+      </section>
+
+      <dl className="browse-group-facts">
+        <div className="browse-group-fact">
+          <dt><Icon name="target" size={16} />{isMoney ? 'Jumlah putaran' : 'Jumlah cicilan'}</dt>
+          <dd>{group.durasi} kali</dd>
+        </div>
+        {isMoney ? (
+          <>
+            <div className="browse-group-fact">
+              <dt><Icon name="shuffle" size={16} />Cara undian</dt>
+              <dd>{group.draw_mode === 'acak' ? 'Diacak' : 'Berurutan'}</dd>
+            </div>
+            <div className="browse-group-fact browse-group-fact-wide">
+              <dt><Icon name="gift" size={16} />Perkiraan hadiah per putaran</dt>
+              <dd>{rupiah(prize)}</dd>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="browse-group-fact">
+              <dt><Icon name="gift" size={16} />Jenis paket</dt>
+              <dd>{group.package_type || 'Paket arisan'}</dd>
+            </div>
+            <div className="browse-group-fact browse-group-fact-wide">
+              <dt><Icon name="coin" size={16} />Total pembayaran</dt>
+              <dd>{rupiah(Number(group.nominal) * group.durasi)}</dd>
+            </div>
+          </>
+        )}
+      </dl>
+
+      {dates.length > 0 && (
+        <div className="browse-group-dates">
+          {dates.map((date) => (
+            <div className="browse-date" key={date.label}>
+              <Icon name={date.icon} size={16} />
+              <span>{date.label}</span>
+              <strong>{date.value}</strong>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <footer className="browse-group-actions">
+        {status ? (
+          <Link to={`/g/${group.id}`} className="btn browse-group-button">
+            Lihat detail <Icon name="arrowRight" size={17} />
+          </Link>
+        ) : (
+          <button className="btn primary browse-group-button" onClick={() => onJoin(group)}>
+            Daftar kelompok <Icon name="arrowRight" size={17} />
+          </button>
+        )}
+        {status === 'menunggu' && <span className="browse-group-note">Pendaftaran menunggu persetujuan admin.</span>}
+      </footer>
+    </article>
+  );
+}
 
 export default function Browse() {
   const { session } = useAuth();
@@ -61,36 +152,16 @@ export default function Browse() {
           Admin akan membuka kelompok baru. Cek lagi nanti.
         </Empty>
       ) : (
-        list.map((g) => {
-          const st = mine[g.id];
-          return (
-            <div key={g.id} className="card">
-              <div className="card-head">
-                <div>
-                  <h3>{g.name}</h3>
-                  <span className={`badge type ${g.type}`}>{typeLabel(g)}</span>
-                  {g.type === 'paket' && <span className="badge off" style={{ marginLeft: 6 }}>{g.pay_period}</span>}
-                </div>
-                {st && <Badge status={st} />}
-              </div>
-              {g.description && <p className="muted small">{g.description}</p>}
-              {g.type === 'paket' && g.package_detail && <p className="small item-detail"><Icon name="gift" size={16} /> {g.package_detail}</p>}
-              <GroupInfo g={g} />
-              <div className="actions">
-                {!st && (
-                  <button className="btn primary" onClick={() => setJoining(g)}>
-                    Daftar
-                  </button>
-                )}
-                {st && (
-                  <Link to={`/g/${g.id}`} className="btn">
-                    Lihat detail
-                  </Link>
-                )}
-              </div>
-            </div>
-          );
-        })
+        <div className="browse-groups">
+          {list.map((group) => (
+            <BrowseGroupCard
+              key={group.id}
+              group={group}
+              status={mine[group.id]}
+              onJoin={setJoining}
+            />
+          ))}
+        </div>
       )}
 
       {joining && (
