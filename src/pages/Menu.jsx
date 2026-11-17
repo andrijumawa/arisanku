@@ -96,7 +96,11 @@ export default function Menu() {
                 </span>
               </button>
             ) : (
-              <Link key={item.to} to={item.to} className="menu-tile">
+              <Link
+                key={item.to}
+                to={item.to}
+                className={`menu-tile${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}`}
+              >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   <span className="menu-tile-arrow"><Icon name="arrowRight" size={17} /></span>
