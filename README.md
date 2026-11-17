@@ -31,7 +31,7 @@ Stack: React + Vite + Supabase, deploy ke GitHub Pages.
 
 `realtime.sql` aman dijalankan berulang kali. Untuk project yang sudah memakai aplikasi, jalankan file itu sekali agar perubahan kelompok, slot, putaran, dan profil juga tersedia lewat Realtime.
 
-`roulette.sql` menambahkan fitur Rolet terpisah dari undian resmi. Hanya anggota berstatus aktif yang dapat dipilih admin. Satu sesi mengizinkan tiga kali pengacakan; admin dapat menyimpan hasil pertama atau kedua, sedangkan hasil ketiga tersimpan otomatis. Peserta yang sudah masuk aplikasi dapat melihat dan memfilter riwayat berdasarkan kelompok dan bulan.
+`roulette.sql` menambahkan fitur Rolet terpisah dari undian resmi. Peserta aktif di kelompok terpilih otomatis ikut pengacakan. Admin dan peserta dapat memantau layar Rolet yang sama; hanya admin yang dapat memulai, mengulang, atau menyimpan hasilnya. Satu periode dapat diacak hingga tiga kali, dengan penyimpanan otomatis pada percobaan ketiga. Hasil tersimpan tersedia di tab **Hasil Rolet** di Menu.
 
 Subscription hanya aktif untuk layar yang sedang dibuka dan dijeda saat aplikasi masuk ke latar. Event beruntun digabung sebelum data dimuat ulang; daftar chat dibatasi ke 150 pesan terakhir dan unggahan gambar dikompres di perangkat sebelum dikirim. Ini mengurangi query dan transfer yang tidak diperlukan, tetapi pemakaian egress aktual tetap bergantung pada jumlah pengguna, perubahan data, dan gambar yang dibuka.
 

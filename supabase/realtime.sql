@@ -15,6 +15,7 @@ begin
     'payments',
     'profiles',
     'roulette_draws',
+    'roulette_sessions',
     'rounds',
     'slots'
   ] loop

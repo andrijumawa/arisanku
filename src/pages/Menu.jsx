@@ -9,6 +9,7 @@ export default function Menu() {
     { to: '/beranda', icon: 'home', label: 'Beranda' },
     { to: '/arisan', icon: 'target', label: 'Arisan' },
     { to: '/rolet', icon: 'dice', label: 'Rolet' },
+    { to: '/hasil-rolet', icon: 'check', label: 'Hasil Rolet' },
     { to: '/chat', icon: 'message', label: 'Chat', count: unread },
     ...(isAdmin ? [{ to: '/admin', icon: 'tools', label: 'Admin' }] : []),
     { to: '/akun', icon: 'user', label: 'Akun' },

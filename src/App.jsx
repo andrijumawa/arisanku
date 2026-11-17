@@ -13,6 +13,7 @@ import Chat from './pages/Chat.jsx';
 import Account from './pages/Account.jsx';
 import Menu from './pages/Menu.jsx';
 import Roulette from './pages/Roulette.jsx';
+import RouletteResults from './pages/RouletteResults.jsx';
 import AdminHome from './pages/admin/AdminHome.jsx';
 import GroupForm from './pages/admin/GroupForm.jsx';
 import AdminGroup from './pages/admin/AdminGroup.jsx';
@@ -65,6 +66,7 @@ export default function App() {
         <Route path="chat" element={<Chat />} />
         <Route path="akun" element={<Account />} />
         <Route path="rolet" element={<Roulette />} />
+        <Route path="hasil-rolet" element={<RouletteResults />} />
         <Route
           path="admin"
           element={
