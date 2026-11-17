@@ -998,9 +998,13 @@ input[type='checkbox'] {
     top: 0;
     left: 0;
     visibility: hidden;
+    animation: auth-register-form-exit 1.8s ease-in-out both;
   }
   .auth-shell:not(.is-login) .auth-form--register {
     animation: auth-register-form-enter 1.8s ease-in-out both;
+  }
+  .auth-shell:not(.is-login) .auth-form--login {
+    animation: auth-login-form-exit 1.8s ease-in-out both;
   }
   .auth-form-heading {
     margin-bottom: 10px;
@@ -1192,6 +1196,26 @@ input[type='checkbox'] {
   100% {
     top: 0;
     visibility: visible;
+  }
+}
+@keyframes auth-login-form-exit {
+  0%, 55.55% {
+    top: 30%;
+    visibility: visible;
+  }
+  55.56%, 100% {
+    top: 30%;
+    visibility: hidden;
+  }
+}
+@keyframes auth-register-form-exit {
+  0%, 55.55% {
+    top: 0;
+    visibility: visible;
+  }
+  55.56%, 100% {
+    top: 0;
+    visibility: hidden;
   }
 }
 @media (max-height: 740px) and (max-width: 650px) {

@@ -45,10 +45,8 @@ export default function App() {
   if (!configured) return <SetupNotice />;
   return (
     <Routes>
-      <Route element={<AuthShell />}>
-        <Route path="/masuk" element={<Login />} />
-        <Route path="/daftar" element={<Register />} />
-      </Route>
+      <Route path="/masuk" element={<AuthShell />} />
+      <Route path="/daftar" element={<AuthShell />} />
       <Route
         element={
           <Guard>

@@ -1,4 +1,6 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import Login from '../pages/Login.jsx';
+import Register from '../pages/Register.jsx';
 
 export default function AuthShell() {
   const isLogin = useLocation().pathname === '/masuk';
@@ -6,7 +8,8 @@ export default function AuthShell() {
   return (
     <main className="auth">
       <section className={`auth-shell${isLogin ? ' is-login' : ''}`} aria-label="Autentikasi Arisan">
-        <Outlet />
+        <Login />
+        <Register />
         <aside className="auth-panels" aria-label="Pilihan akun">
           <section className="auth-panel-content auth-panel-content--register">
             <div>
