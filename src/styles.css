@@ -1022,9 +1022,9 @@ input[type='checkbox'] {
     margin: 10px 0;
   }
   .auth-form input {
-    min-height: 48px;
-    padding: 13px 50px 13px 20px;
-    font-size: 16px;
+    min-height: 60px;
+    padding: 16px 50px 16px 20px;
+    font-size: 18px;
   }
   .auth-field-icon {
     right: 20px;
@@ -1042,9 +1042,9 @@ input[type='checkbox'] {
     margin-bottom: 12px;
   }
   .auth-submit {
-    min-height: 48px;
+    min-height: 60px;
     margin-top: 0;
-    font-size: 16px;
+    font-size: 20px;
   }
   .auth-form-footer {
     margin: 15px 0 10px;
@@ -1205,16 +1205,19 @@ input[type='checkbox'] {
   }
 }
 @media (max-height: 740px) and (max-width: 650px) {
+  .auth-form {
+    padding: 12px 20px;
+  }
   .auth-form-heading {
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .auth-form .field {
-    margin: 6px 0;
+    margin: 3px 0;
   }
   .auth-form input {
-    min-height: 44px;
-    padding-top: 11px;
-    padding-bottom: 11px;
+    min-height: 54px;
+    padding-top: 14px;
+    padding-bottom: 14px;
   }
   .auth-forgot-password {
     margin-bottom: 12px;
@@ -1223,14 +1226,15 @@ input[type='checkbox'] {
     margin-bottom: 12px;
   }
   .auth-submit {
-    min-height: 44px;
+    min-height: 54px;
+    font-size: 18px;
   }
   .auth-form-footer {
     margin: 8px 0 4px;
   }
   .auth-social > p {
-    margin-top: 8px;
-    margin-bottom: 6px;
+    margin-top: 4px;
+    margin-bottom: 4px;
   }
   .auth-social-icon {
     width: 64px;
