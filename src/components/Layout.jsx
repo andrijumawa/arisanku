@@ -6,7 +6,7 @@ import { useToast } from './Toast.jsx';
 import Icon from './Icon.jsx';
 
 export default function Layout() {
-  const { isAdmin, session } = useAuth();
+  const { isAdmin, profile, session } = useAuth();
   const toast = useToast();
   const loc = useLocation();
   const [unread, setUnread] = useState(0);
@@ -62,10 +62,16 @@ export default function Layout() {
     <div className="app">
       <header className="hdr">
         <img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="ArisanKu" />
-        {isAdmin && <span className="badge gold">Admin</span>}
+        <div className="header-account">
+          {isAdmin && <span className="badge gold">Admin</span>}
+          <span className="header-account-name">{profile?.full_name || 'Peserta'}</span>
+          <span className="header-avatar" aria-hidden="true">
+            <Icon name="user" size={19} />
+          </span>
+        </div>
       </header>
 
-      <main className={onChat ? 'main-chat' : 'main'}>
+      <main className={onChat ? 'main-chat' : loc.pathname === '/' ? 'main main-menu' : 'main'}>
         <Outlet context={{ unread }} />
       </main>
 

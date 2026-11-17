@@ -38,14 +38,12 @@ export default function Menu() {
   return (
     <section className="menu-page">
       <div className="menu-heading">
-        <p className="muted small">ArisanKu</p>
         <h1>Menu</h1>
-        <p className="muted">Halo, {profile?.full_name?.split(' ')[0] || 'Peserta'}. Mau membuka apa?</p>
       </div>
       {accountPending && (
         <div className="account-verification-notice" role="status">
           <strong>Akun menunggu verifikasi admin</strong>
-          <span>Menu lainnya akan aktif setelah admin menyetujui akun kamu.</span>
+          <span>Untuk mempercepat verifikasi, bisa hubungi admin.</span>
         </div>
       )}
       {accountRejected && (
