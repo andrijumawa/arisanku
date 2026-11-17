@@ -1144,19 +1144,19 @@ input[type='checkbox'] {
   }
   .auth-panel-content h2 {
     margin-bottom: 8px;
-    font-size: 30px;
+    font-size: 32px;
     line-height: 1.1;
   }
   .auth-panel-content > div > p {
     margin-bottom: 16px;
-    font-size: 17px;
+    font-size: 19px;
   }
   .auth-switch {
     min-height: 58px;
     min-width: 230px;
     padding: 8px 18px;
     border-radius: 8px;
-    font-size: 20px;
+    font-size: 22px;
   }
 }
 @keyframes auth-login-form-enter {
@@ -1251,15 +1251,15 @@ input[type='checkbox'] {
     height: 50px;
   }
   .auth-panel-content h2 {
-    font-size: 28px;
+    font-size: 30px;
   }
   .auth-panel-content > div > p {
-    font-size: 16px;
+    font-size: 18px;
   }
   .auth-switch {
     min-height: 52px;
     min-width: 210px;
-    font-size: 18px;
+    font-size: 20px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
