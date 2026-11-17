@@ -32,7 +32,7 @@ export default function Register() {
     setBusy(true);
     try {
       await signUp({ phone: form.phone, password: form.password, fullName: form.fullName });
-      nav('/arisan', { replace: true });
+      nav('/', { replace: true });
     } catch (x) {
       setErr(x.message);
     } finally {

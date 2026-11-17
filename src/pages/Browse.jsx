@@ -166,23 +166,23 @@ export default function Browse() {
 
       {joining && (
         <Modal title={`Daftar: ${joining.name}`} onClose={() => setJoining(null)}>
-          <GroupInfo g={joining} />
-          <hr className="divider" />
-          {joining.type === 'uang' ? (
-            <label className="field">
-              <span>Jumlah slot (nomor undian)</span>
-              <input type="number" min="1" value={slots} onChange={(e) => setSlots(e.target.value)} />
-              <div className="hint">Memegang lebih dari 1 slot berarti iuran dikalikan jumlah slot.</div>
-            </label>
-          ) : (
-            <div className="alert info">
-              Satu kelompok = satu jenis paket. Untuk paket lain, daftar di kelompok yang berbeda.
-            </div>
-          )}
-          <p className="muted small">Pendaftaran akan diperiksa dan disetujui oleh admin sebelum kamu bisa membayar.</p>
-          <button className="btn primary block" disabled={busy} onClick={join}>
-            {busy ? 'Mengirim…' : 'Kirim pendaftaran'}
-          </button>
+          <div className="stack">
+            {joining.type === 'uang' ? (
+              <label className="field">
+                <span>Jumlah slot yang ingin diikuti</span>
+                <input type="number" min="1" value={slots} onChange={(e) => setSlots(e.target.value)} />
+                <div className="hint">Memegang lebih dari 1 slot berarti iuran dikalikan jumlah slot.</div>
+              </label>
+            ) : (
+              <div className="alert info">
+                Satu kelompok = satu jenis paket. Untuk paket lain, daftar di kelompok yang berbeda.
+              </div>
+            )}
+            <p className="muted small">Pendaftaran akan diperiksa dan disetujui oleh admin sebelum kamu bisa membayar.</p>
+            <button className="btn primary block" disabled={busy} onClick={join}>
+              {busy ? 'Mengirim…' : 'Kirim pendaftaran'}
+            </button>
+          </div>
         </Modal>
       )}
     </>
