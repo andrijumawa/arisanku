@@ -211,10 +211,11 @@ code {
   transform: scale(0.985);
 }
 .menu-page {
-  --menu-avatar-top: 14px;
-  --menu-avatar-size: clamp(160px, 45vw, 350px);
+  --menu-avatar-top: 24px;
+  --menu-avatar-size: min(50vw, 380px);
   position: relative;
   width: 100%;
+  padding-top: 240px;
 }
 .visually-hidden {
   position: absolute;
@@ -227,7 +228,10 @@ code {
   border: 0;
 }
 .menu-avatar-wrap {
-  position: relative;
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
   z-index: 3;
   height: 0;
 }
@@ -300,7 +304,7 @@ code {
   min-height: 164px;
   align-items: flex-end;
   justify-content: space-between;
-  margin: 230px 0 clamp(14px, 3vw, 22px);
+  margin: 0 0 clamp(14px, 3vw, 22px);
   padding: 20px clamp(17px, 4vw, 24px) clamp(17px, 4vw, 24px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.72);
