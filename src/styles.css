@@ -215,7 +215,7 @@ code {
   --menu-avatar-size: min(46vw, 350px);
   position: relative;
   width: 100%;
-  padding-top: 190px;
+  padding-top: 160px;
 }
 .visually-hidden {
   position: absolute;
