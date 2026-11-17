@@ -100,13 +100,13 @@ code {
 }
 .app-watermark {
   position: fixed;
-  z-index: -1;
+  z-index: 0;
   top: 50%;
   left: 50%;
-  width: min(78vw, 460px);
-  aspect-ratio: 1;
+  width: min(112vw, 760px);
+  aspect-ratio: 918 / 768;
   background: linear-gradient(115deg, var(--brand-d), var(--brand));
-  opacity: 0.075;
+  opacity: 0.11;
   pointer-events: none;
   transform: translate(-50%, -42%);
   -webkit-mask: var(--app-watermark-image) center / contain no-repeat;
@@ -158,6 +158,8 @@ code {
   color: #fff;
 }
 .main {
+  position: relative;
+  z-index: 1;
   flex: 1;
   width: 100%;
   max-width: 640px;
@@ -558,10 +560,10 @@ code {
   border-color: rgba(255, 255, 255, 0.2);
 }
 .menu-tile-logout .menu-tile-icon-wrap {
-  border-color: rgba(255, 255, 255, 0.48);
-  background: linear-gradient(145deg, #6e8fe9, #5276d6);
+  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.16);
   color: #fff;
-  box-shadow: 0 5px 11px rgba(120, 26, 49, 0.18), inset 0 1px rgba(255, 255, 255, 0.32);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.28);
 }
 .menu-tile-logout .menu-tile-arrow {
   background: rgba(255, 255, 255, 0.16);
