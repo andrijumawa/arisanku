@@ -122,7 +122,7 @@ export default function Menu() {
         >
           {avatarUrl
             ? <img className="menu-avatar-image" src={avatarUrl} alt="" />
-            : <Icon name="user" size={76} />}
+            : <Icon name="user" size={112} />}
           {uploadingAvatar && <span className="menu-avatar-loading">Menyimpan…</span>}
         </button>
         <button
