@@ -82,7 +82,20 @@ export default function Menu() {
             </button>
           ) : (
             item.disabled ? (
-              <button key={item.to} type="button" className="menu-tile is-disabled" disabled>
+              <button
+                key={item.to}
+                type="button"
+                className={`menu-tile is-disabled${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}`}
+                disabled
+              >
+                {item.to === '/hasil-rolet' && (
+                  <img
+                    className="menu-tile-watermark"
+                    src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                )}
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>
@@ -101,6 +114,14 @@ export default function Menu() {
                 to={item.to}
                 className={`menu-tile${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}`}
               >
+                {item.to === '/hasil-rolet' && (
+                  <img
+                    className="menu-tile-watermark"
+                    src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`}
+                    alt=""
+                    aria-hidden="true"
+                  />
+                )}
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   <span className="menu-tile-arrow"><Icon name="arrowRight" size={17} /></span>

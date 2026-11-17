@@ -96,6 +96,21 @@ code {
   display: flex;
   flex-direction: column;
   background: var(--bg);
+  isolation: isolate;
+}
+.app-watermark {
+  position: fixed;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: min(78vw, 460px);
+  aspect-ratio: 1;
+  background: linear-gradient(115deg, var(--brand-d), var(--brand));
+  opacity: 0.075;
+  pointer-events: none;
+  transform: translate(-50%, -42%);
+  -webkit-mask: var(--app-watermark-image) center / contain no-repeat;
+  mask: var(--app-watermark-image) center / contain no-repeat;
 }
 .hdr {
   position: sticky;
@@ -353,12 +368,32 @@ code {
   box-shadow: 0 14px 24px rgba(68, 93, 154, 0.16), inset 0 1px rgba(255, 255, 255, 0.9);
 }
 .menu-tile-results:not(.is-disabled) {
+  isolation: isolate;
   border-color: rgba(255, 255, 255, 0.3);
   background:
     radial-gradient(ellipse at 92% 8%, rgba(255, 255, 255, 0.24), transparent 42%),
     linear-gradient(115deg, var(--brand-d), var(--brand));
   color: #fff;
   box-shadow: 0 12px 24px rgba(69, 102, 190, 0.25), inset 0 1px rgba(255, 255, 255, 0.24);
+}
+.menu-tile-watermark {
+  position: absolute;
+  z-index: 0;
+  right: -14px;
+  bottom: -28px;
+  width: clamp(128px, 38%, 190px);
+  height: auto;
+  opacity: 0.22;
+  pointer-events: none;
+  user-select: none;
+}
+.menu-tile-results:not(.is-disabled) > :not(.menu-tile-watermark) {
+  position: relative;
+  z-index: 1;
+}
+.menu-tile-results.is-disabled .menu-tile-watermark {
+  opacity: 0.09;
+  filter: saturate(0.65);
 }
 .menu-tile-results:not(.is-disabled)::after {
   border-color: rgba(255, 255, 255, 0.22);
@@ -405,11 +440,11 @@ code {
   height: 46px;
   flex: 0 0 46px;
   place-items: center;
-  border: 1px solid rgba(95, 128, 224, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.36);
   border-radius: 15px;
-  background: linear-gradient(145deg, #eef3ff, #dce6ff);
-  color: #6382dc;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.92);
+  background: linear-gradient(145deg, var(--brand-d), var(--brand));
+  color: #fff;
+  box-shadow: 0 5px 11px rgba(69, 102, 190, 0.2), inset 0 1px rgba(255, 255, 255, 0.28);
 }
 .menu-tile-icon {
   width: 24px;
@@ -471,7 +506,21 @@ code {
   border-color: rgba(92, 111, 145, 0.1);
 }
 .menu-tile.is-disabled .menu-tile-icon {
-  color: #8d99af;
+  color: #fff;
+}
+.menu-tile.is-disabled .menu-tile-icon-wrap {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(145deg, #8299d5, #718acb);
+  box-shadow: 0 4px 9px rgba(75, 96, 145, 0.12), inset 0 1px rgba(255, 255, 255, 0.22);
+}
+.menu-tile-results.is-disabled .menu-tile-icon-wrap {
+  border-color: rgba(95, 128, 224, 0.14);
+  background: linear-gradient(145deg, #eef3ff, #dce6ff);
+  color: #6382dc;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.92);
+}
+.menu-tile-results.is-disabled .menu-tile-icon {
+  color: #6382dc;
 }
 .menu-tile-locked {
   z-index: 1;
@@ -509,10 +558,10 @@ code {
   border-color: rgba(255, 255, 255, 0.2);
 }
 .menu-tile-logout .menu-tile-icon-wrap {
-  border-color: rgba(255, 255, 255, 0.35);
-  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.48);
+  background: linear-gradient(145deg, #6e8fe9, #5276d6);
   color: #fff;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.28);
+  box-shadow: 0 5px 11px rgba(120, 26, 49, 0.18), inset 0 1px rgba(255, 255, 255, 0.32);
 }
 .menu-tile-logout .menu-tile-arrow {
   background: rgba(255, 255, 255, 0.16);
