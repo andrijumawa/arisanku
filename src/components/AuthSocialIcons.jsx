@@ -3,7 +3,7 @@ export default function AuthSocialIcons({ mode }) {
 
   return (
     <div className="auth-social">
-      <p>{isLogin ? 'or login with social platforms' : 'or register with social platforms'}</p>
+      <p>{isLogin ? 'we are a big social family' : 'or register with social platforms'}</p>
       <div className="auth-social-icons" role="group" aria-label="Social platforms">
         <span className="auth-social-icon" role="img" aria-label="Card">
           <svg viewBox="0 0 24 24" aria-hidden="true">

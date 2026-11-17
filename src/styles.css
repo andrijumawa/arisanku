@@ -1026,13 +1026,16 @@ input[type='checkbox'] {
     right: 20px;
   }
   .auth-forgot-password {
-    margin: -10px 0 15px;
+    margin: 0 0 12px;
     font-size: 14.5px;
-    text-align: right;
+    text-align: center;
     color: #333;
   }
   .auth-forgot-password .auth-copy-mobile {
     color: #333;
+  }
+  .auth-form--login > .auth-field:nth-of-type(2) {
+    margin-bottom: 12px;
   }
   .auth-submit {
     min-height: 48px;
@@ -1062,8 +1065,8 @@ input[type='checkbox'] {
   }
   .auth-social-icon {
     display: inline-flex;
-    width: 44px;
-    height: 44px;
+    width: 64px;
+    height: 64px;
     align-items: center;
     justify-content: center;
     margin: 0 4px;
@@ -1075,8 +1078,8 @@ input[type='checkbox'] {
     line-height: 1;
   }
   .auth-social-icon svg {
-    width: 24px;
-    height: 24px;
+    width: 48px;
+    height: 48px;
     fill: #333;
   }
   .auth-panels {
@@ -1133,19 +1136,20 @@ input[type='checkbox'] {
     font-size: 11px;
   }
   .auth-panel-content h2 {
-    margin-bottom: 4px;
-    font-size: 24px;
+    margin-bottom: 8px;
+    font-size: 30px;
+    line-height: 1.1;
   }
   .auth-panel-content > div > p {
-    margin-bottom: 10px;
-    font-size: 13px;
+    margin-bottom: 16px;
+    font-size: 17px;
   }
   .auth-switch {
-    min-height: 40px;
-    min-width: 160px;
+    min-height: 58px;
+    min-width: 230px;
     padding: 8px 18px;
     border-radius: 8px;
-    font-size: 16px;
+    font-size: 20px;
   }
 }
 @keyframes auth-login-form-enter {
@@ -1209,7 +1213,10 @@ input[type='checkbox'] {
     padding-bottom: 11px;
   }
   .auth-forgot-password {
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  .auth-form--login > .auth-field:nth-of-type(2) {
+    margin-bottom: 12px;
   }
   .auth-submit {
     min-height: 44px;
@@ -1222,12 +1229,23 @@ input[type='checkbox'] {
     margin-bottom: 6px;
   }
   .auth-social-icon {
-    width: 40px;
-    height: 40px;
+    width: 64px;
+    height: 64px;
   }
   .auth-social-icon svg {
-    width: 22px;
-    height: 22px;
+    width: 44px;
+    height: 44px;
+  }
+  .auth-panel-content h2 {
+    font-size: 28px;
+  }
+  .auth-panel-content > div > p {
+    font-size: 16px;
+  }
+  .auth-switch {
+    min-height: 52px;
+    min-width: 210px;
+    font-size: 18px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
