@@ -1155,6 +1155,7 @@ input[type='checkbox'] {
     min-height: 58px;
     min-width: 230px;
     padding: 8px 18px;
+    border-width: 2px;
     border-radius: 8px;
     font-size: 22px;
   }
