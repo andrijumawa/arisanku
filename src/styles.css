@@ -912,7 +912,7 @@ input[type='checkbox'] {
     min-height: 100dvh;
     align-items: center;
     padding: 20px;
-    background: linear-gradient(90deg, #e2e8f5, #c9d6ff);
+    background: #c9d6ff;
     color: #333;
     font-family: Poppins, sans-serif;
   }
