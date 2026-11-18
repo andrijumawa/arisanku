@@ -119,13 +119,32 @@ export default function GroupForm() {
     return formatDate(date);
   }
 
+  function calculateDuration(startDate, endDate, period) {
+    if (!startDate || !endDate || endDate < startDate) return 0;
+    const start = new Date(`${startDate}T12:00:00`);
+    const end = new Date(`${endDate}T12:00:00`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return 0;
+
+    const startDay = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+    const endDay = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+    const days = Math.floor((endDay - startDay) / 86400000);
+    if (period === 'harian') return days + 1;
+    if (period === 'mingguan') return Math.floor(days / 7) + 1;
+
+    let duration = (end.getFullYear() - start.getFullYear()) * 12 + end.getMonth() - start.getMonth() + 1;
+    if (calculateEndDate(startDate, period, duration) > endDate) duration -= 1;
+    return duration;
+  }
+
   function setMaxSlots(event) {
     const maxSlots = event.target.value;
     setF((current) => ({
       ...current,
       max_slots: maxSlots,
       durasi: maxSlots,
-      end_date: calculateEndDate(current.start_date, current.pay_period, maxSlots),
+      end_date: selectedCategory() === 'uang'
+        ? calculateEndDate(current.start_date, current.pay_period, maxSlots)
+        : current.end_date,
     }));
   }
 
@@ -134,7 +153,9 @@ export default function GroupForm() {
     setF((current) => ({
       ...current,
       start_date: startDate,
-      end_date: calculateEndDate(startDate, current.pay_period, current.durasi),
+      end_date: selectedCategory() === 'uang'
+        ? calculateEndDate(startDate, current.pay_period, current.durasi)
+        : current.end_date,
     }));
   }
 
@@ -142,7 +163,9 @@ export default function GroupForm() {
     setF((current) => ({
       ...current,
       pay_period: value,
-      end_date: calculateEndDate(current.start_date, value, current.durasi),
+      end_date: selectedCategory() === 'uang'
+        ? calculateEndDate(current.start_date, value, current.durasi)
+        : current.end_date,
     }));
   }
 
@@ -189,22 +212,32 @@ export default function GroupForm() {
   async function submit(e) {
     e.preventDefault();
     if (!f.name.trim()) return toast('Nama kelompok wajib diisi.', 'error');
+    const category = selectedCategory();
+    const uang = category === 'uang';
     const nominalDigits = digitsOnly(f.nominal);
     if (nominalDigits.length > 14) return toast('Nominal maksimal 14 digit.', 'error');
     const nominal = Number(nominalDigits);
     if (!(nominal > 0)) return toast('Nominal harus lebih dari 0.', 'error');
-    if (!(Number(f.durasi) > 0)) return toast('Durasi harus lebih dari 0.', 'error');
-    const category = selectedCategory();
     if (category === 'paket' && !str(f.package_type)) return toast('Jenis paket wajib diisi (mis. makanan, barang).', 'error');
 
-    const uang = category === 'uang';
+    const durasi = uang
+      ? Number(f.durasi)
+      : calculateDuration(f.start_date, f.end_date, f.pay_period);
+    if (uang && !(durasi > 0)) return toast('Durasi harus lebih dari 0.', 'error');
+    if (!uang && (!f.start_date || !f.end_date)) {
+      return toast('Tanggal mulai dan batas akhir bayar wajib diisi untuk menghitung jumlah cicilan paket.', 'error');
+    }
+    if (!uang && !(durasi > 0)) {
+      return toast('Batas akhir bayar harus sama atau setelah tanggal mulai.', 'error');
+    }
+
     const payload = {
       type: category,
       name: f.name.trim(),
       description: str(f.description),
       nominal,
-      durasi: Number(f.durasi),
-      max_slots: num(f.max_slots),
+      durasi,
+      max_slots: uang ? num(f.max_slots) : null,
       draw_mode: uang ? f.draw_mode : null,
       pay_period: f.pay_period,
       package_type: uang ? null : str(f.package_type)?.toLowerCase(),
@@ -299,12 +332,14 @@ export default function GroupForm() {
               required
             />
           </label>
-          <label className="field">
-            <span>Batas jumlah slot</span>
-            <input type="number" min="1" inputMode="numeric" value={f.max_slots} onChange={setMaxSlots} placeholder="Contoh: 20" />
-          </label>
+          {uang && (
+            <label className="field">
+              <span>Batas jumlah slot</span>
+              <input type="number" min="1" inputMode="numeric" value={f.max_slots} onChange={setMaxSlots} placeholder="Contoh: 20" />
+            </label>
+          )}
         </div>
-        {f.durasi && (
+        {uang && f.durasi && (
           <div className="hint duration-auto-hint">
             Durasi otomatis: {f.durasi} {PERIOD_UNITS[f.pay_period] || PERIOD_UNITS.bulanan}
           </div>
@@ -353,13 +388,20 @@ export default function GroupForm() {
         <div className="grid2">
           <label className="field">
             <span>Tanggal mulai</span>
-            <input type="date" value={f.start_date || ''} onChange={setStartDate} />
+            <input type="date" value={f.start_date || ''} onChange={setStartDate} required={!uang} />
           </label>
           <label className="field">
             <span>Batas akhir bayar</span>
-            <input type="date" value={f.end_date || ''} readOnly />
+            <input
+              type="date"
+              value={f.end_date || ''}
+              onChange={uang ? undefined : set('end_date')}
+              readOnly={uang}
+              required={!uang}
+            />
           </label>
         </div>
+        {!uang && <div className="hint">Jumlah cicilan dihitung dari tanggal mulai, batas akhir bayar, dan periode.</div>}
 
         {!uang && (
           <label className="field">
