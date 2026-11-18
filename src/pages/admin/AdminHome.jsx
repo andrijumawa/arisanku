@@ -45,10 +45,10 @@ export default function AdminHome() {
   );
 
   const tabs = [
-    ['daftar', 'Pendaftaran', data?.mem],
-    ['bayar', 'Pembayaran', data?.pay],
-    ['kelompok', 'Kelompok'],
-    ['peserta', 'Peserta', data?.accounts],
+    ['daftar', 'Pendaftaran', data?.mem, 'inbox'],
+    ['bayar', 'Pembayaran', data?.pay, 'coin'],
+    ['kelompok', 'Kelompok', undefined, 'folder'],
+    ['peserta', 'Peserta', data?.accounts, 'users'],
   ];
   const selectTab = (nextTab) => {
     setParams((current) => {
@@ -71,13 +71,14 @@ export default function AdminHome() {
         activationMode="manual"
       >
         <Tabs.List className="admin-tabs" aria-label="Kategori admin">
-          {tabs.map(([key, label, count]) => (
+          {tabs.map(([key, label, count, icon]) => (
             <Tabs.Trigger
               key={key}
               className="admin-tab"
               value={key}
               aria-label={count > 0 ? `${label}, ${count} menunggu` : label}
             >
+              <Icon name={icon} size={17} className="admin-tab-icon" />
               <span aria-hidden="true">{label}</span>
               {count > 0 && <i aria-hidden="true">{count}</i>}
             </Tabs.Trigger>

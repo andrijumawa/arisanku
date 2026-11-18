@@ -94,8 +94,9 @@ Switch the review content while exposing the selected category and its pending c
 ### Variants and data
 
 - Four tabs: `Pendaftaran`, `Pembayaran`, `Kelompok`, `Peserta`.
+- Place one 17px existing-family icon before each label: inbox for Pendaftaran, coin for Pembayaran, folder for Kelompok, users for Peserta. Icons inherit tab text color and are decorative to screen readers; the accessible tab label remains text plus any count.
 - Only Pendaftaran, Pembayaran, and Peserta show a count when the live value is greater than zero.
-- Selected state uses the single accent with the register-rule signature; pending count may use the locked warning semantic tokens.
+- All four tab cells and the content panel use the exact opaque Menu tile surface token (`linear-gradient(145deg, #fff, #f0f5ff)`). Selected state is identified by its accent left rule, accent text, and weight, not a different fill. Pending count may use the locked warning semantic tokens.
 - Unselected tabs use muted text and a quiet surface. Do not style every category as a separate colored button.
 
 ### Interaction and accessibility
