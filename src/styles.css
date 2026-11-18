@@ -1889,6 +1889,7 @@ input[type='checkbox'] {
   z-index: 150;
   background: rgba(10, 30, 26, 0.5);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   place-items: center;
   overflow-x: clip;
   overflow-y: auto;
@@ -1900,6 +1901,7 @@ input[type='checkbox'] {
   flex-direction: column;
   box-sizing: border-box;
   place-self: center;
+  justify-self: center;
   width: 100%;
   min-width: 0;
   max-width: 560px;
