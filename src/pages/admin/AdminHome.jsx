@@ -99,11 +99,7 @@ export default function AdminHome() {
         })}
       </nav>
       {activeSection && (
-        <Modal
-          title={activeSection[1]}
-          onClose={closeSection}
-          className={activeSection[0] === 'peserta' ? 'overlay--slide-up' : ''}
-        >
+        <Modal title={activeSection[1]} onClose={closeSection}>
           <div className="admin-content">
             {activeSection[0] === 'daftar' && <Registrations revision={listRevisions.registrations} />}
             {activeSection[0] === 'bayar' && <Payments revision={listRevisions.payments} />}
