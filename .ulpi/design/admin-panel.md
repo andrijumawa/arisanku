@@ -75,7 +75,7 @@ Identify the admin workspace and orient the user without taking space from the r
 
 - Use one compact heading row, left aligned.
 - Heading text is `Panel Admin`, 21px maximum and fluid down to 19px, semibold/bold.
-- Tools icon sits in a 44–46px accent-soft square with the locked large radius.
+- Tools icon sits in a 44–46px square using the same blue gradient, white icon, translucent white border, radius, and tinted shadow as icons in Menu tiles.
 - No extra kicker, decorative badge, gradient text, or subtitle.
 - Align to existing main content inset; do not extend into viewport gutters.
 
