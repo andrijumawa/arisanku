@@ -5,15 +5,35 @@ import { fmtDate } from '../lib/format';
 import { Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import Icon from '../components/Icon.jsx';
 import { CustomSelect } from '../components/CustomSelect.jsx';
+import { useAuth } from '../lib/auth.jsx';
 
 const PAGE_SIZE = 30;
 
 export default function RouletteResults() {
+  const { isAdmin, session: authSession } = useAuth();
   const [groupFilter, setGroupFilter] = useState('');
   const [page, setPage] = useState(0);
-  const groupsState = useAsync(
-    () => q(supabase.from('groups').select('id,name,durasi').eq('type', 'uang').eq('draw_mode', 'acak').order('name')),
-    []
+  const groupsState = useAsync(async () => {
+    if (isAdmin) {
+      return q(supabase.from('groups').select('id,name,durasi').eq('type', 'uang').eq('draw_mode', 'acak').order('name'));
+    }
+    const memberships = await q(
+      supabase
+        .from('memberships')
+        .select('group_id,groups(id,name,durasi,type,draw_mode)')
+        .eq('user_id', authSession.user.id)
+        .eq('status', 'aktif')
+    );
+    return memberships
+      .map((membership) => membership.groups)
+      .filter((group) => group?.type === 'uang' && group?.draw_mode === 'acak');
+  }, [isAdmin, authSession.user.id]);
+  useRealtimeRefresh(
+    groupsState.reload,
+    `roulette-results-access-${authSession.user.id}-${isAdmin ? 'admin' : 'member'}`,
+    isAdmin
+      ? [{ table: 'groups' }]
+      : [{ table: 'memberships', filter: `user_id=eq.${authSession.user.id}` }]
   );
   const groups = groupsState.data || [];
   const groupMap = useMemo(() => new Map(groups.map((group) => [group.id, group])), [groups]);

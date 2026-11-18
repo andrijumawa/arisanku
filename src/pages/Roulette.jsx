@@ -10,23 +10,42 @@ import { CustomSelect } from '../components/CustomSelect.jsx';
 const SPIN_MS = 5500;
 
 export default function Roulette() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, session: authSession } = useAuth();
   const toast = useToast();
   const [groupId, setGroupId] = useState('');
   const periodNo = 1;
   const [busy, setBusy] = useState(false);
   const [spinIndex, setSpinIndex] = useState(0);
 
-  const groupsState = useAsync(
-    () => q(
+  const groupsState = useAsync(async () => {
+    if (isAdmin) {
+      return q(
+        supabase
+          .from('groups')
+          .select('id,name,durasi,type,draw_mode,pay_period')
+          .eq('type', 'uang')
+          .eq('draw_mode', 'acak')
+          .order('name')
+      );
+    }
+
+    const memberships = await q(
       supabase
-        .from('groups')
-        .select('id,name,durasi,type,draw_mode,pay_period')
-        .eq('type', 'uang')
-        .eq('draw_mode', 'acak')
-        .order('name')
-    ),
-    []
+        .from('memberships')
+        .select('group_id,groups(id,name,durasi,type,draw_mode,pay_period)')
+        .eq('user_id', authSession.user.id)
+        .eq('status', 'aktif')
+    );
+    return memberships
+      .map((membership) => membership.groups)
+      .filter((group) => group?.type === 'uang' && group?.draw_mode === 'acak');
+  }, [isAdmin, authSession.user.id]);
+  useRealtimeRefresh(
+    groupsState.reload,
+    `roulette-access-groups-${authSession.user.id}-${isAdmin ? 'admin' : 'member'}`,
+    isAdmin
+      ? [{ table: 'groups' }]
+      : [{ table: 'memberships', filter: `user_id=eq.${authSession.user.id}` }]
   );
   const groups = groupsState.data || [];
   const selectedGroup = groups.find((group) => group.id === groupId) || null;

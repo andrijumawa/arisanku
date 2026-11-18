@@ -1,6 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth.jsx';
-import { configured } from './lib/supabase';
+import { configured, supabase } from './lib/supabase';
 import Layout from './components/Layout.jsx';
 import { Spinner } from './components/Ui.jsx';
 import AuthShell from './components/AuthShell.jsx';
@@ -18,13 +19,42 @@ import AdminHome from './pages/admin/AdminHome.jsx';
 import GroupForm from './pages/admin/GroupForm.jsx';
 import AdminGroup from './pages/admin/AdminGroup.jsx';
 
-function Guard({ children, admin = false, verified = false }) {
+function Guard({ children, admin = false, verified = false, member = false }) {
   const { session, profile, ready } = useAuth();
+  const [membershipChecked, setMembershipChecked] = useState(false);
+  const [hasActiveMembership, setHasActiveMembership] = useState(false);
+
+  useEffect(() => {
+    if (!member || !session || profile?.role === 'admin') {
+      setMembershipChecked(true);
+      setHasActiveMembership(profile?.role === 'admin');
+      return;
+    }
+    let alive = true;
+    setMembershipChecked(false);
+    supabase
+      .from('memberships')
+      .select('id')
+      .eq('user_id', session.user.id)
+      .eq('status', 'aktif')
+      .limit(1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!alive) return;
+        setHasActiveMembership(!error && Boolean(data));
+        setMembershipChecked(true);
+      });
+    return () => { alive = false; };
+  }, [member, session, profile?.role]);
   if (!ready) return <Spinner />;
   if (!session) return <Navigate to="/masuk" replace />;
   if (verified && !profile) return <Spinner />;
   if (verified && profile.account_status !== 'disetujui' && profile.role !== 'admin') {
     return <Navigate to="/" replace />;
+  }
+  if (member) {
+    if (!membershipChecked) return <Spinner />;
+    if (!hasActiveMembership) return <Navigate to="/" replace />;
   }
   if (admin) {
     if (!profile) return <Spinner />;
@@ -69,8 +99,8 @@ export default function App() {
         <Route path="g/:id" element={<Guard verified><GroupDetail /></Guard>} />
         <Route path="chat" element={<Guard verified><Chat /></Guard>} />
         <Route path="akun" element={<Guard verified><Account /></Guard>} />
-        <Route path="rolet" element={<Guard verified><Roulette /></Guard>} />
-        <Route path="hasil-rolet" element={<Guard verified><RouletteResults /></Guard>} />
+        <Route path="rolet" element={<Guard verified member><Roulette /></Guard>} />
+        <Route path="hasil-rolet" element={<Guard verified member><RouletteResults /></Guard>} />
         <Route
           path="admin"
           element={

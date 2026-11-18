@@ -20,6 +20,24 @@ export default function Menu() {
     && profile?.account_status !== 'disetujui'
     && profile?.account_status !== 'ditolak';
   const accountRejected = !isAdmin && profile?.account_status === 'ditolak';
+  const rouletteAccessState = useAsync(async () => {
+    if (isAdmin) return { hasAccess: true, activeGroupIds: [] };
+    const { data, error } = await supabase
+      .from('memberships')
+      .select('group_id')
+      .eq('user_id', session.user.id)
+      .eq('status', 'aktif');
+    if (error) throw error;
+    const activeGroupIds = (data || []).map((item) => item.group_id);
+    return { hasAccess: activeGroupIds.length > 0, activeGroupIds };
+  }, [isAdmin, session.user.id]);
+  useRealtimeRefresh(
+    rouletteAccessState.reload,
+    'menu-roulette-access',
+    [{ table: 'memberships', filter: `user_id=eq.${session.user.id}` }],
+    !isAdmin
+  );
+  const rouletteAccess = rouletteAccessState.data?.hasAccess;
   const adminCountsState = useAsync(async () => {
     if (!isAdmin) return { registrations: 0, payments: 0, participants: 0 };
     const [registrations, payments, participants] = await Promise.all([
@@ -54,8 +72,8 @@ export default function Menu() {
   const items = [
     { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
     { to: '/arisan', icon: 'target', label: 'Arisan', description: 'Cari kelompok dan daftar', disabled: accountPending || accountRejected },
-    { to: '/rolet', icon: 'dice', label: 'Rolet', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected },
-    { to: '/hasil-rolet', icon: 'check', label: 'Hasil Rolet', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected },
+    { to: '/rolet', icon: 'dice', label: 'Rolet', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
+    { to: '/hasil-rolet', icon: 'check', label: 'Hasil Rolet', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
     { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
     ...(isAdmin ? [{
       to: '/admin',
