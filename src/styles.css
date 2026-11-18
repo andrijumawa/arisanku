@@ -1526,6 +1526,30 @@ input[type='checkbox'] {
   gap: 7px;
   color: var(--admin-accent);
 }
+.admin-card-new {
+  border-color: rgba(242, 11, 112, 0.65);
+  box-shadow: 0 10px 24px rgba(242, 11, 112, 0.18);
+}
+.admin-card-new-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #d91c5c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  animation: admin-card-pulse 1.2s ease-in-out infinite;
+}
+@keyframes admin-card-pulse {
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 5px rgba(217, 28, 92, 0.12);
+  }
+}
 .admin-card-count {
   display: grid;
   min-width: 22px;

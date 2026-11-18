@@ -21,6 +21,7 @@ const sections = [
 export default function AdminHome() {
   const [params, setParams] = useSearchParams();
   const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0, accounts: 0 });
+  const [newNotifications, setNewNotifications] = useState({ daftar: 0, bayar: 0 });
   const requestedTab = params.get('tab');
   const activeSection = sections.find(([key]) => key === requestedTab);
   const { data, error, reload } = useAsync(async () => {
@@ -35,6 +36,11 @@ export default function AdminHome() {
     return { mem: pendingMem.count || 0, pay: pendingPay.count || 0, accounts: pendingAccounts.count || 0 };
   }, []);
   const onRealtimeChange = useCallback((tables) => {
+    setNewNotifications((current) => ({
+      ...current,
+      daftar: current.daftar + Number(tables.includes('memberships')),
+      bayar: current.bayar + Number(tables.includes('payments')),
+    }));
     setListRevisions((current) => ({
       registrations: current.registrations + Number(tables.includes('memberships')),
       payments: current.payments + Number(tables.includes('payments')),
@@ -50,6 +56,7 @@ export default function AdminHome() {
   );
 
   const openSection = (nextTab) => {
+    setNewNotifications((current) => ({ ...current, [nextTab]: 0 }));
     setParams((current) => {
       const next = new URLSearchParams(current);
       next.set('tab', nextTab);
@@ -74,10 +81,11 @@ export default function AdminHome() {
       <nav className="admin-cards" aria-label="Kategori admin">
         {sections.map(([key, label, description, icon]) => {
           const count = key === 'daftar' ? data?.mem : key === 'bayar' ? data?.pay : key === 'peserta' ? data?.accounts : null;
+          const isNew = (key === 'daftar' && newNotifications.daftar > 0) || (key === 'bayar' && newNotifications.bayar > 0);
           return (
             <button
               key={key}
-              className={`admin-card${key === 'daftar' ? ' admin-card-registration' : ''}`}
+              className={`admin-card${key === 'daftar' ? ' admin-card-registration' : ''}${isNew ? ' admin-card-new' : ''}`}
               type="button"
               onClick={() => openSection(key)}
               aria-haspopup="dialog"
@@ -87,6 +95,7 @@ export default function AdminHome() {
                 <span className="admin-card-icon"><Icon name={icon} size={21} /></span>
                 <span className="admin-card-trailing">
                   {count > 0 && <i className="admin-card-count">{count}</i>}
+                  {isNew && <b className="admin-card-new-label">Baru</b>}
                   <Icon name="arrowRight" size={18} />
                 </span>
               </span>
@@ -130,7 +139,7 @@ function Registrations({ revision }) {
   useRealtimeRefresh(
     reload,
     'admin-registrations',
-    [{ table: 'profiles' }, { table: 'groups' }]
+    [{ table: 'memberships' }, { table: 'profiles' }, { table: 'groups' }]
   );
 
   async function approve(m) {
@@ -199,7 +208,7 @@ function Payments({ revision }) {
   useRealtimeRefresh(
     reload,
     'admin-payments',
-    [{ table: 'groups' }, { table: 'profiles' }]
+    [{ table: 'payments' }, { table: 'groups' }, { table: 'profiles' }]
   );
 
   async function review(p, status) {
