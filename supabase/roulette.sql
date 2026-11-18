@@ -64,6 +64,7 @@ declare
   new_id uuid;
   shuffled_participants jsonb;
   active_ids uuid[];
+  winner_ids uuid[];
 begin
   if not public.is_admin() then
     raise exception 'Hanya admin yang dapat menjalankan rolet';
@@ -75,9 +76,16 @@ begin
     raise exception 'Kelompok atau periode Rolet tidak valid';
   end if;
 
+  select coalesce(array_agg(DISTINCT (winner.value->>'user_id')::uuid), '{}'::uuid[]) into winner_ids
+  from public.roulette_draws d
+  cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
+  where d.group_id = p_group and winner.ord = 1;
+
   select array_agg(m.user_id order by m.user_id) into active_ids
   from public.memberships m
-  where m.group_id = p_group and m.status = 'aktif';
+  where m.group_id = p_group
+    and m.status = 'aktif'
+    and not (m.user_id = any(coalesce(winner_ids, '{}'::uuid[])));
   if coalesce(cardinality(active_ids), 0) < 2 then
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
@@ -107,6 +115,7 @@ returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   s public.roulette_sessions;
   active_ids uuid[];
+  winner_ids uuid[];
   shuffled_participants jsonb;
 begin
   if not public.is_admin() then
@@ -121,9 +130,16 @@ begin
     raise exception 'Batas tiga kali pengacakan sudah tercapai';
   end if;
 
+  select coalesce(array_agg(DISTINCT (winner.value->>'user_id')::uuid), '{}'::uuid[]) into winner_ids
+  from public.roulette_draws d
+  cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
+  where d.group_id = s.group_id and winner.ord = 1;
+
   select array_agg(m.user_id order by m.user_id) into active_ids
   from public.memberships m
-  where m.group_id = s.group_id and m.status = 'aktif';
+  where m.group_id = s.group_id
+    and m.status = 'aktif'
+    and not (m.user_id = any(coalesce(winner_ids, '{}'::uuid[])));
   if coalesce(cardinality(active_ids), 0) < 2 then
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
@@ -153,6 +169,10 @@ returns uuid language plpgsql security definer set search_path = public as $$
 declare
   s public.roulette_sessions;
   draw_id uuid;
+  total_rounds integer;
+  elapsed_ms numeric;
+  required_ms numeric;
+  remaining_ratio numeric;
 begin
   if not public.is_admin() then
     raise exception 'Hanya admin yang dapat menyelesaikan putaran Rolet';
@@ -162,26 +182,23 @@ begin
   if not found or s.status <> 'spinning' then
     return null;
   end if;
-  if s.spin_started_at > now() - interval '5 seconds' then
+  select durasi into total_rounds from public.groups where id = s.group_id;
+  elapsed_ms := extract(epoch from (now() - s.spin_started_at)) * 1000;
+  if s.period_no <= 3 or coalesce(total_rounds, s.period_no) <= 3 then
+    required_ms := 7000;
+  else
+    remaining_ratio := greatest(0, least(1, (coalesce(total_rounds, s.period_no) - s.period_no)::numeric / (coalesce(total_rounds, s.period_no) - 3)::numeric));
+    required_ms := 3000 + 4000 * remaining_ratio;
+  end if;
+  if elapsed_ms < required_ms then
     raise exception 'Animasi Rolet masih berlangsung';
   end if;
 
-  if s.attempt_count = 3 then
-    insert into public.roulette_draws (
-      group_id, period_no, session_id, attempt_no, participants, created_by
-    )
-    values (s.group_id, s.period_no, s.id, s.attempt_count, s.draft_order, auth.uid())
-    returning id into draw_id;
-    update public.roulette_sessions
-    set status = 'saved', updated_at = now()
-    where id = s.id;
-  else
-    update public.roulette_sessions
-    set status = 'active', updated_at = now()
-    where id = s.id;
-  end if;
+  update public.roulette_sessions
+  set status = 'active', updated_at = now()
+  where id = s.id;
 
-  return draw_id;
+  return null;
 end $$;
 
 create or replace function public.save_roulette_attempt(p_session uuid)

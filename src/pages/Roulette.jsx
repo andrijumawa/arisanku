@@ -7,13 +7,18 @@ import Icon from '../components/Icon.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { CustomSelect } from '../components/CustomSelect.jsx';
 
-const SPIN_MS = 5500;
+function getSpinDuration(roundNo, totalRounds) {
+  if (roundNo <= 3) return 7000;
+  if (!(totalRounds > 3)) return 3000;
+  const remainingRatio = Math.max(0, (totalRounds - roundNo) / (totalRounds - 3));
+  return Math.max(3000, Math.round(3000 + 4000 * remainingRatio));
+}
 
 export default function Roulette() {
   const { isAdmin, session: authSession } = useAuth();
   const toast = useToast();
   const [groupId, setGroupId] = useState('');
-  const periodNo = 1;
+  const [periodNo, setPeriodNo] = useState(1);
   const [busy, setBusy] = useState(false);
   const [spinIndex, setSpinIndex] = useState(0);
   const [wheelAngle, setWheelAngle] = useState(0);
@@ -55,6 +60,22 @@ export default function Roulette() {
       setGroupId(groups[0].id);
     }
   }, [groupId, groups]);
+
+  useEffect(() => {
+    if (!groupId) return;
+    let alive = true;
+    supabase
+      .from('roulette_draws')
+      .select('period_no')
+      .eq('group_id', groupId)
+      .order('period_no', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (alive) setPeriodNo(data?.period_no ? data.period_no + 1 : 1);
+      });
+    return () => { alive = false; };
+  }, [groupId]);
 
   const liveState = useAsync(async () => {
     if (!groupId || !periodNo) return null;
@@ -104,13 +125,24 @@ export default function Roulette() {
   );
 
   useEffect(() => {
+    if (!participantNames.length) return;
+    if (session?.status === 'active' || session?.status === 'saved') {
+      setWheelAngle(0);
+      setSpinIndex(0);
+    }
+  }, [session?.status, session?.id, participantNames.length]);
+
+  const spinDuration = getSpinDuration(periodNo, selectedGroup?.durasi || periodNo);
+
+  useEffect(() => {
     if (session?.status !== 'spinning' || !participantNames.length) return undefined;
+    const spinIntervalMs = Math.max(65, Math.round(110 * (spinDuration / 7000)));
     const timer = setInterval(() => {
       setSpinIndex((index) => (index + 1) % participantNames.length);
       setWheelAngle((angle) => angle + 18);
-    }, 110);
+    }, spinIntervalMs);
     return () => clearInterval(timer);
-  }, [participantNames.length, session?.status, session?.id, session?.attempt_count]);
+  }, [participantNames.length, session?.status, session?.id, session?.attempt_count, spinIntervalMs]);
 
   useEffect(() => {
     if (!isAdmin || session?.status !== 'spinning') return undefined;
@@ -122,9 +154,9 @@ export default function Roulette() {
       } catch (error) {
         toast(error.message || 'Gagal menyelesaikan putaran Rolet.', 'error');
       }
-    }, Math.max(0, SPIN_MS - elapsed + 250));
+    }, Math.max(0, spinDuration - elapsed + 250));
     return () => clearTimeout(timeout);
-  }, [isAdmin, liveState.reload, session?.id, session?.spin_started_at, session?.status, toast]);
+  }, [isAdmin, liveState.reload, session?.id, session?.spin_started_at, session?.status, spinDuration, toast]);
 
   async function startRoulette() {
     if (!groupId) return;
@@ -140,26 +172,14 @@ export default function Roulette() {
     }
   }
 
-  async function rerunRoulette() {
-    if (!session?.id) return;
-    setBusy(true);
-    try {
-      await q(supabase.rpc('run_roulette_attempt', { p_session: session.id }));
-      await liveState.reload();
-    } catch (error) {
-      toast(error.message || 'Gagal mengulang Rolet.', 'error');
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function saveResult() {
     if (!session?.id) return;
     setBusy(true);
     try {
       await q(supabase.rpc('save_roulette_attempt', { p_session: session.id }));
       await liveState.reload();
-      toast('Hasil tersimpan di menu Hasil Rolet.', 'success');
+      setPeriodNo((current) => current + 1);
+      toast('Pemenang tersimpan. Putaran berikutnya siap.', 'success');
     } catch (error) {
       toast(error.message || 'Gagal menyimpan hasil Rolet.', 'error');
     } finally {
@@ -212,14 +232,14 @@ export default function Roulette() {
               <div className="roulette-wheel-wrap">
                 <div className="roulette-pointer" aria-hidden="true"><span /></div>
                 <div
-                  className="roulette-wheel"
-                  style={{ '--wheel-angle': `${wheelAngle}deg` }}
+                  className={`roulette-wheel${participantNames.length > 12 ? ' roulette-wheel--dense' : ''}`}
+                  style={{ '--wheel-angle': `${spinning ? wheelAngle : 0}deg` }}
                   aria-label="Mesin Rolet peserta"
                 >
                   <div className="roulette-wheel-rim">
                     {participantNames.map((name, index) => {
-                      const angle = participantNames.length ? (360 / participantNames.length) * index : 0;
-                      const radians = ((angle - 90) * Math.PI) / 180;
+                      const angle = participantNames.length ? -90 + (360 / participantNames.length) * index : -90;
+                      const radians = (angle * Math.PI) / 180;
                       const radius = 35;
                       const left = 50 + radius * Math.cos(radians);
                       const top = 50 + radius * Math.sin(radians);
@@ -229,14 +249,16 @@ export default function Roulette() {
                           className="roulette-wheel-name"
                           style={{ left: `${left}%`, top: `${top}%` }}
                         >
-                          {name}
+                          <span title={name}>{participantNames.length > 16
+                            ? name.trim().split(/\s+/)[0].slice(0, 6)
+                            : name}</span>
                         </span>
                       );
                     })}
                   </div>
                   <div className="roulette-wheel-hub">
                     <Icon name="dice" size={30} />
-                    <strong>{spinning ? displayedName : session?.draft_order?.[0]?.full_name || 'Siap'}</strong>
+                    <strong>{spinning ? displayedName : participantNames[0] || 'Siap'}</strong>
                   </div>
                 </div>
               </div>
@@ -246,38 +268,30 @@ export default function Roulette() {
                   : saved
                     ? 'Hasil sudah disimpan'
                     : session?.status === 'active'
-                      ? `Hasil sementara · percobaan ${session.attempt_count} dari 3`
+                      ? 'Hasil sementara · siap disimpan'
                       : 'Menunggu admin memulai Rolet'}
               </span>
             </div>
 
             <div className="roulette-live-meta">
               <span>{selectedGroup?.name}</span>
-              {session && <span>Percobaan {session.attempt_count} dari 3</span>}
+              <span>Putaran {periodNo} · {(spinDuration / 1000).toFixed(spinDuration % 1000 ? 1 : 0)} detik</span>
             </div>
 
             {isAdmin && (
               <div className="roulette-admin-controls">
                 {!session || saved ? (
                   <button className="btn primary" onClick={startRoulette} disabled={busy || spinning}>
-                    <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : saved ? 'Mulai Rolet baru' : 'Mulai Rolet'}
+                    <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : saved ? `Mulai putaran ${periodNo}` : `Mulai putaran ${periodNo}`}
                   </button>
                 ) : spinning ? (
                   <p className="muted small">Rolet sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
                 ) : (
                   <div className="row wrap">
-                    {session.attempt_count < 3 && (
-                      <button className="btn primary" onClick={rerunRoulette} disabled={busy}>
-                        <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : 'Acak ulang'}
-                      </button>
-                    )}
-                    <button className="btn" onClick={saveResult} disabled={busy}>
-                      Simpan hasil
+                    <button className="btn primary" onClick={saveResult} disabled={busy}>
+                      Simpan pemenang putaran {periodNo}
                     </button>
                   </div>
-                )}
-                {!saved && session?.attempt_count < 3 && (
-                  <p className="muted small">Admin dapat mengulang maksimal tiga kali. Hasil percobaan ketiga tersimpan otomatis.</p>
                 )}
               </div>
             )}
