@@ -13,7 +13,6 @@ export default function AdminGroup() {
   const nav = useNavigate();
   const toast = useToast();
   const [busyId, setBusyId] = useState(null);
-  const [pickup, setPickup] = useState('');
 
   const { data, loading, error, reload } = useAsync(async () => {
     const group = await q(
@@ -62,8 +61,6 @@ export default function AdminGroup() {
   const isUang = g.type === 'uang';
   const approvedOf = (mid) => pays.filter((p) => p.membership_id === mid && p.status === 'disetujui').length;
   const slotsOf = (mid) => slots.filter((s) => s.membership_id === mid).map((s) => s.slot_no);
-  const activeSlots = slots.filter((s) => members.find((m) => m.id === s.membership_id)?.status === 'aktif').length;
-
   async function run(key, fn, okMsg) {
     setBusyId(key);
     try {
@@ -82,15 +79,6 @@ export default function AdminGroup() {
   const setStatus = (m, status) =>
     run(m.id, () => supabase.from('memberships').update({ status }).eq('id', m.id), 'Status diperbarui.');
 
-  async function draw() {
-    setBusyId('draw');
-    const { data: r, error } = await supabase.rpc('draw_next_round', { p_group: id, p_pickup: pickup || null });
-    setBusyId(null);
-    if (error) return toast(error.message, 'error');
-    toast(`Putaran ${r.round_no}: ${nameOf[r.winner_user_id] || 'peserta'}`, 'success');
-    setPickup('');
-  }
-
   const setRound = (r, patch, msg) =>
     run(r.id, () => supabase.from('rounds').update(patch).eq('id', r.id), msg);
 
@@ -104,8 +92,6 @@ export default function AdminGroup() {
     toast('Kelompok dihapus.');
     nav('/admin?tab=kelompok', { replace: true });
   }
-
-  const nextRound = rounds.length + 1;
 
   return (
     <>
@@ -140,34 +126,17 @@ export default function AdminGroup() {
 
       {isUang && (
         <>
-          <div className="section-title">Undian putaran</div>
-          <div className="card">
-            <div className="muted small" style={{ marginBottom: 8 }}>
-              Mode: <b>{g.draw_mode === 'acak' ? 'Acak' : 'Berurutan'}</b> · Putaran selesai: {rounds.length}/{g.durasi} · Slot aktif: {activeSlots}
-            </div>
-            {rounds.length < g.durasi ? (
-              <>
-                <label className="field">
-                  <span>Tanggal pengambilan putaran ke-{nextRound} (opsional)</span>
-                  <input type="date" value={pickup} onChange={(e) => setPickup(e.target.value)} />
-                </label>
-                <button className="btn gold block" disabled={busyId === 'draw' || activeSlots === 0} onClick={draw}>
-                  {busyId === 'draw' ? (
-                    'Mengundi…'
-                  ) : (
-                    <>
-                      {g.draw_mode === 'acak' && <Icon name="dice" size={18} />}
-                      {g.draw_mode === 'acak' ? `Undi putaran ke-${nextRound}` : `Tentukan penerima putaran ke-${nextRound}`}
-                    </>
-                  )}
-                </button>
-              </>
-            ) : (
-              <div className="alert info" style={{ marginBottom: 0 }}>Semua putaran sudah selesai.</div>
-            )}
-          </div>
 
-          {rounds.length > 0 && (
+          <div className="section-title">Hasil undian putaran</div>
+
+          {rounds.length === 0 ? (
+            <div className="card">
+              <div className="muted small" style={{ marginBottom: 8 }}>Belum ada hasil putaran. Pemilihan pemenang dilakukan melalui menu Rolet.</div>
+              <Link to="/rolet" className="btn gold block">
+                <Icon name="dice" size={18} /> Buka Rolet
+              </Link>
+            </div>
+          ) : (
             <div className="card">
               {rounds.map((r) => (
                 <div key={r.id} className="period-row" style={{ alignItems: 'flex-start' }}>
