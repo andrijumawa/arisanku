@@ -172,7 +172,18 @@ export default function GroupForm() {
       <Link to={editing ? `/admin/kelompok/${id}` : '/admin?tab=kelompok'} className="small">
         <Icon name="back" size={16} /> Kembali
       </Link>
-      <h2 style={{ marginTop: 8 }}>{editing ? 'Ubah kelompok' : 'Kelompok baru'}</h2>
+      <div className="form-heading">
+        <h2>{editing ? 'Ubah kelompok' : 'Kelompok baru'}</h2>
+        <button
+          type="button"
+          className="form-close-button"
+          aria-label="Tutup formulir"
+          title="Tutup"
+          onClick={() => nav(editing ? `/admin/kelompok/${id}` : '/admin?tab=kelompok', { replace: true })}
+        >
+          ×
+        </button>
+      </div>
 
       <form className="card" onSubmit={submit}>
         <label className="field">

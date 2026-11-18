@@ -930,6 +930,36 @@ body.keyboard-open .main select {
 }
 
 /* ---------- komponen dasar ---------- */
+.form-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+}
+.form-heading h2 {
+  margin: 0;
+}
+.form-close-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 1px solid rgba(95, 128, 224, 0.22);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--ink);
+  font-size: 26px;
+  font-weight: 400;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(38, 50, 72, 0.08);
+}
+.form-close-button:hover {
+  background: #fff;
+  color: #9b3d3d;
+}
 .card {
   background: var(--menu-card-surface);
   border: 1px solid var(--menu-card-border);
