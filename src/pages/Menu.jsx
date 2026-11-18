@@ -70,8 +70,7 @@ export default function Menu() {
     ? `${adminNotifications.registrations} pendaftaran · ${adminNotifications.payments} pembayaran · ${adminNotifications.participants} peserta menunggu`
     : 'Kelola akun dan kelompok';
   const items = [
-    { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
-    { to: '/arisan', icon: 'target', label: 'Arisan', description: 'Cari kelompok dan daftar', disabled: accountPending || accountRejected },
+    { to: '/beranda', icon: 'home', label: 'Beranda & Arisan', description: 'Ringkasan, kelompok saya, dan arisan tersedia', disabled: accountPending || accountRejected },
     { to: '/rolet', icon: 'dice', label: 'Rolet', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
     { to: '/hasil-rolet', icon: 'check', label: 'Hasil Rolet', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
     { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
