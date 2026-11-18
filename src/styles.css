@@ -1884,11 +1884,13 @@ input[type='checkbox'] {
 .overlay {
   position: fixed;
   inset: 0;
+  min-width: 0;
   z-index: 150;
   background: rgba(10, 30, 26, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow-x: clip;
   overflow-y: auto;
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
     max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
@@ -1896,8 +1898,10 @@ input[type='checkbox'] {
 .sheet {
   display: flex;
   flex-direction: column;
-  width: min(100%, 560px);
-  max-width: 560px;
+  box-sizing: border-box;
+  width: min(560px, calc(100vw - 32px));
+  min-width: 0;
+  max-width: calc(100vw - 32px);
   max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
   max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
   min-height: 0;
@@ -1924,6 +1928,7 @@ input[type='checkbox'] {
 .sheet-body {
   flex: 1 1 auto;
   min-height: 0;
+  min-width: 0;
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
@@ -1944,8 +1949,8 @@ input[type='checkbox'] {
       max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
   }
   .sheet {
-    width: 100%;
-    max-width: 560px;
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
     padding: 14px;
   }
   .sheet-body > *,
