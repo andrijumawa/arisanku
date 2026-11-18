@@ -155,6 +155,7 @@ const shapes = {
     </>
   ),
   arrowRight: <path d="M4 12h16m-7-7 7 7-7 7" />,
+  chevronDown: <path d="m6 9 6 6 6-6" />,
 };
 
 export default function Icon({ name, size = 24, className = '' }) {

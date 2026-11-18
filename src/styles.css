@@ -3479,8 +3479,32 @@ input[type='checkbox'] {
 }
 .browse-group-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.browse-group-head:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+.browse-group-chevron {
+  flex: 0 0 auto;
+  color: var(--muted);
+  transition: transform 180ms ease;
+}
+.browse-group-chevron.is-expanded {
+  transform: rotate(180deg);
+}
+.browse-group-details {
+  padding-top: 1px;
 }
 .browse-group-icon {
   display: grid;

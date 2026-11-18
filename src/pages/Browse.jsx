@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
@@ -11,6 +11,8 @@ import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 
 function BrowseGroupCard({ group, status, onJoin }) {
+  const [expanded, setExpanded] = useState(false);
+  const detailsId = useId();
   const isMoney = group.type === 'uang';
   const prize = Number(group.nominal) * (group.max_slots || group.durasi);
   const dates = [
@@ -20,7 +22,14 @@ function BrowseGroupCard({ group, status, onJoin }) {
 
   return (
     <article className="browse-group">
-      <header className="browse-group-head">
+      <button
+        type="button"
+        className="browse-group-head"
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        aria-label={`${expanded ? 'Lipat' : 'Buka'} detail ${group.name}`}
+        onClick={() => setExpanded((value) => !value)}
+      >
         <span className={`browse-group-icon ${isMoney ? 'money' : 'package'}`}>
           <Icon name={isMoney ? 'coin' : 'gift'} size={25} />
         </span>
@@ -30,73 +39,78 @@ function BrowseGroupCard({ group, status, onJoin }) {
           <span className={`badge type ${group.type}`}>{typeLabel(group)}</span>
         </div>
         {status && <Badge status={status} />}
-      </header>
+        <Icon name="chevronDown" size={20} className={`browse-group-chevron ${expanded ? 'is-expanded' : ''}`} />
+      </button>
 
-      {group.description && <p className="browse-group-description">{group.description}</p>}
-      {!isMoney && group.package_detail && (
-        <p className="browse-package-detail"><Icon name="gift" size={16} />{group.package_detail}</p>
-      )}
+      {expanded && (
+        <div id={detailsId} className="browse-group-details">
+          {group.description && <p className="browse-group-description">{group.description}</p>}
+          {!isMoney && group.package_detail && (
+            <p className="browse-package-detail"><Icon name="gift" size={16} />{group.package_detail}</p>
+          )}
 
-      <section className="browse-contribution" aria-label="Informasi iuran">
-        <span>{isMoney ? `Iuran per ${periodUnit(group)}` : `Cicilan per ${periodUnit(group)}`}</span>
-        <strong>{rupiah(group.nominal)}</strong>
-        <small>{isMoney ? 'Kontribusi setiap periode' : 'Pembayaran setiap periode'}</small>
-      </section>
+          <section className="browse-contribution" aria-label="Informasi iuran">
+            <span>{isMoney ? `Iuran per ${periodUnit(group)}` : `Cicilan per ${periodUnit(group)}`}</span>
+            <strong>{rupiah(group.nominal)}</strong>
+            <small>{isMoney ? 'Kontribusi setiap periode' : 'Pembayaran setiap periode'}</small>
+          </section>
 
-      <dl className="browse-group-facts">
-        <div className="browse-group-fact">
-          <dt><Icon name="target" size={16} />{isMoney ? 'Jumlah putaran' : 'Jumlah cicilan'}</dt>
-          <dd>{group.durasi} kali</dd>
-        </div>
-        {isMoney ? (
-          <>
+          <dl className="browse-group-facts">
             <div className="browse-group-fact">
-              <dt><Icon name="shuffle" size={16} />Cara undian</dt>
-              <dd>{group.draw_mode === 'acak' ? 'Diacak' : 'Berurutan'}</dd>
+              <dt><Icon name="target" size={16} />{isMoney ? 'Jumlah putaran' : 'Jumlah cicilan'}</dt>
+              <dd>{group.durasi} kali</dd>
             </div>
-            <div className="browse-group-fact browse-group-fact-wide">
-              <dt><Icon name="gift" size={16} />Perkiraan hadiah per putaran</dt>
-              <dd>{rupiah(prize)}</dd>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="browse-group-fact">
-              <dt><Icon name="gift" size={16} />Jenis paket</dt>
-              <dd>{group.package_type || 'Paket arisan'}</dd>
-            </div>
-            <div className="browse-group-fact browse-group-fact-wide">
-              <dt><Icon name="coin" size={16} />Total pembayaran</dt>
-              <dd>{rupiah(Number(group.nominal) * group.durasi)}</dd>
-            </div>
-          </>
-        )}
-      </dl>
+            {isMoney ? (
+              <>
+                <div className="browse-group-fact">
+                  <dt><Icon name="shuffle" size={16} />Cara undian</dt>
+                  <dd>{group.draw_mode === 'acak' ? 'Diacak' : 'Berurutan'}</dd>
+                </div>
+                <div className="browse-group-fact browse-group-fact-wide">
+                  <dt><Icon name="gift" size={16} />Perkiraan hadiah per putaran</dt>
+                  <dd>{rupiah(prize)}</dd>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="browse-group-fact">
+                  <dt><Icon name="gift" size={16} />Jenis paket</dt>
+                  <dd>{group.package_type || 'Paket arisan'}</dd>
+                </div>
+                <div className="browse-group-fact browse-group-fact-wide">
+                  <dt><Icon name="coin" size={16} />Total pembayaran</dt>
+                  <dd>{rupiah(Number(group.nominal) * group.durasi)}</dd>
+                </div>
+              </>
+            )}
+          </dl>
 
-      {dates.length > 0 && (
-        <div className="browse-group-dates">
-          {dates.map((date) => (
-            <div className="browse-date" key={date.label}>
-              <Icon name={date.icon} size={16} />
-              <span>{date.label}</span>
-              <strong>{date.value}</strong>
+          {dates.length > 0 && (
+            <div className="browse-group-dates">
+              {dates.map((date) => (
+                <div className="browse-date" key={date.label}>
+                  <Icon name={date.icon} size={16} />
+                  <span>{date.label}</span>
+                  <strong>{date.value}</strong>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+
+          <footer className="browse-group-actions">
+            {status ? (
+              <Link to={`/g/${group.id}`} className="btn browse-group-button">
+                Lihat detail <Icon name="arrowRight" size={17} />
+              </Link>
+            ) : (
+              <button className="btn primary browse-group-button" onClick={() => onJoin(group)}>
+                Daftar kelompok <Icon name="arrowRight" size={17} />
+              </button>
+            )}
+            {status === 'menunggu' && <span className="browse-group-note">Pendaftaran menunggu persetujuan admin.</span>}
+          </footer>
         </div>
       )}
-
-      <footer className="browse-group-actions">
-        {status ? (
-          <Link to={`/g/${group.id}`} className="btn browse-group-button">
-            Lihat detail <Icon name="arrowRight" size={17} />
-          </Link>
-        ) : (
-          <button className="btn primary browse-group-button" onClick={() => onJoin(group)}>
-            Daftar kelompok <Icon name="arrowRight" size={17} />
-          </button>
-        )}
-        {status === 'menunggu' && <span className="browse-group-note">Pendaftaran menunggu persetujuan admin.</span>}
-      </footer>
     </article>
   );
 }
