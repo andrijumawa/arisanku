@@ -126,14 +126,6 @@ export default function GroupForm() {
     }));
   }
 
-  function setPeriod(value) {
-    setF((current) => ({
-      ...current,
-      pay_period: value,
-      end_date: calculateEndDate(current.start_date, value, current.durasi),
-    }));
-  }
-
   function setStartDate(event) {
     const startDate = event.target.value;
     setF((current) => ({
@@ -196,7 +188,7 @@ export default function GroupForm() {
       durasi: Number(f.durasi),
       max_slots: num(f.max_slots),
       draw_mode: uang ? f.draw_mode : null,
-      pay_period: f.pay_period,
+      pay_period: 'bulanan',
       package_type: uang ? null : str(f.package_type)?.toLowerCase(),
       package_detail: uang ? null : str(f.package_detail),
       start_date: str(f.start_date),
@@ -269,25 +261,10 @@ export default function GroupForm() {
           )}
         </label>
 
-        <div className="grid2">
-          <label className="field">
-            <span>Nama kelompok</span>
-            <input value={f.name} onChange={set('name')} placeholder={uang ? 'Arisan Uang 1 Juta A' : 'Paket Sembako Mingguan'} required />
-          </label>
-          <label className="field">
-            <span>Periode pembayaran</span>
-            <CustomSelect
-              value={f.pay_period}
-              onValueChange={setPeriod}
-              ariaLabel="Periode pembayaran"
-              options={[
-                { value: 'harian', label: 'Harian' },
-                { value: 'mingguan', label: 'Mingguan' },
-                { value: 'bulanan', label: 'Bulanan' },
-              ]}
-            />
-          </label>
-        </div>
+        <label className="field">
+          <span>Nama kelompok</span>
+          <input value={f.name} onChange={set('name')} placeholder={uang ? 'Arisan Uang 1 Juta A' : 'Paket Sembako Mingguan'} required />
+        </label>
 
         <label className="field">
           <span>Deskripsi (opsional)</span>
@@ -296,7 +273,7 @@ export default function GroupForm() {
 
         <div className="grid2">
           <label className="field">
-            <span>{uang ? `Iuran per ${f.pay_period === 'harian' ? 'hari' : f.pay_period === 'mingguan' ? 'minggu' : 'bulan'} (Rp)` : `Cicilan per ${f.pay_period === 'harian' ? 'hari' : f.pay_period === 'mingguan' ? 'minggu' : 'bulan'} (Rp)`}</span>
+            <span>{uang ? 'Iuran per bulan (Rp)' : 'Cicilan per bulan (Rp)'}</span>
             <input
               ref={nominalInput}
               type="text"
@@ -315,7 +292,7 @@ export default function GroupForm() {
         </div>
         {f.durasi && (
           <div className="hint duration-auto-hint">
-            Durasi otomatis: {f.durasi} {f.pay_period === 'harian' ? 'hari' : f.pay_period === 'mingguan' ? 'minggu' : 'bulan'}
+            Durasi otomatis: {f.durasi} bulan
           </div>
         )}
 

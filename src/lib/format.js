@@ -19,7 +19,7 @@ export const PERIOD = {
   bulanan: { unit: 'bulan', name: 'Bulan' },
 };
 
-export const periodUnit = (g) => (g.type === 'uang' ? 'bulan' : PERIOD[g.pay_period]?.unit || 'periode');
+export const periodUnit = (g) => PERIOD[g.pay_period]?.unit || 'periode';
 export const periodName = (g) => (g.type === 'uang' ? 'Putaran' : PERIOD[g.pay_period]?.name || 'Periode');
 
 export const typeLabel = (g) =>

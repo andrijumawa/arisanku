@@ -10,7 +10,6 @@ const PAGE_SIZE = 30;
 
 export default function RouletteResults() {
   const [groupFilter, setGroupFilter] = useState('');
-  const [periodFilter, setPeriodFilter] = useState('');
   const [page, setPage] = useState(0);
   const groupsState = useAsync(
     () => q(supabase.from('groups').select('id,name,durasi').eq('type', 'uang').eq('draw_mode', 'acak').order('name')),
@@ -29,11 +28,10 @@ export default function RouletteResults() {
       .in('group_id', groupIds)
       .order('created_at', { ascending: false })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-    if (periodFilter) query = query.eq('period_no', Number(periodFilter));
     const { data, error, count } = await query;
     if (error) throw error;
     return { draws: data || [], count: count || 0 };
-  }, [groupKey, page, periodFilter]);
+  }, [groupKey, page]);
 
   useRealtimeRefresh(historyState.reload, 'roulette-saved-results', [{ table: 'roulette_draws' }]);
 
@@ -45,10 +43,6 @@ export default function RouletteResults() {
   const draws = historyState.data?.draws || [];
   const count = historyState.data?.count || 0;
   const maxPage = Math.max(0, Math.ceil(count / PAGE_SIZE) - 1);
-  const maxPeriods = groupFilter
-    ? groupMap.get(groupFilter)?.durasi || 0
-    : Math.max(0, ...groups.map((group) => Number(group.durasi) || 0));
-
   return (
     <section className="roulette-page">
       <header className="roulette-heading">
@@ -66,25 +60,11 @@ export default function RouletteResults() {
             <span>Kelompok</span>
             <CustomSelect value={groupFilter} onValueChange={(value) => changeFilter(() => {
               setGroupFilter(value);
-              setPeriodFilter('');
             })}
               ariaLabel="Filter kelompok"
               options={[
                 { value: '', label: 'Semua kelompok' },
                 ...groups.map((group) => ({ value: group.id, label: group.name })),
-              ]}
-            />
-          </label>
-          <label className="field">
-            <span>Periode</span>
-            <CustomSelect
-              value={periodFilter}
-              onValueChange={(value) => changeFilter(() => setPeriodFilter(value))}
-              ariaLabel="Filter periode"
-              options={[
-                { value: '', label: 'Semua periode' },
-                ...Array.from({ length: maxPeriods }, (_, index) => index + 1)
-                  .map((period) => ({ value: String(period), label: `Periode ${period}` })),
               ]}
             />
           </label>
@@ -102,7 +82,7 @@ export default function RouletteResults() {
                   <div className="roulette-result-head">
                     <div>
                       <h2>{groupMap.get(draw.group_id)?.name || 'Kelompok arisan'}</h2>
-                      <p className="muted small">Periode {draw.period_no} · Disimpan {fmtDate(draw.created_at)} · Percobaan {draw.attempt_no}</p>
+                      <p className="muted small">Disimpan {fmtDate(draw.created_at)} · Percobaan {draw.attempt_no}</p>
                     </div>
                     <Icon name="dice" size={23} className="roulette-result-icon" />
                   </div>

@@ -13,7 +13,7 @@ export default function Roulette() {
   const { isAdmin } = useAuth();
   const toast = useToast();
   const [groupId, setGroupId] = useState('');
-  const [periodNo, setPeriodNo] = useState(1);
+  const periodNo = 1;
   const [busy, setBusy] = useState(false);
   const [spinIndex, setSpinIndex] = useState(0);
 
@@ -21,7 +21,7 @@ export default function Roulette() {
     () => q(
       supabase
         .from('groups')
-        .select('id,name,durasi,type,draw_mode')
+        .select('id,name,durasi,type,draw_mode,pay_period')
         .eq('type', 'uang')
         .eq('draw_mode', 'acak')
         .order('name')
@@ -30,11 +30,9 @@ export default function Roulette() {
   );
   const groups = groupsState.data || [];
   const selectedGroup = groups.find((group) => group.id === groupId) || null;
-
   useEffect(() => {
     if (groups.length && !groups.some((group) => group.id === groupId)) {
       setGroupId(groups[0].id);
-      setPeriodNo(1);
     }
   }, [groupId, groups]);
 
@@ -138,7 +136,7 @@ export default function Roulette() {
         <div>
           <p className="muted small">ArisanKu</p>
           <h1>Rolet peserta</h1>
-          <p className="muted">Pilih kelompok dan periode untuk memantau pengacakan bersama.</p>
+          <p className="muted">Pilih kelompok untuk memantau pengacakan bersama.</p>
         </div>
       </header>
 
@@ -148,24 +146,10 @@ export default function Roulette() {
             <span>Kelompok</span>
             <CustomSelect
               value={groupId}
-              onValueChange={(value) => {
-                setGroupId(value);
-                setPeriodNo(1);
-              }}
+              onValueChange={(value) => setGroupId(value)}
               disabled={groupsState.loading || !groups.length || spinning || busy}
               ariaLabel="Kelompok"
               options={groups.map((group) => ({ value: group.id, label: group.name }))}
-            />
-          </label>
-          <label className="field">
-            <span>Periode</span>
-            <CustomSelect
-              value={periodNo}
-              onValueChange={(value) => setPeriodNo(Number(value))}
-              disabled={!selectedGroup || spinning || busy}
-              ariaLabel="Periode"
-              options={Array.from({ length: selectedGroup?.durasi || 0 }, (_, index) => index + 1)
-                .map((period) => ({ value: period, label: `Periode ${period}` }))}
             />
           </label>
         </div>
@@ -197,7 +181,7 @@ export default function Roulette() {
             </div>
 
             <div className="roulette-live-meta">
-              <span>{selectedGroup?.name} · Periode {periodNo}</span>
+              <span>{selectedGroup?.name}</span>
               {session && <span>Percobaan {session.attempt_count} dari 3</span>}
             </div>
 
