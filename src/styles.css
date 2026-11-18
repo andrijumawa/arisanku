@@ -1743,12 +1743,30 @@ input[type='checkbox'] {
 .admin-person-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(72px, auto);
+  flex-wrap: nowrap;
   width: 100%;
   margin-top: 7px;
 }
 .admin-person-actions .btn {
   width: 100%;
+  min-width: 0;
   white-space: nowrap;
+}
+.admin-person-actions .btn.primary {
+  border-color: #1d8a4d;
+  background: #1d8a4d;
+  color: #fff;
+}
+.admin-person-actions .btn.primary:hover,
+.admin-person-actions .btn.primary:active {
+  border-color: #166f3e;
+  background: #166f3e;
+  color: #fff;
+}
+.admin-person-actions .btn.danger {
+  border-color: #efb9c7;
+  background: #fff0f4;
+  color: #a52b45;
 }
 .admin-content .admin-person-actions .btn {
   min-height: 34px;
