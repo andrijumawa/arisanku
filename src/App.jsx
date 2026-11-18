@@ -1,23 +1,22 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth.jsx';
 import { configured, supabase } from './lib/supabase';
-import Layout from './components/Layout.jsx';
 import { Spinner } from './components/Ui.jsx';
-import AuthShell from './components/AuthShell.jsx';
-import Login from './pages/Login.jsx';
-import Register from './pages/Register.jsx';
-import Home from './pages/Home.jsx';
-import Browse from './pages/Browse.jsx';
-import GroupDetail from './pages/GroupDetail.jsx';
-import Chat from './pages/Chat.jsx';
-import Account from './pages/Account.jsx';
-import Menu from './pages/Menu.jsx';
-import Roulette from './pages/Roulette.jsx';
-import RouletteResults from './pages/RouletteResults.jsx';
-import AdminHome from './pages/admin/AdminHome.jsx';
-import GroupForm from './pages/admin/GroupForm.jsx';
-import AdminGroup from './pages/admin/AdminGroup.jsx';
+
+const Layout = lazy(() => import('./components/Layout.jsx'));
+const AuthShell = lazy(() => import('./components/AuthShell.jsx'));
+const Home = lazy(() => import('./pages/Home.jsx'));
+const Browse = lazy(() => import('./pages/Browse.jsx'));
+const GroupDetail = lazy(() => import('./pages/GroupDetail.jsx'));
+const Chat = lazy(() => import('./pages/Chat.jsx'));
+const Account = lazy(() => import('./pages/Account.jsx'));
+const Menu = lazy(() => import('./pages/Menu.jsx'));
+const Roulette = lazy(() => import('./pages/Roulette.jsx'));
+const RouletteResults = lazy(() => import('./pages/RouletteResults.jsx'));
+const AdminHome = lazy(() => import('./pages/admin/AdminHome.jsx'));
+const GroupForm = lazy(() => import('./pages/admin/GroupForm.jsx'));
+const AdminGroup = lazy(() => import('./pages/admin/AdminGroup.jsx'));
 
 function Guard({ children, admin = false, verified = false, member = false }) {
   const { session, profile, ready } = useAuth();
@@ -81,60 +80,62 @@ function SetupNotice() {
 export default function App() {
   if (!configured) return <SetupNotice />;
   return (
-    <Routes>
-      <Route element={<AuthShell />}>
-        <Route path="/masuk" element={null} />
-        <Route path="/daftar" element={null} />
-      </Route>
-      <Route
-        element={
-          <Guard>
-            <Layout />
-          </Guard>
-        }
-      >
-        <Route index element={<Menu />} />
-        <Route path="beranda" element={<Guard verified><Home /></Guard>} />
-        <Route path="arisan" element={<Guard verified><Browse /></Guard>} />
-        <Route path="g/:id" element={<Guard verified><GroupDetail /></Guard>} />
-        <Route path="chat" element={<Guard verified><Chat /></Guard>} />
-        <Route path="akun" element={<Guard verified><Account /></Guard>} />
-        <Route path="rolet" element={<Guard verified member><Roulette /></Guard>} />
-        <Route path="hasil-rolet" element={<Guard verified member><RouletteResults /></Guard>} />
+    <Suspense fallback={<Spinner text="Memuat halaman…" />}>
+      <Routes>
+        <Route element={<AuthShell />}>
+          <Route path="/masuk" element={null} />
+          <Route path="/daftar" element={null} />
+        </Route>
         <Route
-          path="admin"
           element={
-            <Guard admin>
-              <AdminHome />
+            <Guard>
+              <Layout />
             </Guard>
           }
-        />
-        <Route
-          path="admin/kelompok/baru"
-          element={
-            <Guard admin>
-              <GroupForm />
-            </Guard>
-          }
-        />
-        <Route
-          path="admin/kelompok/:id"
-          element={
-            <Guard admin>
-              <AdminGroup />
-            </Guard>
-          }
-        />
-        <Route
-          path="admin/kelompok/:id/ubah"
-          element={
-            <Guard admin>
-              <GroupForm />
-            </Guard>
-          }
-        />
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        >
+          <Route index element={<Menu />} />
+          <Route path="beranda" element={<Guard verified><Home /></Guard>} />
+          <Route path="arisan" element={<Guard verified><Browse /></Guard>} />
+          <Route path="g/:id" element={<Guard verified><GroupDetail /></Guard>} />
+          <Route path="chat" element={<Guard verified><Chat /></Guard>} />
+          <Route path="akun" element={<Guard verified><Account /></Guard>} />
+          <Route path="rolet" element={<Guard verified member><Roulette /></Guard>} />
+          <Route path="hasil-rolet" element={<Guard verified member><RouletteResults /></Guard>} />
+          <Route
+            path="admin"
+            element={
+              <Guard admin>
+                <AdminHome />
+              </Guard>
+            }
+          />
+          <Route
+            path="admin/kelompok/baru"
+            element={
+              <Guard admin>
+                <GroupForm />
+              </Guard>
+            }
+          />
+          <Route
+            path="admin/kelompok/:id"
+            element={
+              <Guard admin>
+                <AdminGroup />
+              </Guard>
+            }
+          />
+          <Route
+            path="admin/kelompok/:id/ubah"
+            element={
+              <Guard admin>
+                <GroupForm />
+              </Guard>
+            }
+          />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
   );
 }

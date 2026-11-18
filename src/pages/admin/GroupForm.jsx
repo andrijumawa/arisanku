@@ -4,6 +4,7 @@ import { supabase, q } from '../../lib/supabase';
 import { Spinner } from '../../components/Ui.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
+import Modal from '../../components/Modal.jsx';
 import { CustomCombobox, CustomSelect } from '../../components/CustomSelect.jsx';
 
 const EMPTY = {
@@ -30,6 +31,7 @@ const formatNominal = (value) => {
   const digits = digitsOnly(value);
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 };
+const PERIOD_UNITS = { harian: 'hari', mingguan: 'minggu', bulanan: 'bulan' };
 
 export default function GroupForm() {
   const { id } = useParams();
@@ -46,6 +48,7 @@ export default function GroupForm() {
   const [showAddType, setShowAddType] = useState(false);
   const [newTypeLabel, setNewTypeLabel] = useState('');
   const [newTypeCategory, setNewTypeCategory] = useState('uang');
+  const [savingType, setSavingType] = useState(false);
   const nominalInput = useRef(null);
   const nominalCaret = useRef(null);
 
@@ -135,6 +138,14 @@ export default function GroupForm() {
     }));
   }
 
+  function setPayPeriod(value) {
+    setF((current) => ({
+      ...current,
+      pay_period: value,
+      end_date: calculateEndDate(current.start_date, value, current.durasi),
+    }));
+  }
+
   function selectedCategory() {
     return arisanTypes.find((item) => item.code === f.type)?.category || (f.type === 'paket' ? 'paket' : 'uang');
   }
@@ -147,14 +158,21 @@ export default function GroupForm() {
       return toast('Jenis arisan sudah ada.', 'error');
     }
 
-    const code = `${newTypeCategory}-${Date.now().toString(36)}`;
-    const res = await supabase.from('arisan_types').insert({ code, label, category: newTypeCategory }).select().single();
-    if (res.error) return toast(res.error.message, 'error');
-    setArisanTypes((items) => [...items, res.data]);
-    setF((current) => ({ ...current, type: res.data.code }));
-    setNewTypeLabel('');
-    setShowAddType(false);
-    toast('Jenis arisan ditambahkan.', 'success');
+    setSavingType(true);
+    try {
+      const code = `${newTypeCategory}-${Date.now().toString(36)}`;
+      const res = await supabase.from('arisan_types').insert({ code, label, category: newTypeCategory }).select().single();
+      if (res.error) throw res.error;
+      setArisanTypes((items) => [...items, res.data]);
+      setF((current) => ({ ...current, type: res.data.code }));
+      setNewTypeLabel('');
+      setShowAddType(false);
+      toast('Jenis arisan ditambahkan.', 'success');
+    } catch (error) {
+      toast(error.message || 'Jenis arisan gagal ditambahkan.', 'error');
+    } finally {
+      setSavingType(false);
+    }
   }
 
   async function removeArisanType(option) {
@@ -188,7 +206,7 @@ export default function GroupForm() {
       durasi: Number(f.durasi),
       max_slots: num(f.max_slots),
       draw_mode: uang ? f.draw_mode : null,
-      pay_period: 'bulanan',
+      pay_period: f.pay_period,
       package_type: uang ? null : str(f.package_type)?.toLowerCase(),
       package_detail: uang ? null : str(f.package_detail),
       start_date: str(f.start_date),
@@ -240,31 +258,27 @@ export default function GroupForm() {
             onRemoveOption={!editing ? removeArisanType : undefined}
             onAddOption={!editing ? () => setShowAddType((open) => !open) : undefined}
           />
-          {showAddType && !editing && (
-            <div className="add-arisan-type">
-              <input
-                value={newTypeLabel}
-                onChange={(event) => setNewTypeLabel(event.target.value)}
-                placeholder="Nama jenis arisan"
-              />
-              <CustomSelect
-                value={newTypeCategory}
-                onValueChange={setNewTypeCategory}
-                ariaLabel="Kategori jenis arisan"
-                options={[
-                  { value: 'uang', label: 'Kategori Uang' },
-                  { value: 'paket', label: 'Kategori Paket' },
-                ]}
-              />
-              <button type="button" className="btn primary" onClick={addArisanType}>Tambah</button>
-            </div>
-          )}
         </label>
 
-        <label className="field">
-          <span>Nama kelompok</span>
-          <input value={f.name} onChange={set('name')} placeholder={uang ? 'Arisan Uang 1 Juta A' : 'Paket Sembako Mingguan'} required />
-        </label>
+        <div className="grid2 group-name-period">
+          <label className="field">
+            <span>Nama kelompok</span>
+            <input value={f.name} onChange={set('name')} placeholder={uang ? 'Arisan Uang 1 Juta A' : 'Paket Sembako Mingguan'} required />
+          </label>
+          <label className="field">
+            <span>Periode</span>
+            <CustomSelect
+              value={f.pay_period}
+              onValueChange={setPayPeriod}
+              ariaLabel="Periode arisan"
+              options={[
+                { value: 'harian', label: 'Harian' },
+                { value: 'mingguan', label: 'Mingguan' },
+                { value: 'bulanan', label: 'Bulanan' },
+              ]}
+            />
+          </label>
+        </div>
 
         <label className="field">
           <span>Deskripsi (opsional)</span>
@@ -273,7 +287,7 @@ export default function GroupForm() {
 
         <div className="grid2">
           <label className="field">
-            <span>{uang ? 'Iuran per bulan (Rp)' : 'Cicilan per bulan (Rp)'}</span>
+            <span>{uang ? 'Iuran per' : 'Cicilan per'} {PERIOD_UNITS[f.pay_period] || PERIOD_UNITS.bulanan} (Rp)</span>
             <input
               ref={nominalInput}
               type="text"
@@ -292,7 +306,7 @@ export default function GroupForm() {
         </div>
         {f.durasi && (
           <div className="hint duration-auto-hint">
-            Durasi otomatis: {f.durasi} bulan
+            Durasi otomatis: {f.durasi} {PERIOD_UNITS[f.pay_period] || PERIOD_UNITS.bulanan}
           </div>
         )}
 
@@ -363,6 +377,45 @@ export default function GroupForm() {
           {busy ? 'Menyimpan…' : 'Simpan'}
         </button>
       </form>
+
+      {showAddType && !editing && (
+        <Modal
+          title="Tambah jenis arisan"
+          onClose={() => {
+            setShowAddType(false);
+            setNewTypeLabel('');
+          }}
+        >
+          <form className="stack" onSubmit={addArisanType}>
+            <label className="field">
+              <span>Nama jenis arisan</span>
+              <input
+                autoFocus
+                value={newTypeLabel}
+                onChange={(event) => setNewTypeLabel(event.target.value)}
+                placeholder="Contoh: Arisan Kurban"
+                maxLength={60}
+                required
+              />
+            </label>
+            <label className="field">
+              <span>Kategori</span>
+              <CustomSelect
+                value={newTypeCategory}
+                onValueChange={setNewTypeCategory}
+                ariaLabel="Kategori jenis arisan"
+                options={[
+                  { value: 'uang', label: 'Uang' },
+                  { value: 'paket', label: 'Paket' },
+                ]}
+              />
+            </label>
+            <button type="submit" className="btn primary block" disabled={savingType}>
+              {savingType ? 'Menambahkan…' : 'Tambah jenis'}
+            </button>
+          </form>
+        </Modal>
+      )}
     </>
   );
 }

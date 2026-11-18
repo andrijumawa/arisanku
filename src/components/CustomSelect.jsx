@@ -103,7 +103,14 @@ export function CustomSelect({ value, options, onValueChange, disabled = false, 
             </div>
           ))}
           {onAddOption && (
-            <button type="button" className="custom-select-add" onClick={onAddOption}>
+            <button
+              type="button"
+              className="custom-select-add"
+              onClick={() => {
+                setOpen(false);
+                onAddOption();
+              }}
+            >
               + Tambah jenis arisan
             </button>
           )}
