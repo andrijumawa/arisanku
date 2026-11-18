@@ -76,7 +76,15 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className={onChat ? 'main-chat' : loc.pathname === '/' ? 'main main-menu' : 'main'}>
+      <main
+        className={
+          onChat
+            ? 'main-chat'
+            : loc.pathname === '/'
+              ? 'main main-menu'
+              : `main${loc.pathname === '/admin' ? ' main-admin' : ''}`
+        }
+      >
         <Outlet context={{ unread }} />
       </main>
 

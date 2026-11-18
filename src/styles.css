@@ -197,6 +197,11 @@ code {
   padding-left: clamp(12px, 3.5vw, 26px);
   overflow: hidden;
 }
+.main-admin {
+  display: flex;
+  overflow: hidden;
+  padding: clamp(6px, 1.5dvh, 16px) 12px;
+}
 .main-chat {
   position: relative;
   z-index: 1;
@@ -1214,9 +1219,11 @@ input[type='checkbox'] {
   --admin-border: #d6e0f5;
   --admin-muted: #667085;
   display: grid;
+  flex: 1;
   grid-template-rows: auto minmax(0, 1fr);
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
   min-width: 0;
   gap: 12px;
   font-family: Poppins, sans-serif;
@@ -1261,12 +1268,12 @@ input[type='checkbox'] {
   appearance: none;
   display: flex;
   min-width: 0;
-  min-height: 146px;
+  min-height: 0;
   flex-direction: column;
   align-items: stretch;
   justify-content: space-between;
-  gap: 18px;
-  padding: 16px;
+  gap: clamp(4px, 1.5dvh, 18px);
+  padding: clamp(6px, 1.5dvh, 16px);
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.84);
   border-radius: 19px;
@@ -1543,7 +1550,7 @@ input[type='checkbox'] {
 }
 @media (min-width: 560px) {
   .admin-card {
-    min-height: 156px;
+    min-height: 0;
     padding: 18px;
   }
   .admin-card-copy strong {
@@ -1560,7 +1567,7 @@ input[type='checkbox'] {
     flex-basis: 40px;
   }
   .admin-card {
-    min-height: 132px;
+    min-height: 0;
     padding: 12px;
   }
   .admin-card-copy strong {
@@ -1568,6 +1575,111 @@ input[type='checkbox'] {
   }
   .admin-card-copy > span {
     font-size: 11px;
+  }
+}
+@media (max-height: 640px) {
+  .main-admin {
+    padding-block: 6px;
+  }
+  .admin-panel {
+    gap: 8px;
+  }
+  .admin-heading {
+    gap: 8px;
+    padding-block: 0;
+  }
+  .admin-heading-icon {
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
+  }
+  .admin-cards {
+    --menu-card-gap: clamp(4px, 1dvh, 9px);
+  }
+  .admin-card {
+    display: grid;
+    grid-template-areas: 'icon copy trailing';
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    justify-content: initial;
+    gap: 8px;
+    padding: 8px 12px;
+  }
+  .admin-card-top {
+    display: contents;
+  }
+  .admin-card-icon {
+    grid-area: icon;
+    width: 34px;
+    height: 34px;
+  }
+  .admin-card-trailing {
+    grid-area: trailing;
+  }
+  .admin-card-copy {
+    grid-area: copy;
+    gap: 2px;
+  }
+  .admin-card-copy strong {
+    font-size: 13px;
+  }
+  .admin-card-copy > span {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+}
+@media (max-height: 460px) {
+  .main-admin + .app-back {
+    min-height: 0;
+    padding: 5px 12px calc(5px + env(safe-area-inset-bottom));
+  }
+  .main-admin + .app-back .app-back-button {
+    height: 40px;
+  }
+  .admin-panel {
+    gap: 5px;
+  }
+  .admin-heading-icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+    border-radius: 10px;
+  }
+  .admin-heading-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+  .admin-heading h2 {
+    font-size: 17px;
+  }
+  .admin-card {
+    gap: 6px;
+    padding: 5px 8px;
+  }
+  .admin-card-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+  }
+  .admin-card-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+@media (max-height: 380px) {
+  .admin-card-copy > span {
+    display: none;
+  }
+  .admin-card {
+    gap: 5px;
+    padding: 3px 8px;
+  }
+  .admin-card-icon {
+    width: 24px;
+    height: 24px;
+  }
+  .admin-card-copy strong {
+    font-size: 12px;
   }
 }
 @media (max-width: 650px) {
