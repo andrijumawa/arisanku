@@ -4,7 +4,7 @@ create table if not exists public.roulette_sessions (
   group_id           uuid not null references public.groups(id) on delete cascade,
   period_no          int not null default 1 check (period_no >= 1),
   created_by         uuid not null references public.profiles(id),
-  attempt_count      smallint not null default 0 check (attempt_count between 0 and 3),
+  attempt_count      integer not null default 0 check (attempt_count >= 0),
   selected_user_ids  uuid[] not null default '{}',
   draft_order        jsonb not null default '[]'::jsonb,
   status             text not null default 'active',
@@ -15,6 +15,10 @@ create table if not exists public.roulette_sessions (
 
 alter table public.roulette_sessions add column if not exists period_no int not null default 1;
 alter table public.roulette_sessions add column if not exists spin_started_at timestamptz;
+alter table public.roulette_sessions drop constraint if exists roulette_sessions_attempt_count_check;
+alter table public.roulette_sessions alter column attempt_count type integer using attempt_count::integer;
+alter table public.roulette_sessions add constraint roulette_sessions_attempt_count_check
+  check (attempt_count >= 0);
 alter table public.roulette_sessions alter column status set default 'active';
 alter table public.roulette_sessions drop constraint if exists roulette_sessions_status_check;
 alter table public.roulette_sessions add constraint roulette_sessions_status_check
@@ -30,13 +34,17 @@ create table if not exists public.roulette_draws (
   group_id     uuid not null references public.groups(id) on delete cascade,
   period_no    int not null default 1 check (period_no >= 1),
   session_id   uuid not null unique references public.roulette_sessions(id) on delete cascade,
-  attempt_no   smallint not null check (attempt_no between 1 and 3),
+  attempt_no   integer not null check (attempt_no >= 1),
   participants jsonb not null check (jsonb_typeof(participants) = 'array'),
   created_by   uuid not null references public.profiles(id),
   created_at   timestamptz not null default now()
 );
 
 alter table public.roulette_draws add column if not exists period_no int not null default 1;
+alter table public.roulette_draws drop constraint if exists roulette_draws_attempt_no_check;
+alter table public.roulette_draws alter column attempt_no type integer using attempt_no::integer;
+alter table public.roulette_draws add constraint roulette_draws_attempt_no_check
+  check (attempt_no >= 1);
 drop index if exists public.roulette_draws_group_created_idx;
 create index if not exists roulette_draws_group_period_created_idx
   on public.roulette_draws (group_id, period_no, created_at desc);
@@ -69,9 +77,9 @@ begin
   if not public.is_admin() then
     raise exception 'Hanya admin yang dapat menjalankan rolet';
   end if;
-  if p_period < 1 or not exists (
+  if p_period is null or p_period < 1 or not exists (
     select 1 from public.groups
-    where id = p_group and type = 'uang' and draw_mode = 'acak' and p_period <= durasi
+    where id = p_group and type = 'uang' and draw_mode = 'acak'
   ) then
     raise exception 'Kelompok atau periode Rolet tidak valid';
   end if;
@@ -80,6 +88,14 @@ begin
   from public.roulette_draws d
   cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
   where d.group_id = p_group and winner.ord = 1;
+
+  if p_period <> (
+    select coalesce(max(period_no), 0) + 1
+    from public.roulette_draws
+    where group_id = p_group
+  ) then
+    raise exception 'Putaran Rolet harus dijalankan secara berurutan';
+  end if;
 
   select array_agg(m.user_id order by m.user_id) into active_ids
   from public.memberships m
@@ -126,10 +142,6 @@ begin
   if not found or s.status <> 'active' then
     raise exception 'Sesi Rolet belum selesai berputar atau sudah ditutup';
   end if;
-  if s.attempt_count >= 3 then
-    raise exception 'Batas tiga kali pengacakan sudah tercapai';
-  end if;
-
   select coalesce(array_agg(DISTINCT (winner.value->>'user_id')::uuid), '{}'::uuid[]) into winner_ids
   from public.roulette_draws d
   cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
@@ -182,7 +194,9 @@ begin
   if not found or s.status <> 'spinning' then
     return null;
   end if;
-  select durasi into total_rounds from public.groups where id = s.group_id;
+  select count(*)::integer into total_rounds
+  from public.memberships
+  where group_id = s.group_id and status = 'aktif';
   elapsed_ms := extract(epoch from (now() - s.spin_started_at)) * 1000;
   if s.period_no <= 3 or coalesce(total_rounds, s.period_no) <= 3 then
     required_ms := 7000;

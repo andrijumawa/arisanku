@@ -18,7 +18,6 @@ export default function Roulette() {
   const { isAdmin, session: authSession } = useAuth();
   const toast = useToast();
   const [groupId, setGroupId] = useState('');
-  const [periodNo, setPeriodNo] = useState(1);
   const [busy, setBusy] = useState(false);
   const [spinIndex, setSpinIndex] = useState(0);
   const [wheelAngle, setWheelAngle] = useState(0);
@@ -63,21 +62,28 @@ export default function Roulette() {
     }
   }, [groupId, groups]);
 
-  useEffect(() => {
-    if (!groupId) return;
-    let alive = true;
-    supabase
-      .from('roulette_draws')
-      .select('period_no')
-      .eq('group_id', groupId)
-      .order('period_no', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (alive) setPeriodNo(data?.period_no ? data.period_no + 1 : 1);
-      });
-    return () => { alive = false; };
+  const drawsState = useAsync(async () => {
+    if (!groupId) return [];
+    return q(
+      supabase
+        .from('roulette_draws')
+        .select('period_no,participants')
+        .eq('group_id', groupId)
+        .order('period_no')
+    );
   }, [groupId]);
+  useRealtimeRefresh(
+    drawsState.reload,
+    `roulette-draws-${groupId || 'none'}`,
+    groupId ? [{ table: 'roulette_draws', filter: `group_id=eq.${groupId}` }] : [],
+    Boolean(groupId)
+  );
+  const savedDraws = drawsState.loading ? [] : drawsState.data || [];
+  const periodNo = savedDraws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) + 1;
+  const previousWinnerIds = useMemo(
+    () => new Set(savedDraws.map((draw) => draw.participants?.[0]?.user_id).filter(Boolean)),
+    [savedDraws]
+  );
 
   const liveState = useAsync(async () => {
     if (!groupId || !periodNo) return null;
@@ -105,13 +111,13 @@ export default function Roulette() {
     const memberships = await q(
       supabase
         .from('memberships')
-        .select('profiles(full_name)')
+        .select('user_id,profiles(full_name)')
         .eq('group_id', groupId)
         .eq('status', 'aktif')
     );
     return memberships
-      .map((membership) => membership.profiles?.full_name)
-      .filter(Boolean);
+      .filter((membership) => membership.profiles?.full_name)
+      .map((membership) => ({ user_id: membership.user_id, full_name: membership.profiles.full_name }));
   }, [groupId]);
   useRealtimeRefresh(
     participantsState.reload,
@@ -119,12 +125,18 @@ export default function Roulette() {
     groupId ? [{ table: 'memberships', filter: `group_id=eq.${groupId}` }, { table: 'profiles' }] : []
   );
 
+  const activeParticipants = participantsState.loading ? [] : participantsState.data || [];
+  const remainingParticipants = activeParticipants.filter((participant) => !previousWinnerIds.has(participant.user_id));
   const participantNames = useMemo(
     () => (session?.draft_order?.length
       ? session.draft_order.map((participant) => participant.full_name)
-      : participantsState.data || []),
-    [session?.draft_order, participantsState.data]
+      : remainingParticipants.map((participant) => participant.full_name)),
+    [session?.draft_order, remainingParticipants]
   );
+  const rouletteComplete = !drawsState.loading
+    && !participantsState.loading
+    && savedDraws.length > 0
+    && remainingParticipants.length === 1;
 
   useEffect(() => {
     const canvas = wheelCanvasRef.current;
@@ -183,7 +195,7 @@ export default function Roulette() {
     context.fill();
   }, [participantNames]);
 
-  const spinDuration = getSpinDuration(periodNo, selectedGroup?.durasi || periodNo);
+  const spinDuration = getSpinDuration(periodNo, activeParticipants.length || periodNo);
   const spinIntervalMs = Math.max(65, Math.round(110 * (spinDuration / 7000)));
 
   useEffect(() => {
@@ -254,9 +266,13 @@ export default function Roulette() {
     setBusy(true);
     try {
       await q(supabase.rpc('save_roulette_attempt', { p_session: session.id }));
-      await liveState.reload();
-      setPeriodNo((current) => current + 1);
-      toast('Pemenang tersimpan. Putaran berikutnya siap.', 'success');
+      await Promise.all([liveState.reload(), drawsState.reload()]);
+      toast(
+        session.draft_order.length === 2
+          ? 'Pemenang tersimpan. Peserta yang tersisa mendapat nomor terakhir.'
+          : 'Pemenang tersimpan. Putaran berikutnya siap.',
+        'success'
+      );
     } catch (error) {
       toast(error.message || 'Gagal menyimpan hasil Rolet.', 'error');
     } finally {
@@ -282,9 +298,7 @@ export default function Roulette() {
   const spinning = session?.status === 'spinning';
   const saved = session?.status === 'saved';
   const cancelled = session?.status === 'cancelled';
-  const displayedName = participantNames.length
-    ? participantNames[spinIndex % participantNames.length]
-    : 'Menunggu peserta';
+  const displayedName = participantNames.length ? participantNames[spinIndex % participantNames.length] : 'Menunggu peserta';
 
   return (
     <section className="roulette-page">
@@ -315,6 +329,10 @@ export default function Roulette() {
           <Empty icon="users" title="Belum ada kelompok untuk Rolet">
             Rolet tersedia pada kelompok arisan uang dengan metode acak.
           </Empty>
+        ) : drawsState.error ? (
+          <ErrorBox error={drawsState.error} onRetry={drawsState.reload} />
+        ) : participantsState.error ? (
+          <ErrorBox error={participantsState.error} onRetry={participantsState.reload} />
         ) : liveState.loading ? <Spinner text="Menyambungkan ke Rolet…" /> : liveState.error ? (
           <ErrorBox error={liveState.error} onRetry={liveState.reload} />
         ) : (
@@ -347,6 +365,8 @@ export default function Roulette() {
               <span className="roulette-machine-status">
                 {spinning
                   ? 'Sedang mengacak peserta…'
+                  : rouletteComplete
+                    ? 'Urutan peserta selesai'
                   : saved
                     ? 'Hasil sudah disimpan'
                     : session?.status === 'active'
@@ -357,12 +377,19 @@ export default function Roulette() {
 
             <div className="roulette-live-meta">
               <span>{selectedGroup?.name}</span>
-              <span>Putaran {periodNo} · {(spinDuration / 1000).toFixed(spinDuration % 1000 ? 1 : 0)} detik</span>
+              <span>{rouletteComplete ? 'Selesai' : `Putaran ${periodNo} · ${(spinDuration / 1000).toFixed(spinDuration % 1000 ? 1 : 0)} detik`}</span>
             </div>
+
+            {rouletteComplete && (
+              <p className="muted small">
+                Urutan Rolet selesai. {remainingParticipants[0]?.full_name || 'Peserta terakhir'} otomatis mendapat nomor terakhir
+                {' '}({activeParticipants.length}).
+              </p>
+            )}
 
             {isAdmin && (
               <div className="roulette-admin-controls">
-                {!session || saved || cancelled ? (
+                {rouletteComplete ? null : !session || saved || cancelled ? (
                   <button className="btn primary" onClick={startRoulette} disabled={busy || spinning}>
                     <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : `Mulai putaran ${periodNo}`}
                   </button>
