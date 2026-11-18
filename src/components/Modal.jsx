@@ -16,7 +16,7 @@ export default function Modal({ title, onClose, children }) {
             <Icon name="close" size={20} />
           </button>
         </div>
-        {children}
+        <div className="sheet-body">{children}</div>
       </div>
     </div>
   );

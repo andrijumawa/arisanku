@@ -1649,10 +1649,14 @@ input[type='checkbox'] {
   justify-content: center;
 }
 .sheet {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   max-width: 560px;
-  max-height: 92dvh;
-  overflow-y: auto;
+  max-height: calc(100vh - env(safe-area-inset-top) - 8px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - 8px);
+  min-height: 0;
+  overflow: hidden;
   background: var(--bg);
   border-radius: 22px 22px 0 0;
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
@@ -1660,13 +1664,23 @@ input[type='checkbox'] {
 }
 .sheet-head {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 10px;
 }
 .sheet-head h3 {
   margin: 0;
   font-size: 18px;
+}
+.sheet-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 @keyframes up {
   from {
