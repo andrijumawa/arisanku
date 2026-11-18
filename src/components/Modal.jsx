@@ -2,11 +2,18 @@ import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 
 export default function Modal({ title, onClose, children }) {
-  const portalTarget = document.querySelector('.app');
-  if (!portalTarget) return null;
+  const app = document.querySelector('.app');
+  if (!app) return null;
+  const themeProperties = ['--bg', '--ink', '--muted', '--line', '--brand', '--brand-d', '--brand-l', '--gold', '--gold-l'];
+  const themeStyle = Object.fromEntries(
+    themeProperties.map((property) => [
+      property,
+      getComputedStyle(app).getPropertyValue(property).trim(),
+    ])
+  );
 
   return createPortal(
-    <div className="overlay" onClick={onClose}>
+    <div className="overlay" style={themeStyle} onClick={onClose}>
       <div
         className="sheet"
         role="dialog"
@@ -23,6 +30,6 @@ export default function Modal({ title, onClose, children }) {
         <div className="sheet-body">{children}</div>
       </div>
     </div>,
-    portalTarget
+    document.body
   );
 }
