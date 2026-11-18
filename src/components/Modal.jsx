@@ -3,7 +3,13 @@ import Icon from './Icon.jsx';
 export default function Modal({ title, onClose, children }) {
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="sheet-head">
           <h3>{title}</h3>
           <button className="icon-btn" onClick={onClose} aria-label="Tutup">

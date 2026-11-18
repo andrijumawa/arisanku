@@ -1,24 +1,29 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import * as Tabs from '@radix-ui/react-tabs';
 import { useAuth } from '../../lib/auth.jsx';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
 import { fmtDate, rupiah, typeLabel } from '../../lib/format';
-import { Badge, Empty, ErrorBox, Spinner } from '../../components/Ui.jsx';
+import { Empty, ErrorBox, Spinner } from '../../components/Ui.jsx';
 import SignedImage from '../../components/SignedImage.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
+import Modal from '../../components/Modal.jsx';
 
 const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
-const tabValues = ['daftar', 'bayar', 'kelompok', 'peserta'];
+const sections = [
+  ['daftar', 'Pendaftaran', 'Tinjau permintaan bergabung', 'inbox'],
+  ['bayar', 'Pembayaran', 'Periksa bukti transfer', 'coin'],
+  ['kelompok', 'Kelompok', 'Atur kelompok arisan', 'folder'],
+  ['peserta', 'Peserta', 'Kelola akun dan verifikasi', 'users'],
+];
 
 export default function AdminHome() {
   const [params, setParams] = useSearchParams();
   const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0, accounts: 0 });
   const requestedTab = params.get('tab');
-  const tab = tabValues.includes(requestedTab) ? requestedTab : 'daftar';
-  const { data, loading, error, reload } = useAsync(async () => {
+  const activeSection = sections.find(([key]) => key === requestedTab);
+  const { data, error, reload } = useAsync(async () => {
     const [pendingMem, pendingPay, pendingAccounts] = await Promise.all([
       supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
       supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
@@ -44,16 +49,17 @@ export default function AdminHome() {
     onRealtimeChange
   );
 
-  const tabs = [
-    ['daftar', 'Pendaftaran', data?.mem, 'inbox'],
-    ['bayar', 'Pembayaran', data?.pay, 'coin'],
-    ['kelompok', 'Kelompok', undefined, 'folder'],
-    ['peserta', 'Peserta', data?.accounts, 'users'],
-  ];
-  const selectTab = (nextTab) => {
+  const openSection = (nextTab) => {
     setParams((current) => {
       const next = new URLSearchParams(current);
       next.set('tab', nextTab);
+      return next;
+    });
+  };
+  const closeSection = () => {
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      next.delete('tab');
       return next;
     });
   };
@@ -64,45 +70,44 @@ export default function AdminHome() {
         <span className="admin-heading-icon" aria-hidden="true"><Icon name="tools" size={22} /></span>
         <h2>Panel Admin</h2>
       </header>
-      <Tabs.Root
-        className="admin-tabs-root"
-        value={tab}
-        onValueChange={selectTab}
-        activationMode="manual"
-      >
-        <Tabs.List className="admin-tabs" aria-label="Kategori admin">
-          {tabs.map(([key, label, count, icon]) => (
-            <Tabs.Trigger
+      {error && <ErrorBox error={error} onRetry={reload} />}
+      <nav className="admin-cards" aria-label="Kategori admin">
+        {sections.map(([key, label, description, icon]) => {
+          const count = key === 'daftar' ? data?.mem : key === 'bayar' ? data?.pay : key === 'peserta' ? data?.accounts : null;
+          return (
+            <button
               key={key}
-              className="admin-tab"
-              value={key}
-              aria-label={count > 0 ? `${label}, ${count} menunggu` : label}
+              className="admin-card"
+              type="button"
+              onClick={() => openSection(key)}
+              aria-haspopup="dialog"
+              aria-label={count > 0 ? `${label}, ${count} menunggu. ${description}` : `${label}. ${description}`}
             >
-              <Icon name={icon} size={17} className="admin-tab-icon" />
-              <span aria-hidden="true">{label}</span>
-              {count > 0 && <i aria-hidden="true">{count}</i>}
-            </Tabs.Trigger>
-          ))}
-        </Tabs.List>
-        <Tabs.Content className="admin-content" value="daftar">
-          {loading && !data ? <Spinner text="Memuat antrean pendaftaran…" /> : null}
-          {error && <ErrorBox error={error} onRetry={reload} />}
-          {(!loading || data) && !error && <Registrations revision={listRevisions.registrations} />}
-        </Tabs.Content>
-        <Tabs.Content className="admin-content" value="bayar">
-          {loading && !data ? <Spinner text="Memuat antrean pembayaran…" /> : null}
-          {error && <ErrorBox error={error} onRetry={reload} />}
-          {(!loading || data) && !error && <Payments revision={listRevisions.payments} />}
-        </Tabs.Content>
-        <Tabs.Content className="admin-content" value="kelompok">
-          <Groups />
-        </Tabs.Content>
-        <Tabs.Content className="admin-content" value="peserta">
-          {loading && !data ? <Spinner text="Memuat antrean peserta…" /> : null}
-          {error && <ErrorBox error={error} onRetry={reload} />}
-          {(!loading || data) && !error && <People revision={listRevisions.accounts} />}
-        </Tabs.Content>
-      </Tabs.Root>
+              <span className="admin-card-top">
+                <span className="admin-card-icon"><Icon name={icon} size={21} /></span>
+                <span className="admin-card-trailing">
+                  {count > 0 && <i className="admin-card-count">{count}</i>}
+                  <Icon name="arrowRight" size={18} />
+                </span>
+              </span>
+              <span className="admin-card-copy">
+                <strong>{label}</strong>
+                <span>{description}</span>
+              </span>
+            </button>
+          );
+        })}
+      </nav>
+      {activeSection && (
+        <Modal title={activeSection[1]} onClose={closeSection}>
+          <div className="admin-content">
+            {activeSection[0] === 'daftar' && <Registrations revision={listRevisions.registrations} />}
+            {activeSection[0] === 'bayar' && <Payments revision={listRevisions.payments} />}
+            {activeSection[0] === 'kelompok' && <Groups />}
+            {activeSection[0] === 'peserta' && <People revision={listRevisions.accounts} />}
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }
