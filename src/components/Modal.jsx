@@ -1,7 +1,11 @@
+import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 
 export default function Modal({ title, onClose, children }) {
-  return (
+  const portalTarget = document.querySelector('.app');
+  if (!portalTarget) return null;
+
+  return createPortal(
     <div className="overlay" onClick={onClose}>
       <div
         className="sheet"
@@ -18,6 +22,7 @@ export default function Modal({ title, onClose, children }) {
         </div>
         <div className="sheet-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    portalTarget
   );
 }
