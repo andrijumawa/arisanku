@@ -214,9 +214,7 @@ export default function Roulette() {
       <header className="roulette-heading">
         <span className="roulette-heading-icon"><Icon name="shuffle" size={25} /></span>
         <div>
-          <p className="muted small">ArisanKu</p>
           <h1>Rolet peserta</h1>
-          <p className="muted">Pilih kelompok untuk memantau pengacakan bersama.</p>
         </div>
       </header>
 
