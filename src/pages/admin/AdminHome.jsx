@@ -7,6 +7,7 @@ import { fmtDate, rupiah, typeLabel } from '../../lib/format';
 import { Badge, Empty, ErrorBox, Spinner } from '../../components/Ui.jsx';
 import SignedImage from '../../components/SignedImage.jsx';
 import { useToast } from '../../components/Toast.jsx';
+import Icon from '../../components/Icon.jsx';
 
 const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
 
@@ -48,23 +49,38 @@ export default function AdminHome() {
   ];
 
   return (
-    <>
-      <h2>Panel Admin</h2>
-      <div className="tabs">
+    <section className="admin-panel">
+      <header className="admin-heading">
+        <span className="admin-heading-icon" aria-hidden="true"><Icon name="tools" size={22} /></span>
+        <div>
+          <span className="admin-heading-kicker">RUANG PENGELOLAAN</span>
+          <h2>Panel Admin</h2>
+          <p>Kelola pendaftaran, pembayaran, kelompok, dan peserta.</p>
+        </div>
+      </header>
+      <nav className="admin-tabs" aria-label="Kategori admin">
         {tabs.map(([k, label, n]) => (
-          <button key={k} className={`tab ${tab === k ? 'on' : ''}`} onClick={() => setParams({ tab: k })}>
-            {label}
+          <button
+            key={k}
+            type="button"
+            className={`admin-tab ${tab === k ? 'is-active' : ''}`}
+            aria-current={tab === k ? 'page' : undefined}
+            onClick={() => setParams({ tab: k })}
+          >
+            <span>{label}</span>
             {n > 0 && <i>{n}</i>}
           </button>
         ))}
+      </nav>
+      <div className="admin-content">
+        {error && <ErrorBox error={error} onRetry={reload} />}
+        {loading && !data && <Spinner />}
+        {tab === 'daftar' && <Registrations revision={listRevisions.registrations} />}
+        {tab === 'bayar' && <Payments revision={listRevisions.payments} />}
+        {tab === 'kelompok' && <Groups />}
+        {tab === 'peserta' && <People revision={listRevisions.accounts} />}
       </div>
-      {error && <ErrorBox error={error} onRetry={reload} />}
-      {loading && !data && <Spinner />}
-      {tab === 'daftar' && <Registrations revision={listRevisions.registrations} />}
-      {tab === 'bayar' && <Payments revision={listRevisions.payments} />}
-      {tab === 'kelompok' && <Groups />}
-      {tab === 'peserta' && <People revision={listRevisions.accounts} />}
-    </>
+    </section>
   );
 }
 

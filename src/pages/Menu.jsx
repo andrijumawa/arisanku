@@ -220,7 +220,7 @@ export default function Menu() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`menu-tile${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}`}
+                className={`menu-tile${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}${item.to === '/admin' ? ' menu-tile-admin' : ''}`}
               >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>

@@ -33,6 +33,7 @@ export default function Login() {
       await signIn(phone, password);
       nav('/', { replace: true });
     } catch (x) {
+      setPassword('');
       setErr(x.message);
     } finally {
       setBusy(false);
