@@ -254,7 +254,7 @@ export default function GroupForm() {
             onValueChange={(value) => setF((current) => ({ ...current, type: value }))}
             disabled={editing}
             ariaLabel="Jenis arisan"
-            options={arisanTypes.map((item) => ({ value: item.code, label: item.label }))}
+            options={arisanTypes.map((item) => ({ ...item, value: item.code }))}
             onRemoveOption={!editing ? removeArisanType : undefined}
             onAddOption={!editing ? () => setShowAddType((open) => !open) : undefined}
           />
