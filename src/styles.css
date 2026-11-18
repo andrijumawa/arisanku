@@ -2156,6 +2156,11 @@ input[type='checkbox'] {
     padding: max(12px, env(safe-area-inset-top)) 0 0 0;
     animation: overlay-in 0.2s ease-out;
   }
+  body.keyboard-open .overlay {
+    top: var(--visible-viewport-offset-top, 0px);
+    bottom: auto;
+    height: var(--visible-viewport-height, 100dvh);
+  }
   .sheet {
     place-self: end center;
     width: 100%;
@@ -2166,6 +2171,9 @@ input[type='checkbox'] {
     border-bottom-width: 0;
     will-change: transform;
     animation: sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  body.keyboard-open .sheet {
+    max-height: calc(var(--visible-viewport-height, 100dvh) - max(12px, env(safe-area-inset-top)));
   }
   /* Popup admin: tinggi awal sudah memadai, jadi tidak melompat saat data selesai dimuat */
   .sheet.sheet-tall {
@@ -3353,29 +3361,29 @@ input[type='checkbox'] {
 .roulette-final-order,
 .roulette-result ol {
   display: grid;
-  gap: 7px;
+  gap: 5px;
   list-style: none;
-  margin: 18px 0 0;
+  margin: 10px 0 0;
   padding: 0;
 }
 .roulette-final-order li,
 .roulette-result li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
-  padding: 9px 10px;
-  border-radius: 10px;
+  padding: 6px 8px;
+  border-radius: 9px;
   background: rgba(255, 255, 255, 0.72);
   overflow-wrap: anywhere;
 }
 .roulette-rank {
   display: inline-grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
-  flex: 0 0 26px;
-  border-radius: 8px;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 7px;
   background: var(--brand-l);
   color: var(--brand-d);
   font-size: 12px;
@@ -3391,10 +3399,11 @@ input[type='checkbox'] {
 }
 .roulette-result {
   margin: 0;
+  padding: 11px 12px;
 }
 .roulette-result h2 {
-  margin: 0 0 4px;
-  font-size: 17px;
+  margin: 0 0 2px;
+  font-size: 15px;
 }
 .roulette-result p {
   margin: 0;
@@ -3433,12 +3442,12 @@ input[type='checkbox'] {
 /* ---------- browse arisan ---------- */
 .browse-groups {
   display: grid;
-  gap: 16px;
+  gap: 12px;
 }
 .browse-group {
   position: relative;
   overflow: hidden;
-  padding: clamp(16px, 4vw, 22px);
+  padding: 14px 14px 13px 17px;
   border: 1px solid var(--menu-card-border);
   border-radius: 20px;
   background: var(--menu-card-surface);
@@ -3459,15 +3468,15 @@ input[type='checkbox'] {
 .browse-group-head {
   display: flex;
   align-items: flex-start;
-  gap: 13px;
+  gap: 10px;
 }
 .browse-group-icon {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 48px;
-  border-radius: 15px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  border-radius: 12px;
 }
 .browse-group-icon.money {
   background: #eaf0ff;
@@ -3482,7 +3491,7 @@ input[type='checkbox'] {
   min-width: 0;
 }
 .browse-group-kicker {
-  margin-bottom: 3px;
+  margin-bottom: 1px;
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
@@ -3490,7 +3499,7 @@ input[type='checkbox'] {
   text-transform: uppercase;
 }
 .browse-group-title h3 {
-  margin: 0 0 7px;
+  margin: 0 0 4px;
   color: var(--ink);
   font-size: clamp(18px, 4.5vw, 21px);
   letter-spacing: -0.025em;
@@ -3501,18 +3510,18 @@ input[type='checkbox'] {
   margin-top: 2px;
 }
 .browse-group-description {
-  margin: 14px 0 0;
+  margin: 8px 0 0;
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: 13px;
+  line-height: 1.4;
   text-wrap: pretty;
 }
 .browse-package-detail {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin: 12px 0 0;
-  padding: 10px 12px;
+  margin: 8px 0 0;
+  padding: 8px 10px;
   border-radius: 11px;
   background: #f5f7fc;
   color: var(--muted);
@@ -3525,49 +3534,52 @@ input[type='checkbox'] {
 }
 .browse-contribution {
   display: grid;
-  gap: 3px;
-  margin: 16px 0 14px;
-  padding: 14px 16px;
-  border-radius: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1px 8px;
+  margin: 10px 0 8px;
+  padding: 9px 12px;
+  border-radius: 11px;
   background: linear-gradient(110deg, #eff3ff, #f8faff);
 }
 .browse-contribution > span {
+  grid-column: 1;
   color: #596c9e;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
 }
 .browse-contribution > strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
   color: #273f7e;
-  font-size: clamp(22px, 6vw, 28px);
+  font-size: clamp(18px, 5vw, 23px);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.035em;
   line-height: 1.2;
 }
 .browse-contribution > small {
+  grid-column: 1;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 10px;
 }
 .browse-group-facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 18px;
+  gap: 0 12px;
   margin: 0;
 }
 .browse-group-fact {
   min-width: 0;
-  padding: 11px 0;
+  padding: 7px 0;
   border-bottom: 1px solid #edf0f7;
-}
-.browse-group-fact-wide {
-  grid-column: 1 / -1;
 }
 .browse-group-fact dt {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 5px;
+  margin-bottom: 2px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 11px;
 }
 .browse-group-fact dt svg {
   flex: 0 0 auto;
@@ -3576,7 +3588,7 @@ input[type='checkbox'] {
 .browse-group-fact dd {
   margin: 0;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -3584,18 +3596,18 @@ input[type='checkbox'] {
 .browse-group-dates {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 8px;
 }
 .browse-date {
   display: grid;
   grid-template-columns: 18px 1fr;
   align-items: center;
-  column-gap: 7px;
-  row-gap: 3px;
+  column-gap: 6px;
+  row-gap: 1px;
   min-width: 0;
-  padding: 9px 10px;
-  border-radius: 11px;
+  padding: 7px 8px;
+  border-radius: 9px;
   background: #f7f8fc;
 }
 .browse-date svg {
@@ -3608,17 +3620,17 @@ input[type='checkbox'] {
 }
 .browse-date strong {
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 .browse-group-actions {
   display: grid;
-  gap: 7px;
-  margin-top: 16px;
+  gap: 5px;
+  margin-top: 10px;
 }
 .browse-group-button {
   width: 100%;
-  min-height: 48px;
+  min-height: 42px;
   justify-content: space-between;
   padding-inline: 16px;
 }
@@ -3635,15 +3647,15 @@ input[type='checkbox'] {
 }
 @media (max-width: 380px) {
   .browse-group {
-    padding: 15px 13px 15px 16px;
+    padding: 12px 11px 11px 14px;
   }
   .browse-group-head {
-    gap: 9px;
+    gap: 8px;
   }
   .browse-group-icon {
-    width: 42px;
-    height: 42px;
-    flex-basis: 42px;
+    width: 36px;
+    height: 36px;
+    flex-basis: 36px;
   }
   .browse-group-head > .badge {
     padding-inline: 7px;

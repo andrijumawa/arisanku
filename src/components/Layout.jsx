@@ -23,6 +23,7 @@ export default function Layout() {
     const syncVisibleViewport = () => {
       if (!viewport) return;
       document.documentElement.style.setProperty('--visible-viewport-height', `${viewport.height}px`);
+      document.documentElement.style.setProperty('--visible-viewport-offset-top', `${viewport.offsetTop}px`);
       document.body.classList.toggle('keyboard-open', viewport.height < window.innerHeight - 120);
     };
 
@@ -36,6 +37,7 @@ export default function Layout() {
       viewport?.removeEventListener('scroll', syncVisibleViewport);
       window.removeEventListener('resize', syncVisibleViewport);
       document.documentElement.style.removeProperty('--visible-viewport-height');
+      document.documentElement.style.removeProperty('--visible-viewport-offset-top');
       document.body.classList.remove('keyboard-open');
     };
   }, []);

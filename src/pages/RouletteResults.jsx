@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { q, supabase } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
-import { fmtDate } from '../lib/format';
 import { Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import Icon from '../components/Icon.jsx';
 import { CustomSelect } from '../components/CustomSelect.jsx';
@@ -9,18 +8,37 @@ import { useAuth } from '../lib/auth.jsx';
 
 const PAGE_SIZE = 30;
 
+function payoutDate(group, periodNo) {
+  if (!group?.start_date || !Number.isInteger(periodNo) || periodNo < 1) return null;
+  const date = new Date(`${group.start_date}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  const offset = periodNo - 1;
+
+  if (group.pay_period === 'harian') date.setDate(date.getDate() + offset);
+  else if (group.pay_period === 'mingguan') date.setDate(date.getDate() + offset * 7);
+  else if (group.pay_period === 'bulanan') {
+    const day = date.getDate();
+    date.setDate(1);
+    date.setMonth(date.getMonth() + offset);
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    date.setDate(Math.min(day, lastDay));
+  } else return null;
+
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 export default function RouletteResults() {
   const { isAdmin, session: authSession } = useAuth();
   const [groupFilter, setGroupFilter] = useState('');
   const [page, setPage] = useState(0);
   const groupsState = useAsync(async () => {
     if (isAdmin) {
-      return q(supabase.from('groups').select('id,name,durasi').eq('type', 'uang').eq('draw_mode', 'acak').order('name'));
+      return q(supabase.from('groups').select('id,name,durasi,pay_period,start_date').eq('type', 'uang').eq('draw_mode', 'acak').order('name'));
     }
     const memberships = await q(
       supabase
         .from('memberships')
-        .select('group_id,groups(id,name,durasi,type,draw_mode)')
+        .select('group_id,groups(id,name,durasi,pay_period,start_date,type,draw_mode)')
         .eq('user_id', authSession.user.id)
         .eq('status', 'aktif')
     );
@@ -46,7 +64,8 @@ export default function RouletteResults() {
       .from('roulette_draws')
       .select('id,group_id,period_no,attempt_no,participants,created_at', { count: 'exact' })
       .in('group_id', groupIds)
-      .order('created_at', { ascending: false })
+      .order('period_no', { ascending: true })
+      .order('created_at', { ascending: true })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
     const { data, error, count } = await query;
     if (error) throw error;
@@ -97,35 +116,41 @@ export default function RouletteResults() {
         ) : draws.length ? (
           <>
             <div className="roulette-results">
-              {draws.map((draw) => (
-                <article className="card roulette-result" key={draw.id}>
-                  <div className="roulette-result-head">
-                    <div>
-                      <h2>{groupMap.get(draw.group_id)?.name || 'Kelompok arisan'}</h2>
-                      <p className="muted small">Putaran {draw.period_no} · Disimpan {fmtDate(draw.created_at)}</p>
+              {draws.map((draw) => {
+                const group = groupMap.get(draw.group_id);
+                const estimatedPayoutDate = payoutDate(group, draw.period_no);
+                return (
+                  <article className="card roulette-result" key={draw.id}>
+                    <div className="roulette-result-head">
+                      <div>
+                        <h2>{group?.name || 'Kelompok arisan'}</h2>
+                        <p className="muted small">
+                          Putaran {draw.period_no} · Perkiraan cair {estimatedPayoutDate || 'belum ditentukan'}
+                        </p>
+                      </div>
+                      <Icon name="dice" size={23} className="roulette-result-icon" />
                     </div>
-                    <Icon name="dice" size={23} className="roulette-result-icon" />
-                  </div>
-                  <ol>
-                    {(draw.participants || [])
-                      .slice(0, draw.participants?.length === 2 ? 2 : 1)
-                      .map((participant, index) => (
-                      <li key={`${participant.user_id}-${index}`}>
-                        <span className="roulette-rank">{draw.period_no + index}</span>
-                        <span>{participant.full_name}</span>
-                      </li>
-                    ))}
-                  </ol>
-                </article>
-              ))}
+                    <ol>
+                      {(draw.participants || [])
+                        .slice(0, draw.participants?.length === 2 ? 2 : 1)
+                        .map((participant, index) => (
+                          <li key={`${participant.user_id}-${index}`}>
+                            <span className="roulette-rank">{draw.period_no + index}</span>
+                            <span>{participant.full_name}</span>
+                          </li>
+                        ))}
+                    </ol>
+                  </article>
+                );
+              })}
             </div>
             <div className="roulette-pagination">
               <button className="btn sm" onClick={() => setPage((current) => Math.max(0, current - 1))} disabled={page === 0 || historyState.loading}>
-                Hasil lebih baru
+                Sebelumnya
               </button>
               <span className="muted small">{count} hasil · Halaman {page + 1} dari {maxPage + 1}</span>
               <button className="btn sm" onClick={() => setPage((current) => Math.min(maxPage, current + 1))} disabled={page >= maxPage || historyState.loading}>
-                Hasil sebelumnya
+                Berikutnya
               </button>
             </div>
           </>
