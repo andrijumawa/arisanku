@@ -84,6 +84,13 @@ export default function Roulette() {
     () => new Set(savedDraws.map((draw) => draw.participants?.[0]?.user_id).filter(Boolean)),
     [savedDraws]
   );
+  const savedWinners = useMemo(
+    () => [...savedDraws]
+      .sort((a, b) => a.period_no - b.period_no)
+      .map((draw) => draw.participants?.[0])
+      .filter(Boolean),
+    [savedDraws]
+  );
 
   const liveState = useAsync(async () => {
     if (!groupId || !periodNo) return null;
@@ -408,14 +415,29 @@ export default function Roulette() {
               </div>
             )}
 
-            {!spinning && session?.draft_order?.length > 0 && (
-              <ol className="roulette-final-order" aria-label="Urutan peserta Rolet">
-                {session.draft_order.map((participant, index) => (
+            {!spinning && session?.status === 'active' && session.draft_order?.[0] && (
+              <p className="roulette-round-winner">
+                Pemenang putaran {periodNo}: <strong>{session.draft_order[0].full_name}</strong>
+                {session.draft_order.length === 2 && (
+                  <> · Peserta terakhir: <strong>{session.draft_order[1].full_name}</strong></>
+                )}
+              </p>
+            )}
+
+            {savedWinners.length > 0 && (
+              <ol className="roulette-final-order" aria-label="Urutan sementara peserta Rolet">
+                {savedWinners.map((participant, index) => (
                   <li key={`${participant.user_id}-${index}`}>
                     <span className="roulette-rank">{index + 1}</span>
                     <span>{participant.full_name}</span>
                   </li>
                 ))}
+                {rouletteComplete && (
+                  <li>
+                    <span className="roulette-rank">{savedWinners.length + 1}</span>
+                    <span>{remainingParticipants[0].full_name}</span>
+                  </li>
+                )}
               </ol>
             )}
           </>

@@ -236,7 +236,17 @@ begin
   insert into public.roulette_draws (
     group_id, period_no, session_id, attempt_no, participants, created_by
   )
-  values (s.group_id, s.period_no, s.id, s.attempt_count, s.draft_order, auth.uid())
+  values (
+    s.group_id,
+    s.period_no,
+    s.id,
+    s.attempt_count,
+    case
+      when jsonb_array_length(s.draft_order) = 2 then s.draft_order
+      else jsonb_build_array(s.draft_order->0)
+    end,
+    auth.uid()
+  )
   returning id into draw_id;
   update public.roulette_sessions
   set status = 'saved', updated_at = now()

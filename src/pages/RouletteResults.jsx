@@ -102,14 +102,16 @@ export default function RouletteResults() {
                   <div className="roulette-result-head">
                     <div>
                       <h2>{groupMap.get(draw.group_id)?.name || 'Kelompok arisan'}</h2>
-                      <p className="muted small">Disimpan {fmtDate(draw.created_at)} · Percobaan {draw.attempt_no}</p>
+                      <p className="muted small">Putaran {draw.period_no} · Disimpan {fmtDate(draw.created_at)}</p>
                     </div>
                     <Icon name="dice" size={23} className="roulette-result-icon" />
                   </div>
                   <ol>
-                    {(draw.participants || []).map((participant, index) => (
+                    {(draw.participants || [])
+                      .slice(0, draw.participants?.length === 2 ? 2 : 1)
+                      .map((participant, index) => (
                       <li key={`${participant.user_id}-${index}`}>
-                        <span className="roulette-rank">{index + 1}</span>
+                        <span className="roulette-rank">{draw.period_no + index}</span>
                         <span>{participant.full_name}</span>
                       </li>
                     ))}
