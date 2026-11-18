@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../lib/auth.jsx';
 import { q, supabase } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
@@ -14,6 +14,8 @@ function getSpinDuration(roundNo, totalRounds) {
   return Math.max(3000, Math.round(3000 + 4000 * remainingRatio));
 }
 
+const WHEEL_COLORS = ['#596fd6', '#e76b73', '#e9b64f', '#45a989', '#9872ca', '#d65785', '#4b98c4', '#e18957'];
+
 export default function Roulette() {
   const { isAdmin, session: authSession } = useAuth();
   const toast = useToast();
@@ -22,7 +24,6 @@ export default function Roulette() {
   const [spinIndex, setSpinIndex] = useState(0);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [wheelTransitionDuration, setWheelTransitionDuration] = useState(0);
-  const wheelCanvasRef = useRef(null);
 
   const groupsState = useAsync(async () => {
     if (isAdmin) {
@@ -145,61 +146,16 @@ export default function Roulette() {
     && savedDraws.length > 0
     && remainingParticipants.length === 1;
 
-  useEffect(() => {
-    const canvas = wheelCanvasRef.current;
-    const context = canvas?.getContext('2d');
-    if (!canvas || !context) return;
-
-    const size = 800;
-    const ratio = window.devicePixelRatio || 1;
-    canvas.width = size * ratio;
-    canvas.height = size * ratio;
-    context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    context.clearRect(0, 0, size, size);
-    if (!participantNames.length) return;
-
-    const colors = ['#596fd6', '#e76b73', '#e9b64f', '#45a989', '#9872ca', '#d65785', '#4b98c4', '#e18957'];
-    const center = size / 2;
-    const radius = 396;
-    const slice = (Math.PI * 2) / participantNames.length;
-    const fontSize = participantNames.length >= 18 ? 12 : participantNames.length >= 13 ? 14 : participantNames.length >= 9 ? 17 : 21;
-    const maxLength = participantNames.length >= 18 ? 8 : participantNames.length >= 13 ? 11 : 17;
-
-    participantNames.forEach((name, index) => {
-      const start = -Math.PI / 2 + index * slice;
-      const end = start + slice;
-      const middle = start + slice / 2;
-
-      context.beginPath();
-      context.moveTo(center, center);
-      context.arc(center, center, radius, start, end);
-      context.closePath();
-      context.fillStyle = colors[index % colors.length];
-      context.fill();
-      context.lineWidth = 3;
-      context.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-      context.stroke();
-
-      context.save();
-      context.translate(center + Math.cos(middle) * radius * 0.63, center + Math.sin(middle) * radius * 0.63);
-      let textRotation = middle + Math.PI / 2;
-      if (textRotation > Math.PI / 2 && textRotation < Math.PI * 1.5) textRotation += Math.PI;
-      context.rotate(textRotation);
-      context.fillStyle = '#fff';
-      context.font = `800 ${fontSize}px system-ui, sans-serif`;
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.shadowColor = 'rgba(0, 0, 0, 0.25)';
-      context.shadowBlur = 3;
-      const label = name.length > maxLength ? `${name.slice(0, maxLength - 1)}…` : name;
-      context.fillText(label, 0, 0);
-      context.restore();
+  const wheelBackground = useMemo(() => {
+    if (!participantNames.length) return '#fff';
+    const slice = 360 / participantNames.length;
+    const sectors = participantNames.map((_, index) => {
+      const start = index * slice;
+      const end = (index + 1) * slice;
+      const color = WHEEL_COLORS[index % WHEEL_COLORS.length];
+      return `${color} ${start}deg ${end}deg`;
     });
-
-    context.beginPath();
-    context.arc(center, center, 72, 0, Math.PI * 2);
-    context.fillStyle = '#fff';
-    context.fill();
+    return `conic-gradient(from -90deg, ${sectors.join(', ')})`;
   }, [participantNames]);
 
   const spinDuration = getSpinDuration(periodNo, activeParticipants.length || periodNo);
@@ -354,15 +310,32 @@ export default function Roulette() {
                     '--wheel-angle': `${wheelAngle}deg`,
                     '--wheel-transition': spinning && wheelAngle > 0 && wheelTransitionDuration > 0
                       ? `transform ${wheelTransitionDuration}ms cubic-bezier(0.12, 0.78, 0.12, 1)`
-                      : 'none'
+                      : 'none',
+                    background: wheelBackground
                   }}
                   aria-label="Mesin Rolet peserta"
                 >
-                  <canvas
-                    ref={wheelCanvasRef}
-                    className="roulette-wheel-canvas"
-                    aria-label={`Roda Rolet berisi ${participantNames.length} peserta`}
-                  />
+                  <div className="roulette-wheel-labels">
+                    {participantNames.map((name, index) => {
+                      const angle = participantNames.length ? -90 + (360 / participantNames.length) * (index + 0.5) : -90;
+                      const radians = (angle * Math.PI) / 180;
+                      const radius = 35;
+                      const left = 50 + radius * Math.cos(radians);
+                      const top = 50 + radius * Math.sin(radians);
+                      const maxLength = participantNames.length >= 18 ? 7 : participantNames.length >= 13 ? 10 : 16;
+                      const label = name.length > maxLength ? `${name.slice(0, maxLength - 1)}…` : name;
+                      return (
+                        <span
+                          key={`${name}-${index}`}
+                          className="roulette-wheel-name"
+                          style={{ left: `${left}%`, top: `${top}%` }}
+                          title={name}
+                        >
+                          {label}
+                        </span>
+                      );
+                    })}
+                  </div>
                   <div className="roulette-wheel-hub">
                     <Icon name="dice" size={30} />
                     <strong>{spinning ? displayedName : participantNames[0] || 'Siap'}</strong>

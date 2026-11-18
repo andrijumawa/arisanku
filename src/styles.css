@@ -3242,11 +3242,22 @@ input[type='checkbox'] {
   transform: rotate(var(--wheel-angle));
   transition: var(--wheel-transition, none);
 }
-.roulette-wheel-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
+.roulette-wheel-labels {
+  position: absolute;
+  inset: 0;
   border-radius: 50%;
+}
+.roulette-wheel-name {
+  position: absolute;
+  width: 32%;
+  transform: translate(-50%, -50%) rotate(calc(-1 * var(--wheel-angle)));
+  color: #fff;
+  font-size: clamp(7px, 2.4vw, 11px);
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  overflow-wrap: anywhere;
 }
 .roulette-wheel-hub {
   position: relative;
