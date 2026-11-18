@@ -177,11 +177,11 @@ function Registrations({ revision }) {
         <b>{m.groups?.name}</b> · {typeLabel(m.groups || {})} · {rupiah(m.groups?.nominal)}
         {m.groups?.type === 'uang' && <> · {m.slot_count} slot</>}
       </div>
-      <div className="actions">
-        <button className="btn primary sm" disabled={busyId === m.id} onClick={() => approve(m)}>
+      <div className="actions admin-review-actions">
+        <button type="button" className="btn primary sm" disabled={busyId === m.id} onClick={() => approve(m)}>
           Setujui
         </button>
-        <button className="btn danger sm" disabled={busyId === m.id} onClick={() => reject(m)}>
+        <button type="button" className="btn danger sm" disabled={busyId === m.id} onClick={() => reject(m)}>
           Tolak
         </button>
       </div>
@@ -247,11 +247,11 @@ function Payments({ revision }) {
           {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
         </div>
         <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb" />
-        <div className="actions">
-          <button className="btn primary sm" disabled={busyId === p.id} onClick={() => review(p, 'disetujui')}>
+        <div className="actions admin-review-actions">
+          <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => review(p, 'disetujui')}>
             Setujui
           </button>
-          <button className="btn danger sm" disabled={busyId === p.id} onClick={() => review(p, 'ditolak')}>
+          <button type="button" className="btn danger sm" disabled={busyId === p.id} onClick={() => review(p, 'ditolak')}>
             Tolak
           </button>
         </div>

@@ -3067,6 +3067,30 @@ input[type='checkbox'] {
   background: #fff0f4;
   color: #a52b45;
 }
+.admin-content .admin-review-actions {
+ display: flex;
+ flex-wrap: nowrap;
+ width: 100%;
+ gap: 8px;
+}
+.admin-content .admin-review-actions .btn.primary {
+ flex: 1 1 auto;
+ border: 1px solid #166f3e;
+ background: #1d8a4d;
+ color: #fff;
+}
+.admin-content .admin-review-actions .btn.primary:hover,
+.admin-content .admin-review-actions .btn.primary:active {
+ border-color: #105832;
+ background: #166f3e;
+ color: #fff;
+}
+.admin-content .admin-review-actions .btn.danger {
+ flex: 0 0 72px;
+ border: 1px solid #efb9c7;
+ background: #fff0f4;
+ color: #a52b45;
+}
 .divider {
   border: 0;
   border-top: 1px solid var(--line);
