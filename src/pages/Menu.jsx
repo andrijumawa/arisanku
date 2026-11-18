@@ -258,7 +258,7 @@ export default function Menu() {
               <button
                 key={item.to}
                 type="button"
-                className={`menu-tile is-disabled${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}${item.to === '/arisan' ? ' menu-tile-arisan' : ''}`}
+                className={`menu-tile is-disabled${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}`}
                 disabled
               >
                 <span className="menu-tile-top">
@@ -277,7 +277,7 @@ export default function Menu() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`menu-tile${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/arisan' ? ' menu-tile-arisan' : ''}`}
+                className={`menu-tile${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}${item.to === '/admin' ? ' menu-tile-admin' : ''}`}
               >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
