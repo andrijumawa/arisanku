@@ -18,6 +18,29 @@ export default function Layout() {
   const onChat = loc.pathname.startsWith('/chat');
 
   useEffect(() => {
+    const viewport = window.visualViewport;
+
+    const syncVisibleViewport = () => {
+      if (!viewport) return;
+      document.documentElement.style.setProperty('--visible-viewport-height', `${viewport.height}px`);
+      document.body.classList.toggle('keyboard-open', viewport.height < window.innerHeight - 120);
+    };
+
+    syncVisibleViewport();
+    viewport?.addEventListener('resize', syncVisibleViewport);
+    viewport?.addEventListener('scroll', syncVisibleViewport);
+    window.addEventListener('resize', syncVisibleViewport);
+
+    return () => {
+      viewport?.removeEventListener('resize', syncVisibleViewport);
+      viewport?.removeEventListener('scroll', syncVisibleViewport);
+      window.removeEventListener('resize', syncVisibleViewport);
+      document.documentElement.style.removeProperty('--visible-viewport-height');
+      document.body.classList.remove('keyboard-open');
+    };
+  }, []);
+
+  useEffect(() => {
     let startY = null;
     let scrollTarget = null;
 
@@ -117,6 +140,25 @@ export default function Layout() {
       document.removeEventListener('touchcancel', resetPull);
     };
   }, [toast]);
+
+  useEffect(() => {
+    const keepFocusedFieldVisible = (event) => {
+      const field = event.target;
+      if (!(field instanceof HTMLElement)) return;
+      if (!field.matches('input, textarea, select')) return;
+
+      window.setTimeout(() => {
+        const rect = field.getBoundingRect?.() || field.getBoundingClientRect();
+        const viewportHeight = window.visualViewport?.height || window.innerHeight;
+        if (rect.bottom > viewportHeight - 24) {
+          field.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      }, 180);
+    };
+
+    document.addEventListener('focusin', keepFocusedFieldVisible);
+    return () => document.removeEventListener('focusin', keepFocusedFieldVisible);
+  }, []);
 
   useEffect(() => {
     if (loc.pathname.startsWith('/chat')) setUnread(0);

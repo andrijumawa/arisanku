@@ -103,7 +103,7 @@ code {
   --brand-l: #e8efff;
   --gold: #7494ec;
   --gold-l: #e8efff;
-  height: 100dvh;
+  height: var(--visible-viewport-height, 100dvh);
   min-height: 0;
   display: flex;
   flex-direction: column;
@@ -243,6 +243,18 @@ code {
   overflow-y: auto;
   overscroll-behavior-y: contain;
   padding: 16px;
+  scroll-padding-block: 24px;
+  -webkit-overflow-scrolling: touch;
+}
+body.keyboard-open .main {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding-bottom: 64px;
+}
+body.keyboard-open .main input,
+body.keyboard-open .main textarea,
+body.keyboard-open .main select {
+  scroll-margin-block: 32px;
 }
 .main-menu {
   display: flex;
