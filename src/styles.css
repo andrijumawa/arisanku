@@ -1495,6 +1495,41 @@ input[type='checkbox'] {
     font-size: 11px;
   }
 }
+@media (max-width: 650px) {
+  .overlay {
+    align-items: stretch;
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+  }
+  .sheet {
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    padding-top: calc(12px + env(safe-area-inset-top));
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    padding-left: max(12px, env(safe-area-inset-left));
+    border-radius: 0;
+  }
+  .sheet-body,
+  .sheet-body > *,
+  .admin-content {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+  .admin-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .admin-content .card,
+  .admin-content input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
 @media (prefers-reduced-motion: reduce) {
   .admin-card {
     transition-duration: 0.01ms;
