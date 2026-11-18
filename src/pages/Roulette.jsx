@@ -133,10 +133,10 @@ export default function Roulette() {
   }, [session?.status, session?.id, participantNames.length]);
 
   const spinDuration = getSpinDuration(periodNo, selectedGroup?.durasi || periodNo);
+  const spinIntervalMs = Math.max(65, Math.round(110 * (spinDuration / 7000)));
 
   useEffect(() => {
     if (session?.status !== 'spinning' || !participantNames.length) return undefined;
-    const spinIntervalMs = Math.max(65, Math.round(110 * (spinDuration / 7000)));
     const timer = setInterval(() => {
       setSpinIndex((index) => (index + 1) % participantNames.length);
       setWheelAngle((angle) => angle + 18);
