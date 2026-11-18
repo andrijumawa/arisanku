@@ -77,7 +77,7 @@ export default function AdminHome() {
           return (
             <button
               key={key}
-              className="admin-card"
+              className={`admin-card${key === 'daftar' ? ' admin-card-registration' : ''}`}
               type="button"
               onClick={() => openSection(key)}
               aria-haspopup="dialog"
