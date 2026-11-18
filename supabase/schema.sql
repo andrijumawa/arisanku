@@ -95,6 +95,19 @@ create table public.groups (
   constraint paket_needs_pay  check (type <> 'paket' or (pay_period is not null and package_type is not null))
 );
 
+create table if not exists public.arisan_types (
+  code text primary key,
+  label text not null,
+  category text not null check (category in ('uang','paket')),
+  created_at timestamptz not null default now()
+);
+
+insert into public.arisan_types (code, label, category)
+values
+  ('uang', 'Arisan Uang', 'uang'),
+  ('paket', 'Arisan Paket Lebaran', 'paket')
+on conflict (code) do nothing;
+
 -- ---------------------------------------------------------------------
 -- 3. MEMBERSHIPS (pendaftaran peserta ke kelompok)
 -- ---------------------------------------------------------------------
@@ -263,6 +276,7 @@ end $$;
 -- ---------------------------------------------------------------------
 alter table public.profiles           enable row level security;
 alter table public.groups             enable row level security;
+alter table public.arisan_types       enable row level security;
 alter table public.memberships        enable row level security;
 alter table public.slots              enable row level security;
 alter table public.rounds             enable row level security;
@@ -285,8 +299,13 @@ create policy "grup: lihat" on public.groups
 create policy "grup: admin kelola" on public.groups
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
--- memberships
-create policy "member: lihat sendiri / admin" on public.memberships
+-- jenis arisan
+create policy "jenis arisan: lihat" on public.arisan_types
+  for select to authenticated using (public.is_verified());
+create policy "jenis arisan: admin kelola" on public.arisan_types
+  for all to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- membershipscreate policy "member: lihat sendiri / admin" on public.memberships
   for select to authenticated using (public.is_admin() or (public.is_verified() and user_id = auth.uid()));
 create policy "member: daftar sendiri" on public.memberships
   for insert to authenticated
@@ -352,6 +371,8 @@ create policy "push: kelola sendiri" on public.push_subscriptions
 
 -- Hak akses view nama
 grant select on public.public_profiles to authenticated;
+grant select on public.arisan_types to authenticated;
+grant insert, update, delete on public.arisan_types to authenticated;
 
 -- ---------------------------------------------------------------------
 -- 10. REALTIME (chat & notifikasi status)

@@ -39,6 +39,13 @@ export default function GroupForm() {
   const [f, setF] = useState(EMPTY);
   const [loading, setLoading] = useState(editing);
   const [busy, setBusy] = useState(false);
+  const [arisanTypes, setArisanTypes] = useState([
+    { code: 'uang', label: 'Arisan Uang', category: 'uang' },
+    { code: 'paket', label: 'Arisan Paket Lebaran', category: 'paket' },
+  ]);
+  const [showAddType, setShowAddType] = useState(false);
+  const [newTypeLabel, setNewTypeLabel] = useState('');
+  const [newTypeCategory, setNewTypeCategory] = useState('uang');
   const nominalInput = useRef(null);
   const nominalCaret = useRef(null);
 
@@ -56,6 +63,14 @@ export default function GroupForm() {
   }, [id, editing, toast]);
 
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+
+  useEffect(() => {
+    q(supabase.from('arisan_types').select('code,label,category').order('created_at', { ascending: true }))
+      .then((rows) => {
+        if (rows?.length) setArisanTypes(rows);
+      })
+      .catch(() => undefined);
+  }, []);
 
   useLayoutEffect(() => {
     if (nominalCaret.current === null || !nominalInput.current) return;
@@ -77,6 +92,39 @@ export default function GroupForm() {
     setF((current) => ({ ...current, nominal: digitsOnly(input.value) }));
   }
 
+  function selectedCategory() {
+    return arisanTypes.find((item) => item.code === f.type)?.category || (f.type === 'paket' ? 'paket' : 'uang');
+  }
+
+  async function addArisanType(e) {
+    e?.preventDefault();
+    const label = newTypeLabel.trim();
+    if (!label) return toast('Nama jenis arisan wajib diisi.', 'error');
+    if (arisanTypes.some((item) => item.label.toLowerCase() === label.toLowerCase())) {
+      return toast('Jenis arisan sudah ada.', 'error');
+    }
+
+    const code = `${newTypeCategory}-${Date.now().toString(36)}`;
+    const res = await supabase.from('arisan_types').insert({ code, label, category: newTypeCategory }).select().single();
+    if (res.error) return toast(res.error.message, 'error');
+    setArisanTypes((items) => [...items, res.data]);
+    setF((current) => ({ ...current, type: res.data.code }));
+    setNewTypeLabel('');
+    setShowAddType(false);
+    toast('Jenis arisan ditambahkan.', 'success');
+  }
+
+  async function removeArisanType(option) {
+    if (option.code === 'uang' || option.code === 'paket') {
+      return toast('Jenis dasar tidak dapat dihapus.', 'error');
+    }
+    const res = await supabase.from('arisan_types').delete().eq('code', option.code);
+    if (res.error) return toast(res.error.message, 'error');
+    setArisanTypes((items) => items.filter((item) => item.code !== option.code));
+    if (f.type === option.code) setF((current) => ({ ...current, type: option.category === 'paket' ? 'paket' : 'uang' }));
+    toast('Jenis arisan dihapus.', 'success');
+  }
+
   async function submit(e) {
     e.preventDefault();
     if (!f.name.trim()) return toast('Nama kelompok wajib diisi.', 'error');
@@ -85,11 +133,12 @@ export default function GroupForm() {
     const nominal = Number(nominalDigits);
     if (!(nominal > 0)) return toast('Nominal harus lebih dari 0.', 'error');
     if (!(Number(f.durasi) > 0)) return toast('Durasi harus lebih dari 0.', 'error');
-    if (f.type === 'paket' && !str(f.package_type)) return toast('Jenis paket wajib diisi (mis. makanan, barang).', 'error');
+    const category = selectedCategory();
+    if (category === 'paket' && !str(f.package_type)) return toast('Jenis paket wajib diisi (mis. makanan, barang).', 'error');
 
-    const uang = f.type === 'uang';
+    const uang = category === 'uang';
     const payload = {
-      type: f.type,
+      type: category,
       name: f.name.trim(),
       description: str(f.description),
       nominal,
@@ -116,7 +165,7 @@ export default function GroupForm() {
   }
 
   if (loading) return <Spinner />;
-  const uang = f.type === 'uang';
+  const uang = selectedCategory() === 'uang';
 
   return (
     <>
@@ -133,11 +182,29 @@ export default function GroupForm() {
             onValueChange={(value) => setF((current) => ({ ...current, type: value }))}
             disabled={editing}
             ariaLabel="Jenis arisan"
-            options={[
-              { value: 'uang', label: 'Arisan Uang' },
-              { value: 'paket', label: 'Arisan Paket Lebaran' },
-            ]}
+            options={arisanTypes.map((item) => ({ value: item.code, label: item.label }))}
+            onRemoveOption={!editing ? removeArisanType : undefined}
+            onAddOption={!editing ? () => setShowAddType((open) => !open) : undefined}
           />
+          {showAddType && !editing && (
+            <div className="add-arisan-type">
+              <input
+                value={newTypeLabel}
+                onChange={(event) => setNewTypeLabel(event.target.value)}
+                placeholder="Nama jenis arisan"
+              />
+              <CustomSelect
+                value={newTypeCategory}
+                onValueChange={setNewTypeCategory}
+                ariaLabel="Kategori jenis arisan"
+                options={[
+                  { value: 'uang', label: 'Kategori Uang' },
+                  { value: 'paket', label: 'Kategori Paket' },
+                ]}
+              />
+              <button type="button" className="btn primary" onClick={addArisanType}>Tambah</button>
+            </div>
+          )}
         </label>
 
         <label className="field">

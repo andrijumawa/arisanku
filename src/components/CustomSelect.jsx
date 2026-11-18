@@ -11,7 +11,7 @@ function useDismiss(ref, open, onDismiss) {
   }, [open, onDismiss, ref]);
 }
 
-export function CustomSelect({ value, options, onValueChange, disabled = false, ariaLabel }) {
+export function CustomSelect({ value, options, onValueChange, disabled = false, ariaLabel, onRemoveOption, onAddOption }) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const rootRef = useRef(null);
@@ -71,19 +71,42 @@ export function CustomSelect({ value, options, onValueChange, disabled = false, 
       {open && (
         <div className="custom-select-menu" id={id} role="listbox" aria-label={ariaLabel}>
           {options.map((option, index) => (
-            <button
-              type="button"
+            <div
               role="option"
               aria-selected={String(option.value) === String(value)}
               className={`custom-select-option${activeIndex === index ? ' is-active' : ''}`}
               key={String(option.value)}
               onMouseEnter={() => setActiveIndex(index)}
-              onClick={() => choose(index)}
             >
-              <span>{option.label}</span>
-              {String(option.value) === String(value) && <span className="custom-select-check" aria-hidden="true">✓</span>}
-            </button>
+              <button
+                type="button"
+                className="custom-select-choice"
+                onClick={() => choose(index)}
+              >
+                <span>{option.label}</span>
+                {String(option.value) === String(value) && <span className="custom-select-check" aria-hidden="true">✓</span>}
+              </button>
+              {onRemoveOption && (
+                <button
+                  type="button"
+                  className="custom-select-remove"
+                  aria-label={`Hapus ${option.label}`}
+                  title={`Hapus ${option.label}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onRemoveOption(option);
+                  }}
+                >
+                  ×
+                </button>
+              )}
+            </div>
           ))}
+          {onAddOption && (
+            <button type="button" className="custom-select-add" onClick={onAddOption}>
+              + Tambah jenis arisan
+            </button>
+          )}
         </div>
       )}
     </div>

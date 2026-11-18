@@ -1177,6 +1177,48 @@ textarea:focus {
   cursor: pointer;
   transition: background 140ms ease, color 140ms ease;
 }
+.custom-select-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  min-width: 0;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.custom-select-remove {
+  flex: 0 0 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #9b3d3d;
+  font-size: 20px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.custom-select-remove:hover {
+  background: #fee8e8;
+}
+.custom-select-add {
+  width: 100%;
+  margin-top: 5px;
+  padding: 9px 11px;
+  border: 0;
+  border-top: 1px solid rgba(95, 128, 224, 0.12);
+  background: transparent;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
 .custom-select-option:hover,
 .custom-select-option.is-active {
   background: var(--brand-l);
@@ -1187,6 +1229,21 @@ textarea:focus {
 }
 .custom-select-check {
   color: var(--brand);
+}
+.add-arisan-type {
+  display: grid;
+  grid-template-columns: 1fr 150px auto;
+  gap: 8px;
+  margin-top: 8px;
+}
+.add-arisan-type .btn {
+  height: 44px;
+  padding: 0 14px;
+}
+@media (max-width: 520px) {
+  .add-arisan-type {
+    grid-template-columns: 1fr;
+  }
 }
 .custom-combobox input {
   padding-right: 12px;
