@@ -33,6 +33,11 @@ body,
 #root {
   height: 100%;
 }
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
 body {
   margin: 0;
   overscroll-behavior-y: none;
@@ -104,6 +109,7 @@ code {
   flex-direction: column;
   background: var(--bg);
   isolation: isolate;
+  overflow-x: clip;
 }
 .app-watermark {
   position: absolute;
