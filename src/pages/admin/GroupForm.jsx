@@ -92,6 +92,57 @@ export default function GroupForm() {
     setF((current) => ({ ...current, nominal: digitsOnly(input.value) }));
   }
 
+  function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function calculateEndDate(startDate, period, duration) {
+    if (!startDate || !(Number(duration) > 0)) return '';
+    const date = new Date(`${startDate}T12:00:00`);
+    if (Number.isNaN(date.getTime())) return '';
+
+    if (period === 'harian') date.setDate(date.getDate() + Number(duration) - 1);
+    if (period === 'mingguan') date.setDate(date.getDate() + (Number(duration) - 1) * 7);
+    if (period === 'bulanan') {
+      const day = date.getDate();
+      date.setDate(1);
+      date.setMonth(date.getMonth() + Number(duration) - 1);
+      const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      date.setDate(Math.min(day, lastDay));
+    }
+    return formatDate(date);
+  }
+
+  function setMaxSlots(event) {
+    const maxSlots = event.target.value;
+    setF((current) => ({
+      ...current,
+      max_slots: maxSlots,
+      durasi: maxSlots,
+      end_date: calculateEndDate(current.start_date, current.pay_period, maxSlots),
+    }));
+  }
+
+  function setPeriod(value) {
+    setF((current) => ({
+      ...current,
+      pay_period: value,
+      end_date: calculateEndDate(current.start_date, value, current.durasi),
+    }));
+  }
+
+  function setStartDate(event) {
+    const startDate = event.target.value;
+    setF((current) => ({
+      ...current,
+      start_date: startDate,
+      end_date: calculateEndDate(startDate, current.pay_period, current.durasi),
+    }));
+  }
+
   function selectedCategory() {
     return arisanTypes.find((item) => item.code === f.type)?.category || (f.type === 'paket' ? 'paket' : 'uang');
   }
@@ -145,7 +196,7 @@ export default function GroupForm() {
       durasi: Number(f.durasi),
       max_slots: num(f.max_slots),
       draw_mode: uang ? f.draw_mode : null,
-      pay_period: uang ? null : f.pay_period,
+      pay_period: f.pay_period,
       package_type: uang ? null : str(f.package_type)?.toLowerCase(),
       package_detail: uang ? null : str(f.package_detail),
       start_date: str(f.start_date),
@@ -218,10 +269,25 @@ export default function GroupForm() {
           )}
         </label>
 
-        <label className="field">
-          <span>Nama kelompok</span>
-          <input value={f.name} onChange={set('name')} placeholder={uang ? 'Arisan Uang 1 Juta A' : 'Paket Sembako Mingguan'} required />
-        </label>
+        <div className="grid2">
+          <label className="field">
+            <span>Nama kelompok</span>
+            <input value={f.name} onChange={set('name')} placeholder={uang ? 'Arisan Uang 1 Juta A' : 'Paket Sembako Mingguan'} required />
+          </label>
+          <label className="field">
+            <span>Periode pembayaran</span>
+            <CustomSelect
+              value={f.pay_period}
+              onValueChange={setPeriod}
+              ariaLabel="Periode pembayaran"
+              options={[
+                { value: 'harian', label: 'Harian' },
+                { value: 'mingguan', label: 'Mingguan' },
+                { value: 'bulanan', label: 'Bulanan' },
+              ]}
+            />
+          </label>
+        </div>
 
         <label className="field">
           <span>Deskripsi (opsional)</span>
@@ -230,7 +296,7 @@ export default function GroupForm() {
 
         <div className="grid2">
           <label className="field">
-            <span>{uang ? 'Iuran per bulan (Rp)' : 'Cicilan per periode (Rp)'}</span>
+            <span>{uang ? `Iuran per ${f.pay_period === 'harian' ? 'hari' : f.pay_period === 'mingguan' ? 'minggu' : 'bulan'} (Rp)` : `Cicilan per ${f.pay_period === 'harian' ? 'hari' : f.pay_period === 'mingguan' ? 'minggu' : 'bulan'} (Rp)`}</span>
             <input
               ref={nominalInput}
               type="text"
@@ -243,10 +309,15 @@ export default function GroupForm() {
             />
           </label>
           <label className="field">
-            <span>{uang ? 'Durasi (putaran)' : 'Jumlah cicilan'}</span>
-            <input type="number" min="1" inputMode="numeric" value={f.durasi} onChange={set('durasi')} required />
+            <span>Batas jumlah slot</span>
+            <input type="number" min="1" inputMode="numeric" value={f.max_slots} onChange={setMaxSlots} placeholder="Contoh: 20" />
           </label>
         </div>
+        {f.durasi && (
+          <div className="hint duration-auto-hint">
+            Durasi otomatis: {f.durasi} {f.pay_period === 'harian' ? 'hari' : f.pay_period === 'mingguan' ? 'minggu' : 'bulan'}
+          </div>
+        )}
 
         {uang ? (
           <>
@@ -262,27 +333,9 @@ export default function GroupForm() {
                 ]}
               />
             </label>
-            <label className="field">
-              <span>Batas jumlah slot (opsional)</span>
-              <input type="number" min="1" inputMode="numeric" value={f.max_slots} onChange={set('max_slots')} />
-              <div className="hint">Kosongkan jika tidak dibatasi. Biasanya sama dengan jumlah putaran.</div>
-            </label>
           </>
         ) : (
           <>
-            <label className="field">
-              <span>Skema pembayaran</span>
-              <CustomSelect
-                value={f.pay_period}
-                onValueChange={(value) => setF((current) => ({ ...current, pay_period: value }))}
-                ariaLabel="Skema pembayaran"
-                options={[
-                  { value: 'harian', label: 'Harian' },
-                  { value: 'mingguan', label: 'Mingguan' },
-                  { value: 'bulanan', label: 'Bulanan' },
-                ]}
-              />
-            </label>
             <label className="field">
               <span>Jenis paket</span>
               <CustomCombobox
@@ -309,11 +362,11 @@ export default function GroupForm() {
         <div className="grid2">
           <label className="field">
             <span>Tanggal mulai</span>
-            <input type="date" value={f.start_date || ''} onChange={set('start_date')} />
+            <input type="date" value={f.start_date || ''} onChange={setStartDate} />
           </label>
           <label className="field">
             <span>Batas akhir bayar</span>
-            <input type="date" value={f.end_date || ''} onChange={set('end_date')} />
+            <input type="date" value={f.end_date || ''} readOnly />
           </label>
         </div>
 

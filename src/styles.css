@@ -1288,6 +1288,9 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+.duration-auto-hint {
+  margin: -4px 0 12px;
+}
 .custom-combobox input {
   padding-right: 12px;
 }
