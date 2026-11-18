@@ -14,7 +14,7 @@ function getSpinDuration(roundNo, totalRounds) {
   return Math.max(3000, Math.round(3000 + 4000 * remainingRatio));
 }
 
-const WHEEL_COLORS = ['#596fd6', '#e76b73', '#e9b64f', '#45a989', '#9872ca', '#d65785', '#4b98c4', '#e18957'];
+const WHEEL_COLORS = ['#ee746e', '#e7b955', '#4fba9a', '#9b78d8', '#d96388', '#7566e8', '#5598d4', '#e58b61'];
 
 export default function Roulette() {
   const { isAdmin, session: authSession } = useAuth();
@@ -155,7 +155,7 @@ export default function Roulette() {
       const color = WHEEL_COLORS[index % WHEEL_COLORS.length];
       return `${color} ${start}deg ${end}deg`;
     });
-    return `conic-gradient(from -90deg, ${sectors.join(', ')})`;
+    return `conic-gradient(from ${-90 - slice / 2}deg, ${sectors.join(', ')})`;
   }, [participantNames]);
 
   const spinDuration = getSpinDuration(periodNo, activeParticipants.length || periodNo);
@@ -167,7 +167,7 @@ export default function Roulette() {
       ? Math.max(0, Date.now() - new Date(session.spin_started_at).getTime())
       : 0;
     const remaining = Math.max(0, spinDuration - elapsed);
-    const selectedAngle = (360 - (180 / participantNames.length)) % 360;
+    const selectedAngle = 0;
     const targetAngle = 360 * 6 + selectedAngle;
     setWheelAngle(0);
     setWheelTransitionDuration(remaining);
@@ -317,14 +317,17 @@ export default function Roulette() {
                 >
                   <div className="roulette-wheel-labels">
                     {participantNames.map((name, index) => {
-                      const angle = participantNames.length ? -90 + (360 / participantNames.length) * (index + 0.5) : -90;
+                      const angle = participantNames.length ? -90 + (360 / participantNames.length) * index : -90;
                       const radians = (angle * Math.PI) / 180;
-                      const radius = 34;
+                      const radius = 59;
                       const left = 50 + radius * Math.cos(radians);
                       const top = 50 + radius * Math.sin(radians);
-                      const maxLength = participantNames.length >= 18 ? 7 : participantNames.length >= 13 ? 10 : 16;
+                      const maxLength = participantNames.length >= 18 ? 7 : participantNames.length >= 13 ? 10 : 20;
                       const label = name.length > maxLength ? `${name.slice(0, maxLength - 1)}…` : name;
-                      const labelAngle = angle > 90 && angle < 270 ? angle - 90 : angle + 90;
+                      const normalizedAngle = (angle + 360) % 360;
+                      const labelAngle = normalizedAngle >= 90 && normalizedAngle < 270
+                        ? angle - 90
+                        : angle + 90;
                       return (
                         <span
                           key={`${name}-${index}`}
@@ -341,7 +344,10 @@ export default function Roulette() {
                       );
                     })}
                   </div>
-                  <div className="roulette-wheel-center" aria-hidden="true" />
+                  <div className="roulette-wheel-center" aria-hidden="true">
+                    <strong>KOCOK</strong>
+                    <span>ARISAN</span>
+                  </div>
                 </div>
               </div>
               <span className="roulette-machine-status">
