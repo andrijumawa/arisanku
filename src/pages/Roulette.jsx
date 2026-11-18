@@ -187,8 +187,24 @@ export default function Roulette() {
     }
   }
 
+  async function cancelResult() {
+    if (!session?.id) return;
+    if (!window.confirm('Batalkan hasil Rolet ini? Hasil belum disimpan, jadi putaran ini bisa dimulai ulang.')) return;
+    setBusy(true);
+    try {
+      await q(supabase.rpc('cancel_roulette_session', { p_session: session.id }));
+      await liveState.reload();
+      toast('Hasil Rolet dibatalkan. Putaran ini bisa dimulai ulang.', 'success');
+    } catch (error) {
+      toast(error.message || 'Gagal membatalkan hasil Rolet.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const spinning = session?.status === 'spinning';
   const saved = session?.status === 'saved';
+  const cancelled = session?.status === 'cancelled';
   const displayedName = participantNames.length
     ? participantNames[spinIndex % participantNames.length]
     : 'Menunggu peserta';
@@ -280,9 +296,9 @@ export default function Roulette() {
 
             {isAdmin && (
               <div className="roulette-admin-controls">
-                {!session || saved ? (
+                {!session || saved || cancelled ? (
                   <button className="btn primary" onClick={startRoulette} disabled={busy || spinning}>
-                    <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : saved ? `Mulai putaran ${periodNo}` : `Mulai putaran ${periodNo}`}
+                    <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : `Mulai putaran ${periodNo}`}
                   </button>
                 ) : spinning ? (
                   <p className="muted small">Rolet sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
@@ -290,6 +306,9 @@ export default function Roulette() {
                   <div className="row wrap">
                     <button className="btn primary" onClick={saveResult} disabled={busy}>
                       Simpan pemenang putaran {periodNo}
+                    </button>
+                    <button className="btn danger" onClick={cancelResult} disabled={busy}>
+                      Batalkan hasil
                     </button>
                   </div>
                 )}

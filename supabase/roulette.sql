@@ -18,7 +18,7 @@ alter table public.roulette_sessions add column if not exists spin_started_at ti
 alter table public.roulette_sessions alter column status set default 'active';
 alter table public.roulette_sessions drop constraint if exists roulette_sessions_status_check;
 alter table public.roulette_sessions add constraint roulette_sessions_status_check
-  check (status in ('active','spinning','saved'));
+  check (status in ('active','spinning','saved','cancelled'));
 
 drop index if exists public.roulette_one_active_session_per_group;
 create unique index if not exists roulette_one_active_session_per_period
@@ -230,11 +230,36 @@ begin
   return draw_id;
 end $$;
 
+create or replace function public.cancel_roulette_session(p_session uuid)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  s public.roulette_sessions;
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin yang dapat membatalkan Rolet';
+  end if;
+
+  select * into s
+  from public.roulette_sessions
+  where id = p_session
+  for update;
+
+  if not found or s.status not in ('active','spinning') then
+    raise exception 'Hasil Rolet tidak dapat dibatalkan';
+  end if;
+
+  update public.roulette_sessions
+  set status = 'cancelled', updated_at = now()
+  where id = s.id;
+end $$;
+
 revoke all on function public.start_roulette_session(uuid, integer) from public;
 revoke all on function public.run_roulette_attempt(uuid) from public;
 revoke all on function public.finish_roulette_attempt(uuid) from public;
 revoke all on function public.save_roulette_attempt(uuid) from public;
+revoke all on function public.cancel_roulette_session(uuid) from public;
 grant execute on function public.start_roulette_session(uuid, integer) to authenticated;
 grant execute on function public.run_roulette_attempt(uuid) to authenticated;
 grant execute on function public.finish_roulette_attempt(uuid) to authenticated;
 grant execute on function public.save_roulette_attempt(uuid) to authenticated;
+grant execute on function public.cancel_roulette_session(uuid) to authenticated;
