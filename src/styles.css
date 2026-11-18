@@ -20,6 +20,7 @@
   --menu-card-shadow: 0 9px 20px rgba(68, 93, 154, 0.1), inset 0 1px rgba(255, 255, 255, 0.8);
   --hdr: 54px;
   --nav: calc(76px + env(safe-area-inset-bottom));
+  --app-back-lift: max(0px, calc(24px - env(safe-area-inset-bottom)));
   --radius: 16px;
 }
 
@@ -185,7 +186,7 @@ code {
   margin: 0 auto;
   overflow-y: auto;
   overscroll-behavior-y: contain;
-  padding: 16px 16px calc(var(--nav) + 16px);
+  padding: 16px 16px calc(var(--nav) + var(--app-back-lift) + 16px);
 }
 .main-menu {
   display: flex;
@@ -210,7 +211,7 @@ code {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--app-back-lift);
   z-index: 20;
   height: var(--nav);
   background: var(--bg);
