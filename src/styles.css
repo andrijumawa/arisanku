@@ -479,7 +479,7 @@ code {
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.84);
   border-radius: 19px;
-  background: var(--menu-card-surface);
+  background: linear-gradient(145deg, #fff, #f0f5ff);
   color: #2e3c58;
   font: inherit;
   text-align: left;
