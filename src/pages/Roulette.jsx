@@ -205,7 +205,6 @@ export default function Roulette() {
     return undefined;
   }, [
     participantNames.length,
-    remainingSpinDuration,
     session?.attempt_count,
     session?.id,
     session?.spin_started_at,
