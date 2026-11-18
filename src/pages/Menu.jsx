@@ -21,27 +21,35 @@ export default function Menu() {
     && profile?.account_status !== 'ditolak';
   const accountRejected = !isAdmin && profile?.account_status === 'ditolak';
   const adminCountsState = useAsync(async () => {
-    if (!isAdmin) return { registrations: 0, payments: 0 };
-    const [registrations, payments] = await Promise.all([
+    if (!isAdmin) return { registrations: 0, payments: 0, participants: 0 };
+    const [registrations, payments, participants] = await Promise.all([
       supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
       supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
+      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_status', 'menunggu'),
     ]);
     if (registrations.error) throw registrations.error;
     if (payments.error) throw payments.error;
+    if (participants.error) throw participants.error;
     return {
       registrations: registrations.count || 0,
       payments: payments.count || 0,
+      participants: participants.count || 0,
     };
   }, [isAdmin]);
   useRealtimeRefresh(
     adminCountsState.reload,
     'menu-admin-counts',
-    [{ table: 'memberships' }, { table: 'payments' }],
+    [{ table: 'memberships' }, { table: 'payments' }, { table: 'profiles' }],
     isAdmin
   );
-  const adminPendingCount = (adminCountsState.data?.registrations || 0) + (adminCountsState.data?.payments || 0);
+  const adminNotifications = {
+    registrations: adminCountsState.data?.registrations || 0,
+    payments: adminCountsState.data?.payments || 0,
+    participants: adminCountsState.data?.participants || 0,
+  };
+  const adminPendingCount = adminNotifications.registrations + adminNotifications.payments + adminNotifications.participants;
   const adminDescription = adminPendingCount > 0
-    ? `${adminCountsState.data.registrations} pendaftaran · ${adminCountsState.data.payments} pembayaran menunggu`
+    ? `${adminNotifications.registrations} pendaftaran · ${adminNotifications.payments} pembayaran · ${adminNotifications.participants} peserta menunggu`
     : 'Kelola akun dan kelompok';
   const items = [
     { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
@@ -49,7 +57,14 @@ export default function Menu() {
     { to: '/rolet', icon: 'dice', label: 'Rolet', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected },
     { to: '/hasil-rolet', icon: 'check', label: 'Hasil Rolet', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected },
     { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
-    ...(isAdmin ? [{ to: '/admin', icon: 'tools', label: 'Admin', description: adminDescription, count: adminPendingCount }] : []),
+    ...(isAdmin ? [{
+      to: '/admin',
+      icon: 'tools',
+      label: 'Admin',
+      description: adminDescription,
+      count: adminPendingCount,
+      adminNotifications,
+    }] : []),
     { to: '/akun', icon: 'user', label: 'Akun', description: 'Atur informasi profil', disabled: accountPending || accountRejected },
     { action: 'logout', icon: 'logout', label: signingOut ? 'Keluar…' : 'Keluar', description: 'Akhiri sesi akun' },
   ];
@@ -249,7 +264,15 @@ export default function Menu() {
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   <span className="menu-tile-arrow"><Icon name="arrowRight" size={17} /></span>
-                  {item.count > 0 && <span className="menu-tile-count">{item.count > 9 ? '9+' : item.count}</span>}
+                  {item.adminNotifications ? (
+                    <span className="menu-admin-notifications" aria-label={`${item.adminNotifications.registrations} pendaftaran, ${item.adminNotifications.payments} pembayaran, ${item.adminNotifications.participants} peserta menunggu`}>
+                      {item.adminNotifications.registrations > 0 && <span className="menu-admin-notice"><b>Pendaftaran</b>{item.adminNotifications.registrations > 9 ? '9+' : item.adminNotifications.registrations}</span>}
+                      {item.adminNotifications.payments > 0 && <span className="menu-admin-notice"><b>Pembayaran</b>{item.adminNotifications.payments > 9 ? '9+' : item.adminNotifications.payments}</span>}
+                      {item.adminNotifications.participants > 0 && <span className="menu-admin-notice"><b>Peserta</b>{item.adminNotifications.participants > 9 ? '9+' : item.adminNotifications.participants}</span>}
+                    </span>
+                  ) : item.count > 0 ? (
+                    <span className="menu-tile-count">{item.count > 9 ? '9+' : item.count}</span>
+                  ) : null}
                 </span>
                 <span className="menu-tile-copy">
                   <strong>{item.label}</strong>

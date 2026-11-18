@@ -597,16 +597,39 @@ body.keyboard-open .main select {
   color: #554b20;
   box-shadow: 0 14px 24px rgba(130, 113, 35, 0.16), inset 0 1px rgba(255, 255, 255, 0.9);
 }
-.menu-tile-admin .menu-tile-count {
- top: -7px;
- right: 26px;
- min-width: 24px;
- height: 24px;
- border-width: 2px;
- background: #d91c5c;
- font-size: 11px;
- box-shadow: 0 4px 10px rgba(217, 28, 92, 0.28);
- animation: menu-admin-count-pulse 1.4s ease-in-out infinite;
+.menu-admin-notifications {
+  position: absolute;
+  z-index: 3;
+  top: -5px;
+  right: 26px;
+  display: flex;
+  gap: 4px;
+}
+.menu-admin-notice {
+  display: grid;
+  min-width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  background: #d91c5c;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 4px 10px rgba(217, 28, 92, 0.28);
+  animation: menu-admin-count-pulse 1.4s ease-in-out infinite;
+}
+.menu-admin-notice b {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+.menu-tile-admin .menu-tile-arrow {
+  z-index: 2;
 }
 @keyframes menu-admin-count-pulse {
  50% { transform: scale(1.08); }
@@ -1718,7 +1741,14 @@ input[type='checkbox'] {
   opacity: 0.65;
 }
 .admin-person-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(72px, auto);
+  width: 100%;
   margin-top: 7px;
+}
+.admin-person-actions .btn {
+  width: 100%;
+  white-space: nowrap;
 }
 .admin-content .admin-person-actions .btn {
   min-height: 34px;

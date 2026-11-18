@@ -398,11 +398,11 @@ function People({ revision }) {
           </div>
           {p.account_status !== 'disetujui' && (
             <div className="actions admin-person-actions">
-              <button className="btn primary sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'disetujui')}>
-                {busyId === p.id ? 'Memproses…' : 'Setujui akun'}
+              <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'disetujui')}>
+                {busyId === p.id ? 'Memproses…' : 'Terima peserta'}
               </button>
               {p.account_status !== 'ditolak' && (
-                <button className="btn danger sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'ditolak')}>
+                <button type="button" className="btn danger sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'ditolak')}>
                   Tolak
                 </button>
               )}
