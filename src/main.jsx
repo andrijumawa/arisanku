@@ -20,6 +20,21 @@ createRoot(document.getElementById('root')).render(
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {});
+    let controllerWasPresent = Boolean(navigator.serviceWorker.controller);
+    let reloadedForUpdate = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!controllerWasPresent) {
+        controllerWasPresent = true;
+        return;
+      }
+      if (reloadedForUpdate) return;
+      reloadedForUpdate = true;
+      window.location.reload();
+    });
+
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`, { updateViaCache: 'none' })
+      .then((registration) => registration.update())
+      .catch((error) => console.error('Gagal memeriksa pembaruan aplikasi:', error));
   });
 }

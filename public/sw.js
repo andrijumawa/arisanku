@@ -1,3 +1,4 @@
+// Service worker version: roulette-wheel-refresh-2026-11-18
 // Service worker: Web Push + agar aplikasi bisa di-install (PWA)
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
