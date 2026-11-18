@@ -20,7 +20,7 @@
   --menu-card-shadow: 0 9px 20px rgba(68, 93, 154, 0.1), inset 0 1px rgba(255, 255, 255, 0.8);
   --hdr: 54px;
   --nav: calc(76px + env(safe-area-inset-bottom));
-  --app-back-lift: max(0px, calc(24px - env(safe-area-inset-bottom)));
+  --app-back-lift: max(32px, env(safe-area-inset-bottom));
   --radius: 16px;
 }
 
@@ -213,10 +213,10 @@ code {
   right: 0;
   bottom: var(--app-back-lift);
   z-index: 20;
-  height: var(--nav);
+  height: 76px;
   background: var(--bg);
   border-top: 1px solid var(--line);
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  padding: 10px 16px;
   display: flex;
   align-items: center;
 }
