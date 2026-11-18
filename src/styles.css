@@ -1214,7 +1214,9 @@ input[type='checkbox'] {
   --admin-border: #d6e0f5;
   --admin-muted: #667085;
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   width: 100%;
+  min-height: 100%;
   min-width: 0;
   gap: 12px;
   font-family: Poppins, sans-serif;
@@ -1248,6 +1250,8 @@ input[type='checkbox'] {
 .admin-cards {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: repeat(4, minmax(0, 1fr));
+  min-height: 0;
   min-width: 0;
   gap: var(--menu-card-gap);
 }
