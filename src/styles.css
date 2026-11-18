@@ -1952,15 +1952,32 @@ input[type='checkbox'] {
     opacity: 0;
   }
 }
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
 @media (max-width: 650px) {
   .overlay {
-    padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
-      max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+    align-items: end;
+    padding: max(12px, env(safe-area-inset-top)) 0 0 0;
+    animation: overlay-in 0.2s ease-out;
   }
   .sheet {
+    place-self: end center;
     width: 100%;
     max-width: 560px;
-    padding: 14px;
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top)));
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+    border-bottom-width: 0;
+    animation: sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   }
   .sheet-body > *,
   .admin-content,
@@ -1969,6 +1986,12 @@ input[type='checkbox'] {
     width: 100%;
     max-width: 100%;
     min-width: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .sheet {
+    animation-duration: 0.01ms;
   }
 }
 
