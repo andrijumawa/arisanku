@@ -35,6 +35,7 @@ body,
 }
 body {
   margin: 0;
+  overscroll-behavior-y: none;
   background: var(--bg);
   color: var(--ink);
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -142,6 +143,55 @@ code {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.pull-refresh-indicator {
+  position: fixed;
+  z-index: 19;
+  top: calc(var(--hdr) + env(safe-area-inset-top) + 10px);
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 5px 16px rgba(38, 50, 72, 0.14);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, calc(-100% + var(--pull-distance, 0px)));
+  transition: opacity 140ms ease;
+}
+.pull-refresh-indicator.is-pulling,
+.pull-refresh-indicator.is-ready,
+.pull-refresh-indicator.is-refreshing {
+  opacity: 1;
+}
+.pull-refresh-icon {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-45deg);
+}
+.pull-refresh-indicator.is-ready .pull-refresh-icon {
+  border-right-color: currentColor;
+  transform: rotate(135deg);
+}
+.pull-refresh-indicator.is-refreshing .pull-refresh-icon {
+  border-right-color: transparent;
+  animation: pull-refresh-spin 700ms linear infinite;
+}
+@keyframes pull-refresh-spin {
+  to {
+    transform: rotate(315deg);
+  }
 }
 .brand-logo {
   display: block;

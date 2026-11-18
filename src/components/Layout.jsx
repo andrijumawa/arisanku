@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase } from '../lib/supabase';
@@ -10,8 +10,113 @@ export default function Layout() {
   const toast = useToast();
   const loc = useLocation();
   const [unread, setUnread] = useState(0);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [pullState, setPullState] = useState('idle');
+  const pullStartRef = useRef(null);
+  const pullDistanceRef = useRef(0);
   const uid = session.user.id;
   const onChat = loc.pathname.startsWith('/chat');
+
+  useEffect(() => {
+    let startY = null;
+    let scrollTarget = null;
+
+    const findScrollTarget = (target) => {
+      let element = target instanceof Element ? target : null;
+      while (element && element !== document.body) {
+        const overflowY = getComputedStyle(element).overflowY;
+        if (
+          (overflowY === 'auto' || overflowY === 'scroll') &&
+          element.scrollHeight > element.clientHeight + 1
+        ) {
+          return element;
+        }
+        element = element.parentElement;
+      }
+      return document.scrollingElement;
+    };
+
+    const onTouchStart = (event) => {
+      if (event.touches.length !== 1 || pullStartRef.current) return;
+      if (event.target.closest?.('input, textarea, select, button, a')) return;
+      const target = findScrollTarget(event.target);
+      if (target && target.scrollTop > 0) return;
+      startY = event.touches[0].clientY;
+      scrollTarget = target;
+      pullStartRef.current = true;
+    };
+
+    const onTouchMove = (event) => {
+      if (!pullStartRef.current || event.touches.length !== 1) return;
+      const distance = event.touches[0].clientY - startY;
+      if (distance <= 0) {
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+        setPullState('idle');
+        return;
+      }
+      if (scrollTarget && scrollTarget.scrollTop > 0) {
+        pullStartRef.current = false;
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+        setPullState('idle');
+        return;
+      }
+      event.preventDefault();
+      const nextDistance = Math.min(distance, 96);
+      pullDistanceRef.current = nextDistance;
+      setPullDistance(nextDistance);
+      setPullState(distance >= 76 ? 'ready' : 'pulling');
+    };
+
+    const resetPull = () => {
+      pullStartRef.current = false;
+      startY = null;
+      scrollTarget = null;
+      pullDistanceRef.current = 0;
+      setPullDistance(0);
+      setPullState('idle');
+    };
+
+    const onTouchEnd = async () => {
+      if (!pullStartRef.current) return;
+      const shouldRefresh = pullDistanceRef.current >= 76;
+      pullStartRef.current = false;
+      startY = null;
+      scrollTarget = null;
+      if (!shouldRefresh) {
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+        setPullState('idle');
+        return;
+      }
+
+      setPullDistance(76);
+      setPullState('refreshing');
+      try {
+        const registration = await navigator.serviceWorker?.getRegistration();
+        if (registration) await registration.update();
+        window.location.reload();
+      } catch (error) {
+        console.error('Pull-to-refresh update check failed:', error);
+        toast('Pembaruan gagal diperiksa. Coba tarik lagi.', 'error');
+        pullDistanceRef.current = 0;
+        setPullDistance(0);
+        setPullState('idle');
+      }
+    };
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove', onTouchMove, { passive: false });
+    document.addEventListener('touchend', onTouchEnd, { passive: true });
+    document.addEventListener('touchcancel', resetPull, { passive: true });
+    return () => {
+      document.removeEventListener('touchstart', onTouchStart);
+      document.removeEventListener('touchmove', onTouchMove);
+      document.removeEventListener('touchend', onTouchEnd);
+      document.removeEventListener('touchcancel', resetPull);
+    };
+  }, [toast]);
 
   useEffect(() => {
     if (loc.pathname.startsWith('/chat')) setUnread(0);
@@ -75,6 +180,22 @@ export default function Layout() {
           </span>
         </div>
       </header>
+
+      {pullState !== 'idle' && (
+        <div
+          className={`pull-refresh-indicator is-${pullState}`}
+          style={{ '--pull-distance': `${pullDistance}px` }}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="pull-refresh-icon" aria-hidden="true" />
+          {pullState === 'refreshing'
+            ? 'Memeriksa pembaruan…'
+            : pullState === 'ready'
+              ? 'Lepaskan untuk memperbarui'
+              : 'Tarik untuk memperbarui'}
+        </div>
+      )}
 
       <main
         className={
