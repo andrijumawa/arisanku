@@ -101,7 +101,7 @@ function BrowseGroupCard({ group, status, onJoin }) {
   );
 }
 
-export default function Browse({ embedded = false, excludeMine = false }) {
+export default function Browse() {
   const { session } = useAuth();
   const uid = session.user.id;
   const toast = useToast();
@@ -129,7 +129,7 @@ export default function Browse({ embedded = false, excludeMine = false }) {
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
   const { groups, mine } = data;
-  const list = groups.filter((g) => (g.is_open || mine[g.id]) && (!excludeMine || !mine[g.id]));
+  const list = groups.filter((g) => g.is_open || mine[g.id]);
 
   async function join() {
     setBusy(true);
@@ -146,23 +146,13 @@ export default function Browse({ embedded = false, excludeMine = false }) {
 
   return (
     <>
-      {embedded ? (
-        <header className="home-section-heading home-discover-heading" id="kelompok-tersedia">
-          <span className="home-section-icon"><Icon name="search" size={19} /></span>
-          <div>
-            <h2>Temukan arisan</h2>
-            <p>Pilih kelompok yang sedang membuka pendaftaran</p>
-          </div>
-        </header>
-      ) : <h2>Pilih Arisan</h2>}
+      <h2>Pilih Arisan</h2>
       {list.length === 0 ? (
-        <Empty icon="search" title={excludeMine ? 'Belum ada kelompok baru' : 'Belum ada arisan yang dibuka'}>
-          {excludeMine
-            ? 'Kelompok yang membuka pendaftaran akan muncul di sini.'
-            : 'Admin akan membuka kelompok baru. Cek lagi nanti.'}
+        <Empty icon="search" title="Belum ada arisan yang dibuka">
+          Admin akan membuka kelompok baru. Cek lagi nanti.
         </Empty>
       ) : (
-        <div className={`browse-groups${embedded ? ' browse-groups-embedded' : ''}`}>
+        <div className="browse-groups">
           {list.map((group) => (
             <BrowseGroupCard
               key={group.id}
