@@ -361,37 +361,40 @@ function People({ revision }) {
         </Empty>
       )}
       {list.map((p) => (
-        <div key={p.id} className="card">
-          <div className="person">
+        <div key={p.id} className="card admin-person-card">
+          <div className="admin-person-row">
             <div className="avatar">{initial(p.full_name)}</div>
-            <div style={{ flex: 1 }}>
-              <b>{p.full_name}</b>
+            <div className="admin-person-info">
+              <div className="admin-person-name-line">
+                <b>{p.full_name}</b>
+                {p.role === 'admin' && <span className="badge gold">Admin</span>}
+                <span className={`badge ${p.account_status === 'disetujui' ? 'ok' : p.account_status === 'ditolak' ? 'bad' : 'wait'}`}>
+                  {p.account_status === 'disetujui' ? 'Terverifikasi' : p.account_status === 'ditolak' ? 'Ditolak' : 'Menunggu verifikasi'}
+                </span>
+              </div>
               <div className="muted small">{p.phone}</div>
             </div>
+            {p.id !== session.user.id && (
+              <button
+                className="admin-role-button"
+                type="button"
+                disabled={busyId === p.id}
+                onClick={() => toggleRole(p)}
+                aria-label={p.role === 'admin' ? `Cabut hak admin ${p.full_name}` : `Jadikan ${p.full_name} admin`}
+                title={p.role === 'admin' ? 'Cabut hak admin' : 'Jadikan admin'}
+              >
+                <Icon name={busyId === p.id ? 'clock' : p.role === 'admin' ? 'userMinus' : 'userPlus'} size={18} />
+              </button>
+            )}
           </div>
-          <div className="person-badges">
-            {p.role === 'admin' && <span className="badge gold">Admin</span>}
-            <span className={`badge ${p.account_status === 'disetujui' ? 'ok' : p.account_status === 'ditolak' ? 'bad' : 'wait'}`}>
-              {p.account_status === 'disetujui' ? 'Terverifikasi' : p.account_status === 'ditolak' ? 'Ditolak' : 'Menunggu verifikasi'}
-            </span>
-          </div>
-          {(p.account_status !== 'disetujui' || p.id !== session.user.id) && (
-            <div className="actions">
-              {p.account_status !== 'disetujui' && (
-                <>
-                  <button className="btn primary sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'disetujui')}>
-                    {busyId === p.id ? 'Memproses…' : 'Setujui akun'}
-                  </button>
-                  {p.account_status !== 'ditolak' && (
-                    <button className="btn danger sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'ditolak')}>
-                      Tolak
-                    </button>
-                  )}
-                </>
-              )}
-              {p.id !== session.user.id && (
-                <button className="btn sm" disabled={busyId === p.id} onClick={() => toggleRole(p)}>
-                  {busyId === p.id ? 'Memproses…' : p.role === 'admin' ? 'Cabut admin' : 'Jadikan admin'}
+          {p.account_status !== 'disetujui' && (
+            <div className="actions admin-person-actions">
+              <button className="btn primary sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'disetujui')}>
+                {busyId === p.id ? 'Memproses…' : 'Setujui akun'}
+              </button>
+              {p.account_status !== 'ditolak' && (
+                <button className="btn danger sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'ditolak')}>
+                  Tolak
                 </button>
               )}
             </div>

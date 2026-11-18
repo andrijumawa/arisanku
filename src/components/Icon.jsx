@@ -66,6 +66,20 @@ const shapes = {
       <path d="M20 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" />
     </>
   ),
+  userPlus: (
+    <>
+      <path d="M15 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M19 8v6M16 11h6" />
+    </>
+  ),
+  userMinus: (
+    <>
+      <path d="M15 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M16 11h6" />
+    </>
+  ),
   inbox: (
     <>
       <path d="M4 4h16l2 12v4H2v-4z" />
