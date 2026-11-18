@@ -87,9 +87,7 @@ export default function RouletteResults() {
       <header className="roulette-heading">
         <span className="roulette-heading-icon"><Icon name="dice" size={25} /></span>
         <div>
-          <p className="muted small">ArisanKu</p>
           <h1>Hasil Rolet</h1>
-          <p className="muted">Riwayat urutan peserta yang sudah disimpan admin.</p>
         </div>
       </header>
 
@@ -125,7 +123,8 @@ export default function RouletteResults() {
                       <div>
                         <h2>{group?.name || 'Kelompok arisan'}</h2>
                         <p className="muted small">
-                          Putaran {draw.period_no} · Perkiraan cair {estimatedPayoutDate || 'belum ditentukan'}
+                          Putaran {draw.period_no} · Tanggal pencairan:{' '}
+                          <strong>{estimatedPayoutDate || 'belum ditentukan'}</strong>
                         </p>
                       </div>
                       <Icon name="dice" size={23} className="roulette-result-icon" />
