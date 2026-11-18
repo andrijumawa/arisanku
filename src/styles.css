@@ -597,6 +597,20 @@ body.keyboard-open .main select {
   color: #554b20;
   box-shadow: 0 14px 24px rgba(130, 113, 35, 0.16), inset 0 1px rgba(255, 255, 255, 0.9);
 }
+.menu-tile-admin .menu-tile-count {
+ top: -7px;
+ right: 26px;
+ min-width: 24px;
+ height: 24px;
+ border-width: 2px;
+ background: #d91c5c;
+ font-size: 11px;
+ box-shadow: 0 4px 10px rgba(217, 28, 92, 0.28);
+ animation: menu-admin-count-pulse 1.4s ease-in-out infinite;
+}
+@keyframes menu-admin-count-pulse {
+ 50% { transform: scale(1.08); }
+}
 .menu-tile-results:not(.is-disabled) {
   isolation: isolate;
   border-color: rgba(255, 255, 255, 0.3);

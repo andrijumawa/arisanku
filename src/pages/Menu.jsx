@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase';
 import Icon from '../components/Icon.jsx';
 import { signedUrl } from '../components/SignedImage.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 
 export default function Menu() {
   const { profile, session, isAdmin, signOut, refreshProfile } = useAuth();
@@ -19,13 +20,36 @@ export default function Menu() {
     && profile?.account_status !== 'disetujui'
     && profile?.account_status !== 'ditolak';
   const accountRejected = !isAdmin && profile?.account_status === 'ditolak';
+  const adminCountsState = useAsync(async () => {
+    if (!isAdmin) return { registrations: 0, payments: 0 };
+    const [registrations, payments] = await Promise.all([
+      supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
+      supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
+    ]);
+    if (registrations.error) throw registrations.error;
+    if (payments.error) throw payments.error;
+    return {
+      registrations: registrations.count || 0,
+      payments: payments.count || 0,
+    };
+  }, [isAdmin]);
+  useRealtimeRefresh(
+    adminCountsState.reload,
+    'menu-admin-counts',
+    [{ table: 'memberships' }, { table: 'payments' }],
+    isAdmin
+  );
+  const adminPendingCount = (adminCountsState.data?.registrations || 0) + (adminCountsState.data?.payments || 0);
+  const adminDescription = adminPendingCount > 0
+    ? `${adminCountsState.data.registrations} pendaftaran · ${adminCountsState.data.payments} pembayaran menunggu`
+    : 'Kelola akun dan kelompok';
   const items = [
     { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
     { to: '/arisan', icon: 'target', label: 'Arisan', description: 'Cari kelompok dan daftar', disabled: accountPending || accountRejected },
     { to: '/rolet', icon: 'dice', label: 'Rolet', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected },
     { to: '/hasil-rolet', icon: 'check', label: 'Hasil Rolet', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected },
     { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
-    ...(isAdmin ? [{ to: '/admin', icon: 'tools', label: 'Admin', description: 'Kelola akun dan kelompok' }] : []),
+    ...(isAdmin ? [{ to: '/admin', icon: 'tools', label: 'Admin', description: adminDescription, count: adminPendingCount }] : []),
     { to: '/akun', icon: 'user', label: 'Akun', description: 'Atur informasi profil', disabled: accountPending || accountRejected },
     { action: 'logout', icon: 'logout', label: signingOut ? 'Keluar…' : 'Keluar', description: 'Akhiri sesi akun' },
   ];
