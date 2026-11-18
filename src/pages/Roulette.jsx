@@ -319,16 +319,21 @@ export default function Roulette() {
                     {participantNames.map((name, index) => {
                       const angle = participantNames.length ? -90 + (360 / participantNames.length) * (index + 0.5) : -90;
                       const radians = (angle * Math.PI) / 180;
-                      const radius = 35;
+                      const radius = 34;
                       const left = 50 + radius * Math.cos(radians);
                       const top = 50 + radius * Math.sin(radians);
                       const maxLength = participantNames.length >= 18 ? 7 : participantNames.length >= 13 ? 10 : 16;
                       const label = name.length > maxLength ? `${name.slice(0, maxLength - 1)}…` : name;
+                      const labelAngle = angle > 90 && angle < 270 ? angle - 90 : angle + 90;
                       return (
                         <span
                           key={`${name}-${index}`}
                           className="roulette-wheel-name"
-                          style={{ left: `${left}%`, top: `${top}%` }}
+                          style={{
+                            left: `${left}%`,
+                            top: `${top}%`,
+                            '--label-angle': `${labelAngle}deg`
+                          }}
                           title={name}
                         >
                           {label}
@@ -336,10 +341,7 @@ export default function Roulette() {
                       );
                     })}
                   </div>
-                  <div className="roulette-wheel-hub">
-                    <Icon name="dice" size={30} />
-                    <strong>{spinning ? displayedName : participantNames[0] || 'Siap'}</strong>
-                  </div>
+                  <div className="roulette-wheel-center" aria-hidden="true" />
                 </div>
               </div>
               <span className="roulette-machine-status">
