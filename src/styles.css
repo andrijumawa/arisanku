@@ -3260,11 +3260,14 @@ input[type='checkbox'] {
   overflow-wrap: anywhere;
 }
 .roulette-wheel-hub {
-  position: relative;
+  position: absolute;
+  top: 50%;
+  left: 50%;
   z-index: 3;
   display: grid;
   width: 112px;
   height: 112px;
+  transform: translate(-50%, -50%);
   place-items: center;
   align-content: center;
   gap: 4px;
