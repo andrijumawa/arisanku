@@ -1771,6 +1771,18 @@ input[type='checkbox'] {
   background: var(--admin-accent);
   color: #fff;
 }
+.admin-content .admin-group-create.btn.primary {
+  border-color: #3f5eac;
+  background: #3f5eac;
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(63, 94, 172, 0.22);
+}
+.admin-content .admin-group-create.btn.primary:hover,
+.admin-content .admin-group-create.btn.primary:focus-visible {
+  border-color: #344f94;
+  background: #344f94;
+  color: #fff;
+}
 .admin-content .btn.primary:active {
   background: var(--admin-accent-pressed);
 }

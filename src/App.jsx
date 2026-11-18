@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Component, lazy, Suspense, useEffect, useState } from 'react';
+import { Link, Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './lib/auth.jsx';
 import { configured, supabase } from './lib/supabase';
 import { Spinner } from './components/Ui.jsx';
@@ -17,6 +17,29 @@ const RouletteResults = lazy(() => import('./pages/RouletteResults.jsx'));
 const AdminHome = lazy(() => import('./pages/admin/AdminHome.jsx'));
 const GroupForm = lazy(() => import('./pages/admin/GroupForm.jsx'));
 const AdminGroup = lazy(() => import('./pages/admin/AdminGroup.jsx'));
+
+class GroupFormErrorBoundary extends Component {
+  state = { error: null };
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error('Group form render failed:', error, info.componentStack);
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div className="card err-box" role="alert">
+        <h2>Formulir kelompok gagal dimuat</h2>
+        <p>{this.state.error.message || 'Terjadi kesalahan saat membuka formulir.'}</p>
+        <Link className="btn" to="/admin?tab=kelompok">Kembali ke daftar kelompok</Link>
+      </div>
+    );
+  }
+}
 
 function Guard({ children, admin = false, verified = false, member = false }) {
   const { session, profile, ready } = useAuth();
@@ -113,7 +136,9 @@ export default function App() {
             path="admin/kelompok/baru"
             element={
               <Guard admin>
-                <GroupForm />
+                <GroupFormErrorBoundary>
+                  <GroupForm />
+                </GroupFormErrorBoundary>
               </Guard>
             }
           />

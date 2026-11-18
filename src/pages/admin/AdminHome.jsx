@@ -270,7 +270,7 @@ function Groups() {
 
   return (
     <>
-      <Link to="/admin/kelompok/baru" className="btn primary block">
+      <Link to="/admin/kelompok/baru" className="btn primary block admin-group-create">
         + Kelompok baru
       </Link>
       {loading && <Spinner text="Memuat kelompok…" />}
