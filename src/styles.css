@@ -936,6 +936,7 @@ body.keyboard-open .main select {
   justify-content: space-between;
   gap: 12px;
   margin-top: 8px;
+  margin-bottom: 10px;
 }
 .form-heading h2 {
   margin: 0;
