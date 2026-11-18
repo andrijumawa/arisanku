@@ -1506,6 +1506,10 @@ input[type='checkbox'] {
 .admin-content .admin-person-card {
   padding: 9px 10px;
 }
+/* jarak antar kartu peserta: 12px (gap grid) - 5px = 7px */
+.admin-content .admin-person-card + .admin-person-card {
+  margin-top: -5px;
+}
 .admin-person-row {
   display: flex;
   min-width: 0;
