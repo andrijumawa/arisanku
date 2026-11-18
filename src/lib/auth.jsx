@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase, phoneToEmail, normalizePhone } from './supabase';
 import { useRealtimeRefresh } from './hooks';
 
@@ -19,6 +19,7 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [ready, setReady] = useState(false);
+  const uidRef = useRef(null);
 
   const loadProfile = useCallback(async (uid) => {
     if (!uid) {
@@ -35,7 +36,9 @@ export function AuthProvider({ children }) {
       setProfile(null);
       return;
     }
-    setProfile(data || null);
+    const next = data || null;
+    // Pertahankan objek lama bila isinya sama agar layar tidak ikut dirender ulang
+    setProfile((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
   }, []);
 
   useEffect(() => {
@@ -43,13 +46,22 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!alive) return;
       setSession(data.session);
+      uidRef.current = data.session?.user.id ?? null;
       await loadProfile(data.session?.user.id);
       if (alive) setReady(true);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-      // jangan panggil supabase langsung di dalam callback (hindari deadlock)
-      setTimeout(() => loadProfile(s?.user.id), 0);
+      // Supabase mengirim ulang SIGNED_IN setiap aplikasi kembali dari background.
+      // Pertahankan session lama bila akun dan token-nya sama.
+      setSession((prev) =>
+        prev && s && prev.user.id === s.user.id && prev.access_token === s.access_token ? prev : s
+      );
+      const nextUid = s?.user.id ?? null;
+      if (nextUid !== uidRef.current) {
+        uidRef.current = nextUid;
+        // jangan panggil supabase langsung di dalam callback (hindari deadlock)
+        setTimeout(() => loadProfile(nextUid), 0);
+      }
     });
     return () => {
       alive = false;

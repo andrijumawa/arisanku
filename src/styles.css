@@ -1981,7 +1981,13 @@ input[type='checkbox'] {
     padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
     border-radius: 22px 22px 0 0;
     border-bottom-width: 0;
+    will-change: transform;
     animation: sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  /* Popup admin: tinggi awal sudah memadai, jadi tidak melompat saat data selesai dimuat */
+  .sheet.sheet-tall {
+    min-height: 72vh;
+    min-height: 72dvh;
   }
   .sheet-body > *,
   .admin-content,

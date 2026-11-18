@@ -1,7 +1,7 @@
 import { createPortal } from 'react-dom';
 import Icon from './Icon.jsx';
 
-export default function Modal({ title, onClose, children }) {
+export default function Modal({ title, onClose, tall = false, children }) {
   const app = document.querySelector('.app');
   if (!app) return null;
   const themeProperties = ['--bg', '--ink', '--muted', '--line', '--brand', '--brand-d', '--brand-l', '--gold', '--gold-l'];
@@ -15,7 +15,7 @@ export default function Modal({ title, onClose, children }) {
   return createPortal(
     <div className="overlay" style={themeStyle} onClick={onClose}>
       <div
-        className="sheet"
+        className={`sheet${tall ? ' sheet-tall' : ''}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}

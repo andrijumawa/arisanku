@@ -2,19 +2,49 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from './supabase';
 
 // Muat data async + reload manual. fn dipanggil ulang saat deps berubah.
+// Reload ulang (reload() / kembali dari background) tidak menampilkan spinner dan
+// tidak menghapus data yang sudah tampil; layar hanya diperbarui jika datanya berubah.
+const sameData = (a, b) => {
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+};
+
 export function useAsync(fn, deps = []) {
   const [state, setState] = useState({ loading: true, data: null, error: null });
   const [tick, setTick] = useState(0);
   const fnRef = useRef(fn);
   fnRef.current = fn;
+  const lastDeps = useRef(null);
+  const hasData = useRef(false);
 
   useEffect(() => {
     let alive = true;
-    setState((s) => ({ ...s, loading: true, error: null }));
+    const prev = lastDeps.current;
+    const depsChanged = !prev || prev.length !== deps.length || deps.some((d, i) => !Object.is(d, prev[i]));
+    lastDeps.current = deps;
+    if (depsChanged) hasData.current = false;
+    const silent = !depsChanged && hasData.current;
+
+    if (!silent) setState((s) => ({ ...s, loading: true, error: null }));
     fnRef
       .current()
-      .then((data) => alive && setState({ loading: false, data, error: null }))
-      .catch((error) => alive && setState({ loading: false, data: null, error }));
+      .then((data) => {
+        if (!alive) return;
+        hasData.current = true;
+        setState((s) => (silent && sameData(s.data, data) ? s : { loading: false, data, error: null }));
+      })
+      .catch((error) => {
+        if (!alive) return;
+        if (silent) {
+          console.error('Gagal memperbarui data:', error);
+          return;
+        }
+        hasData.current = false;
+        setState({ loading: false, data: null, error });
+      });
     return () => {
       alive = false;
     };

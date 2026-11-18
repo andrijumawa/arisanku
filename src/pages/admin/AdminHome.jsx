@@ -99,7 +99,7 @@ export default function AdminHome() {
         })}
       </nav>
       {activeSection && (
-        <Modal title={activeSection[1]} onClose={closeSection}>
+        <Modal title={activeSection[1]} onClose={closeSection} tall>
           <div className="admin-content">
             {activeSection[0] === 'daftar' && <Registrations revision={listRevisions.registrations} />}
             {activeSection[0] === 'bayar' && <Payments revision={listRevisions.payments} />}
