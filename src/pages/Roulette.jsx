@@ -16,6 +16,7 @@ export default function Roulette() {
   const periodNo = 1;
   const [busy, setBusy] = useState(false);
   const [spinIndex, setSpinIndex] = useState(0);
+  const [wheelAngle, setWheelAngle] = useState(0);
 
   const groupsState = useAsync(async () => {
     if (isAdmin) {
@@ -76,14 +77,38 @@ export default function Roulette() {
     Boolean(groupId)
   );
 
+  const participantsState = useAsync(async () => {
+    if (!groupId) return [];
+    const memberships = await q(
+      supabase
+        .from('memberships')
+        .select('profiles(full_name)')
+        .eq('group_id', groupId)
+        .eq('status', 'aktif')
+    );
+    return memberships
+      .map((membership) => membership.profiles?.full_name)
+      .filter(Boolean);
+  }, [groupId]);
+  useRealtimeRefresh(
+    participantsState.reload,
+    `roulette-participants-${groupId || 'none'}`,
+    groupId ? [{ table: 'memberships', filter: `group_id=eq.${groupId}` }, { table: 'profiles' }] : []
+  );
+
   const participantNames = useMemo(
-    () => (session?.draft_order || []).map((participant) => participant.full_name),
-    [session?.draft_order]
+    () => (session?.draft_order?.length
+      ? session.draft_order.map((participant) => participant.full_name)
+      : participantsState.data || []),
+    [session?.draft_order, participantsState.data]
   );
 
   useEffect(() => {
     if (session?.status !== 'spinning' || !participantNames.length) return undefined;
-    const timer = setInterval(() => setSpinIndex((index) => (index + 1) % participantNames.length), 110);
+    const timer = setInterval(() => {
+      setSpinIndex((index) => (index + 1) % participantNames.length);
+      setWheelAngle((angle) => angle + 18);
+    }, 110);
     return () => clearInterval(timer);
   }, [participantNames.length, session?.status, session?.id, session?.attempt_count]);
 
@@ -183,11 +208,38 @@ export default function Roulette() {
           <ErrorBox error={liveState.error} onRetry={liveState.reload} />
         ) : (
           <>
-            <div className={`roulette-machine${spinning ? ' is-spinning' : ''}`} aria-live="polite">
-              <span className="roulette-machine-icon"><Icon name="dice" size={48} /></span>
-              <strong className="roulette-machine-name">
-                {spinning ? displayedName : session?.draft_order?.[0]?.full_name || 'Rolet siap'}
-              </strong>
+            <div className={`roulette-machine roulette-wheel-machine${spinning ? ' is-spinning' : ''}`} aria-live="polite">
+              <div className="roulette-wheel-wrap">
+                <div className="roulette-pointer" aria-hidden="true"><span /></div>
+                <div
+                  className="roulette-wheel"
+                  style={{ '--wheel-angle': `${wheelAngle}deg` }}
+                  aria-label="Mesin Rolet peserta"
+                >
+                  <div className="roulette-wheel-rim">
+                    {participantNames.map((name, index) => {
+                      const angle = participantNames.length ? (360 / participantNames.length) * index : 0;
+                      const radians = ((angle - 90) * Math.PI) / 180;
+                      const radius = 35;
+                      const left = 50 + radius * Math.cos(radians);
+                      const top = 50 + radius * Math.sin(radians);
+                      return (
+                        <span
+                          key={`${name}-${index}`}
+                          className="roulette-wheel-name"
+                          style={{ left: `${left}%`, top: `${top}%` }}
+                        >
+                          {name}
+                        </span>
+                      );
+                    })}
+                  </div>
+                  <div className="roulette-wheel-hub">
+                    <Icon name="dice" size={30} />
+                    <strong>{spinning ? displayedName : session?.draft_order?.[0]?.full_name || 'Siap'}</strong>
+                  </div>
+                </div>
+              </div>
               <span className="roulette-machine-status">
                 {spinning
                   ? 'Sedang mengacak peserta…'
