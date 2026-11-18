@@ -8,8 +8,8 @@ export function Badge({ status, children }) {
 
 export function Spinner({ text = 'Memuat…' }) {
   return (
-    <div className="center muted" style={{ padding: 32 }}>
-      <div className="spin" />
+    <div className="center muted" style={{ padding: 32 }} role="status" aria-live="polite">
+      <div className="spin" aria-hidden="true" />
       <div style={{ marginTop: 8 }}>{text}</div>
     </div>
   );
@@ -18,8 +18,8 @@ export function Spinner({ text = 'Memuat…' }) {
 export function Empty({ icon = 'inbox', title, children }) {
   return (
     <div className="empty">
-      <Icon name={icon} size={40} className="empty-ico" />
-      <strong>{title}</strong>
+      <Icon name={icon} size={40} className="empty-ico" aria-hidden="true" />
+      <strong role="heading" aria-level="3">{title}</strong>
       {children && <p className="muted">{children}</p>}
     </div>
   );

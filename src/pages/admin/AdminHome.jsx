@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import * as Tabs from '@radix-ui/react-tabs';
 import { useAuth } from '../../lib/auth.jsx';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
@@ -10,11 +11,13 @@ import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
 
 const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
+const tabValues = ['daftar', 'bayar', 'kelompok', 'peserta'];
 
 export default function AdminHome() {
   const [params, setParams] = useSearchParams();
   const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0, accounts: 0 });
-  const tab = params.get('tab') || 'daftar';
+  const requestedTab = params.get('tab');
+  const tab = tabValues.includes(requestedTab) ? requestedTab : 'daftar';
   const { data, loading, error, reload } = useAsync(async () => {
     const [pendingMem, pendingPay, pendingAccounts] = await Promise.all([
       supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
@@ -47,39 +50,58 @@ export default function AdminHome() {
     ['kelompok', 'Kelompok'],
     ['peserta', 'Peserta', data?.accounts],
   ];
+  const selectTab = (nextTab) => {
+    setParams((current) => {
+      const next = new URLSearchParams(current);
+      next.set('tab', nextTab);
+      return next;
+    });
+  };
 
   return (
     <section className="admin-panel">
       <header className="admin-heading">
         <span className="admin-heading-icon" aria-hidden="true"><Icon name="tools" size={22} /></span>
-        <div>
-          <span className="admin-heading-kicker">RUANG PENGELOLAAN</span>
-          <h2>Panel Admin</h2>
-          <p>Kelola pendaftaran, pembayaran, kelompok, dan peserta.</p>
-        </div>
+        <h2>Panel Admin</h2>
       </header>
-      <nav className="admin-tabs" aria-label="Kategori admin">
-        {tabs.map(([k, label, n]) => (
-          <button
-            key={k}
-            type="button"
-            className={`admin-tab ${tab === k ? 'is-active' : ''}`}
-            aria-current={tab === k ? 'page' : undefined}
-            onClick={() => setParams({ tab: k })}
-          >
-            <span>{label}</span>
-            {n > 0 && <i>{n}</i>}
-          </button>
-        ))}
-      </nav>
-      <div className="admin-content">
-        {error && <ErrorBox error={error} onRetry={reload} />}
-        {loading && !data && <Spinner />}
-        {tab === 'daftar' && <Registrations revision={listRevisions.registrations} />}
-        {tab === 'bayar' && <Payments revision={listRevisions.payments} />}
-        {tab === 'kelompok' && <Groups />}
-        {tab === 'peserta' && <People revision={listRevisions.accounts} />}
-      </div>
+      <Tabs.Root
+        className="admin-tabs-root"
+        value={tab}
+        onValueChange={selectTab}
+        activationMode="manual"
+      >
+        <Tabs.List className="admin-tabs" aria-label="Kategori admin">
+          {tabs.map(([key, label, count]) => (
+            <Tabs.Trigger
+              key={key}
+              className="admin-tab"
+              value={key}
+              aria-label={count > 0 ? `${label}, ${count} menunggu` : label}
+            >
+              <span aria-hidden="true">{label}</span>
+              {count > 0 && <i aria-hidden="true">{count}</i>}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
+        <Tabs.Content className="admin-content" value="daftar">
+          {loading && !data ? <Spinner text="Memuat antrean pendaftaran…" /> : null}
+          {error && <ErrorBox error={error} onRetry={reload} />}
+          {(!loading || data) && !error && <Registrations revision={listRevisions.registrations} />}
+        </Tabs.Content>
+        <Tabs.Content className="admin-content" value="bayar">
+          {loading && !data ? <Spinner text="Memuat antrean pembayaran…" /> : null}
+          {error && <ErrorBox error={error} onRetry={reload} />}
+          {(!loading || data) && !error && <Payments revision={listRevisions.payments} />}
+        </Tabs.Content>
+        <Tabs.Content className="admin-content" value="kelompok">
+          <Groups />
+        </Tabs.Content>
+        <Tabs.Content className="admin-content" value="peserta">
+          {loading && !data ? <Spinner text="Memuat antrean peserta…" /> : null}
+          {error && <ErrorBox error={error} onRetry={reload} />}
+          {(!loading || data) && !error && <People revision={listRevisions.accounts} />}
+        </Tabs.Content>
+      </Tabs.Root>
     </section>
   );
 }
@@ -231,16 +253,15 @@ function Groups() {
   );
   useRealtimeRefresh(reload, 'admin-groups', [{ table: 'groups' }, { table: 'memberships' }]);
 
-  if (loading) return <Spinner />;
-  if (error) return <ErrorBox error={error} onRetry={reload} />;
-
   return (
     <>
-      <Link to="/admin/kelompok/baru" className="btn primary block" style={{ marginBottom: 12 }}>
+      <Link to="/admin/kelompok/baru" className="btn primary block">
         + Kelompok baru
       </Link>
-      {data.length === 0 && <Empty icon="folder" title="Belum ada kelompok">Buat kelompok arisan uang atau paket lebaran.</Empty>}
-      {data.map((g) => (
+      {loading && <Spinner text="Memuat kelompok…" />}
+      {error && <ErrorBox error={error} onRetry={reload} />}
+      {!loading && !error && data.length === 0 && <Empty icon="folder" title="Belum ada kelompok">Buat kelompok arisan uang atau paket lebaran.</Empty>}
+      {!loading && !error && data.map((g) => (
         <Link key={g.id} to={`/admin/kelompok/${g.id}`} className="card link">
           <div className="card-head">
             <div>
@@ -264,6 +285,7 @@ function People({ revision }) {
   const { session } = useAuth();
   const toast = useToast();
   const [search, setSearch] = useState('');
+  const [busyId, setBusyId] = useState(null);
   const { data, loading, error, reload } = useAsync(
     () => q(supabase
       .from('profiles')
@@ -283,18 +305,28 @@ function People({ revision }) {
   async function toggleRole(p) {
     const next = p.role === 'admin' ? 'peserta' : 'admin';
     if (!window.confirm(`${next === 'admin' ? 'Jadikan' : 'Cabut hak admin'} ${p.full_name}?`)) return;
-    const { error } = await supabase.from('profiles').update({ role: next }).eq('id', p.id);
-    if (error) return toast(error.message, 'error');
+    setBusyId(p.id);
+    try {
+      const { error } = await supabase.from('profiles').update({ role: next }).eq('id', p.id);
+      if (error) toast(error.message, 'error');
+    } finally {
+      setBusyId(null);
+    }
   }
 
   async function reviewAccount(p, accountStatus) {
     if (accountStatus === 'ditolak' && !window.confirm(`Tolak verifikasi akun ${p.full_name}?`)) return;
-    const { error } = await supabase
-      .from('profiles')
-      .update({ account_status: accountStatus })
-      .eq('id', p.id);
-    if (error) return toast(error.message, 'error');
-    toast(accountStatus === 'disetujui' ? 'Akun peserta disetujui.' : 'Verifikasi akun ditolak.', 'success');
+    setBusyId(p.id);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ account_status: accountStatus })
+        .eq('id', p.id);
+      if (error) return toast(error.message, 'error');
+      toast(accountStatus === 'disetujui' ? 'Akun peserta disetujui.' : 'Verifikasi akun ditolak.', 'success');
+    } finally {
+      setBusyId(null);
+    }
   }
 
   if (loading) return <Spinner />;
@@ -302,10 +334,26 @@ function People({ revision }) {
 
   return (
     <>
-      <input placeholder="Cari nama / nomor telepon…" value={search} onChange={(e) => setSearch(e.target.value)} style={{ marginBottom: 12 }} />
-      <div className="muted small" style={{ margin: '0 2px 8px' }}>
+      <input
+        type="search"
+        aria-label="Cari nama atau nomor telepon peserta"
+        placeholder="Cari nama / nomor telepon…"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <div className="muted small">
         {list.length} peserta
       </div>
+      {list.length === 0 && (
+        <Empty
+          icon="search"
+          title={search.trim() ? 'Tidak ada peserta yang cocok' : 'Belum ada peserta'}
+        >
+          {search.trim()
+            ? 'Periksa nama atau nomor telepon, atau ubah pencarian.'
+            : 'Belum ada akun peserta untuk ditampilkan.'}
+        </Empty>
+      )}
       {list.map((p) => (
         <div key={p.id} className="card">
           <div className="person">
@@ -325,19 +373,19 @@ function People({ revision }) {
             <div className="actions">
               {p.account_status !== 'disetujui' && (
                 <>
-                <button className="btn primary sm" onClick={() => reviewAccount(p, 'disetujui')}>
-                  Setujui akun
-                </button>
-                {p.account_status !== 'ditolak' && (
-                  <button className="btn danger sm" onClick={() => reviewAccount(p, 'ditolak')}>
-                    Tolak
+                  <button className="btn primary sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'disetujui')}>
+                    {busyId === p.id ? 'Memproses…' : 'Setujui akun'}
                   </button>
-                )}
+                  {p.account_status !== 'ditolak' && (
+                    <button className="btn danger sm" disabled={busyId === p.id} onClick={() => reviewAccount(p, 'ditolak')}>
+                      Tolak
+                    </button>
+                  )}
                 </>
               )}
               {p.id !== session.user.id && (
-                <button className="btn sm" onClick={() => toggleRole(p)}>
-                  {p.role === 'admin' ? 'Cabut admin' : 'Jadikan admin'}
+                <button className="btn sm" disabled={busyId === p.id} onClick={() => toggleRole(p)}>
+                  {busyId === p.id ? 'Memproses…' : p.role === 'admin' ? 'Cabut admin' : 'Jadikan admin'}
                 </button>
               )}
             </div>
