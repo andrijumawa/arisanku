@@ -423,27 +423,29 @@ export default function Roulette() {
                   <span>Mulai dalam</span>
                 </span>
               )}
-              {fallbackFullscreen && groupId && (
-                <button
-                  type="button"
-                  className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
-                  onClick={registerAttendance}
-                  disabled={
-                    busy
-                    || attendanceState.loading
-                    || hasRegistered
-                    || countdown !== null
-                    || spinning
-                    || saved
-                    || rouletteComplete
-                  }
-                  aria-label={hasRegistered ? 'Kehadiran sudah terdaftar' : 'Daftar hadir untuk kocokan'}
-                >
-                  <Icon name={hasRegistered ? 'check' : 'userPlus'} size={16} />
-                  <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
-                  <span className="roulette-attendance-count">{registeredUserIds.size}</span>
-                </button>
-              )}
+              <div className="roulette-machine-left-controls">
+                {fallbackFullscreen && groupId && (
+                  <button
+                    type="button"
+                    className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
+                    onClick={registerAttendance}
+                    disabled={
+                      busy
+                      || attendanceState.loading
+                      || hasRegistered
+                      || countdown !== null
+                      || spinning
+                      || saved
+                      || rouletteComplete
+                    }
+                    aria-label={hasRegistered ? 'Kehadiran sudah terdaftar' : 'Daftar hadir untuk kocokan'}
+                  >
+                    <Icon name={hasRegistered ? 'check' : 'userPlus'} size={16} />
+                    <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
+                    <span className="roulette-attendance-count">{registeredUserIds.size}</span>
+                  </button>
+                )}
+              </div>
               <div className="roulette-machine-controls">
                 <button
                   type="button"
