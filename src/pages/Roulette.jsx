@@ -4,6 +4,7 @@ import { q, supabase } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import Icon from '../components/Icon.jsx';
+import RouletteChat from '../components/RouletteChat.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { CustomSelect } from '../components/CustomSelect.jsx';
 
@@ -293,29 +294,33 @@ export default function Roulette() {
     const machine = wheelMachineRef.current;
     if (!machine) return;
 
-    if (fullscreen) {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        setFallbackFullscreen(false);
-        setFullscreen(false);
-      }
-      return;
-    }
-
-    if (machine.requestFullscreen) {
-      try {
-        await machine.requestFullscreen();
-        return;
-      } catch {
-        setFallbackFullscreen(true);
-        setFullscreen(true);
+    try {
+      if (fullscreen) {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        } else {
+          setFallbackFullscreen(false);
+          setFullscreen(false);
+        }
         return;
       }
-    }
 
-    setFallbackFullscreen(true);
-    setFullscreen(true);
+      if (machine.requestFullscreen) {
+        try {
+          await machine.requestFullscreen();
+          return;
+        } catch {
+          setFallbackFullscreen(true);
+          setFullscreen(true);
+          return;
+        }
+      }
+
+      setFallbackFullscreen(true);
+      setFullscreen(true);
+    } catch (error) {
+      toast(error.message || 'Tidak dapat mengubah tampilan layar penuh.', 'error');
+    }
   }
 
   const spinning = session?.status === 'spinning';
@@ -434,6 +439,7 @@ export default function Roulette() {
                       ? 'Hasil sementara · siap disimpan'
                       : 'Menunggu admin memulai kocokan'}
               </span>
+              {fullscreen && <RouletteChat />}
             </div>
 
             <div className="roulette-live-meta">
