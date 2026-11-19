@@ -6,6 +6,27 @@ const toDate = (d) => (typeof d === 'string' && d.length === 10 ? new Date(d + '
 export const fmtDate = (d) =>
   d ? toDate(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
 
+export function paymentDueDate(startDate, payPeriod, periodNo) {
+  if (!startDate || !periodNo) return null;
+  const [year, month, day] = startDate.split('-').map(Number);
+  if (![year, month, day].every(Number.isFinite)) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const offset = periodNo - 1;
+
+  if (payPeriod === 'harian') date.setUTCDate(date.getUTCDate() + offset);
+  else if (payPeriod === 'mingguan') date.setUTCDate(date.getUTCDate() + offset * 7);
+  else if (payPeriod === 'bulanan') {
+    const targetMonth = date.getUTCMonth() + offset;
+    const targetYear = date.getUTCFullYear() + Math.floor(targetMonth / 12);
+    const normalizedMonth = targetMonth % 12;
+    const lastDay = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+    date.setUTCDate(1);
+    date.setUTCFullYear(targetYear, normalizedMonth, Math.min(day, lastDay));
+  } else return null;
+
+  return date.toISOString().slice(0, 10);
+}
+
 export const fmtDay = (d) =>
   toDate(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 

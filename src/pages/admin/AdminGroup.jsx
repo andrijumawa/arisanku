@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
-import { periodName, typeLabel } from '../../lib/format';
+import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, typeLabel } from '../../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../../components/Ui.jsx';
 import GroupInfo from '../../components/GroupInfo.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -29,7 +29,7 @@ export default function AdminGroup() {
     const rounds = await q(
       supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')
     );
-    const pays = await q(supabase.from('payments').select('membership_id,status').eq('group_id', id));
+    const pays = await q(supabase.from('payments').select('membership_id,period_no,status').eq('group_id', id));
     return { group, members, slots, rounds, pays };
   }, [id]);
   const realtimeSubscriptions = useMemo(
@@ -60,6 +60,26 @@ export default function AdminGroup() {
   const { group: g, members, slots, rounds, pays } = data;
   const isUang = g.type === 'uang';
   const approvedOf = (mid) => pays.filter((p) => p.membership_id === mid && p.status === 'disetujui').length;
+  const today = new Date();
+  const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const paymentsByMember = new Map();
+  pays.forEach((payment) => {
+    const memberPayments = paymentsByMember.get(payment.membership_id) || [];
+    memberPayments.push(payment);
+    paymentsByMember.set(payment.membership_id, memberPayments);
+  });
+  const overduePeriodsOf = (member) => {
+    if (member.status !== 'aktif') return [];
+    const memberPayments = bestPaymentByPeriod(paymentsByMember.get(member.id));
+    return Array.from({ length: g.durasi }, (_, index) => index + 1).flatMap((periodNo) => {
+      const payment = memberPayments[periodNo];
+      if (payment?.status === 'disetujui' || payment?.status === 'menunggu') return [];
+      const dueDate = paymentDueDate(g.start_date, g.pay_period, periodNo);
+      return dueDate && dueDate < todayString ? [{ periodNo, dueDate }] : [];
+    });
+  };
+  const overdueByMember = new Map(members.map((member) => [member.id, overduePeriodsOf(member)]));
+  const overdueMemberCount = [...overdueByMember.values()].filter((periods) => periods.length > 0).length;
   const slotsOf = (mid) => slots.filter((s) => s.membership_id === mid).map((s) => s.slot_no);
   async function run(key, fn, okMsg) {
     setBusyId(key);
@@ -165,7 +185,12 @@ export default function AdminGroup() {
         </>
       )}
 
-      <div className="section-title">Peserta ({members.length})</div>
+      <div className="row between section-title">
+        <span>Peserta ({members.length})</span>
+        {overdueMemberCount > 0 && (
+          <span className="badge bad">{overdueMemberCount} menunggak</span>
+        )}
+      </div>
       {members.length === 0 && <Empty icon="users" title="Belum ada pendaftar" />}
       {members.map((m) => (
         <div key={m.id} className="card">
@@ -187,6 +212,21 @@ export default function AdminGroup() {
               <div className="muted small" style={{ marginTop: 4 }}>
                 Lunas {approvedOf(m.id)} dari {g.durasi} {periodName(g).toLowerCase()}
               </div>
+            </div>
+          )}
+
+          {(overdueByMember.get(m.id) || []).length > 0 && (
+            <div className="admin-payment-overdue" role="status">
+              <Icon name="clock" size={16} aria-hidden="true" />
+              <span>
+                <b>Belum bayar:</b>{' '}
+                {overdueByMember.get(m.id).map(({ periodNo, dueDate }, index) => (
+                  <span key={periodNo}>
+                    {index > 0 && ', '}
+                    {periodName(g).toLowerCase()} ke-{periodNo} (jatuh tempo {fmtDate(dueDate)})
+                  </span>
+                ))}
+              </span>
             </div>
           )}
 

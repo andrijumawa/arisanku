@@ -2,29 +2,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
-import { bestPaymentByPeriod, fmtDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
+import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
-
-function getPaymentDate(startDate, payPeriod, periodNo) {
-  if (!startDate || !periodNo) return null;
-  const [year, month, day] = startDate.split('-').map(Number);
-  if (![year, month, day].every(Number.isFinite)) return null;
-  const date = new Date(Date.UTC(year, month - 1, day));
-  const offset = periodNo - 1;
-
-  if (payPeriod === 'harian') date.setUTCDate(date.getUTCDate() + offset);
-  else if (payPeriod === 'mingguan') date.setUTCDate(date.getUTCDate() + offset * 7);
-  else if (payPeriod === 'bulanan') {
-    const targetMonth = date.getUTCMonth() + offset;
-    const targetYear = date.getUTCFullYear() + Math.floor(targetMonth / 12);
-    const normalizedMonth = targetMonth % 12;
-    const lastDay = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
-    date.setUTCDate(1);
-    date.setUTCFullYear(targetYear, normalizedMonth, Math.min(day, lastDay));
-  } else return null;
-
-  return date.toISOString().slice(0, 10);
-}
 
 export default function Home() {
   const { profile, session } = useAuth();
@@ -100,7 +79,7 @@ export default function Home() {
           const done = Object.values(paymentsByPeriod).filter((payment) => payment.status === 'disetujui').length;
           const nextPeriod = Array.from({ length: g.durasi }, (_, index) => index + 1)
             .find((period) => !paymentsByPeriod[period] || paymentsByPeriod[period].status === 'ditolak');
-          const dueDate = nextPeriod ? getPaymentDate(g.start_date, g.pay_period, nextPeriod) : null;
+          const dueDate = nextPeriod ? paymentDueDate(g.start_date, g.pay_period, nextPeriod) : null;
           return (
             <Link key={m.id} to={`/g/${g.id}`} state={{ from: '/beranda' }} className="card link">
               <div className="card-head">
