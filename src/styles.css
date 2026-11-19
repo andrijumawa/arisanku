@@ -3623,8 +3623,7 @@ input[type='checkbox'] {
     inset 0 0 0 3px rgba(95, 128, 224, 0.32),
     inset 0 0 30px rgba(95, 128, 224, 0.14);
 }
-.roulette-live-meta,
-.roulette-result-head {
+.roulette-live-meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -3647,18 +3646,18 @@ input[type='checkbox'] {
 }
 .roulette-result ol {
   display: grid;
-  gap: 5px;
+  gap: 4px;
   list-style: none;
-  margin: 10px 0 0;
+  margin: 0;
   padding: 0;
 }
 .roulette-result li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
-  padding: 6px 8px;
-  border-radius: 9px;
+  padding: 4px 6px;
+  border-radius: 7px;
   background: rgba(255, 255, 255, 0.72);
   overflow-wrap: anywhere;
 }
@@ -3680,22 +3679,11 @@ input[type='checkbox'] {
 }
 .roulette-results {
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 .roulette-result {
   margin: 0;
-  padding: 11px 12px;
-}
-.roulette-result h2 {
-  margin: 0 0 2px;
-  font-size: 15px;
-}
-.roulette-result p {
-  margin: 0;
-}
-.roulette-result-icon {
-  flex: 0 0 auto;
-  color: var(--brand);
+  padding: 6px 8px;
 }
 .roulette-pagination {
   display: flex;

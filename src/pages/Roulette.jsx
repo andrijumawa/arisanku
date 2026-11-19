@@ -15,25 +15,6 @@ function getSpinDuration(roundNo, totalRounds) {
   return Math.max(3000, Math.round(3000 + 4000 * remainingRatio));
 }
 
-function payoutDate(group, periodNo) {
-  if (!group?.start_date || !Number.isInteger(periodNo) || periodNo < 1) return null;
-  const date = new Date(`${group.start_date}T12:00:00`);
-  if (Number.isNaN(date.getTime())) return null;
-  const offset = periodNo - 1;
-
-  if (group.pay_period === 'harian') date.setDate(date.getDate() + offset);
-  else if (group.pay_period === 'mingguan') date.setDate(date.getDate() + offset * 7);
-  else if (group.pay_period === 'bulanan') {
-    const day = date.getDate();
-    date.setDate(1);
-    date.setMonth(date.getMonth() + offset);
-    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-    date.setDate(Math.min(day, lastDay));
-  } else return null;
-
-  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-}
-
 const WHEEL_COLORS = ['#ee746e', '#e7b955', '#4fba9a', '#9b78d8', '#d96388', '#7566e8', '#5598d4', '#e58b61'];
 
 export default function Roulette() {
@@ -569,16 +550,6 @@ export default function Roulette() {
                     .sort((a, b) => a.period_no - b.period_no)
                     .map((draw) => (
                       <article className="card roulette-result" key={`${draw.period_no}-${draw.participants?.[0]?.user_id}`}>
-                        <div className="roulette-result-head">
-                          <div>
-                            <h2>{selectedGroup?.name || 'Kelompok arisan'}</h2>
-                            <p className="muted small">
-                              Putaran {draw.period_no} · Tanggal pencairan:{' '}
-                              <strong>{payoutDate(selectedGroup, draw.period_no) || 'belum ditentukan'}</strong>
-                            </p>
-                          </div>
-                          <Icon name="dice" size={23} className="roulette-result-icon" />
-                        </div>
                         <ol>
                           {(draw.participants || [])
                             .slice(0, draw.participants?.length === 2 ? 2 : 1)
