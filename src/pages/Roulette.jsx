@@ -62,6 +62,11 @@ export default function Roulette() {
     return () => window.clearInterval(timer);
   }, [countdownEndsAt]);
 
+  useEffect(() => {
+    document.body.classList.toggle('roulette-fullscreen-open', fallbackFullscreen);
+    return () => document.body.classList.remove('roulette-fullscreen-open');
+  }, [fallbackFullscreen]);
+
   const groupsState = useAsync(async () => {
     if (isAdmin) {
       return q(

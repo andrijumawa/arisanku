@@ -312,6 +312,32 @@ body.keyboard-open .main select {
 .app-back-button:active {
   transform: scale(0.985);
 }
+body.roulette-fullscreen-open .hdr,
+body.roulette-fullscreen-open .app-back {
+  display: none;
+}
+body.roulette-fullscreen-open .main {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+}
+body.roulette-fullscreen-open .roulette-page {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+body.roulette-fullscreen-open .roulette-live {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
 .menu-page {
   --menu-card-gap: clamp(10px, 2vw, 15px);
   --menu-avatar-top: 8px;
@@ -3305,12 +3331,14 @@ input[type='checkbox'] {
 .roulette-wheel-machine.is-fullscreen {
   position: fixed;
   z-index: 1000;
-  inset: 0;
+  top: var(--visible-viewport-offset-top, 0px);
+  right: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   width: 100vw;
-  height: 100dvh;
-  min-height: 100dvh;
+  height: var(--visible-viewport-height, 100dvh);
+  min-height: 0;
   align-items: center;
   justify-content: flex-start;
   gap: 8px;
@@ -3357,7 +3385,8 @@ input[type='checkbox'] {
 }
 .roulette-fullscreen-chat-heading {
   display: flex;
-  min-height: 38px;
+  min-height: 42px;
+  flex: 0 0 auto;
   align-items: center;
   gap: 7px;
   padding: 7px 11px;
@@ -3424,6 +3453,8 @@ input[type='checkbox'] {
 }
 .roulette-fullscreen-chat-composer {
   display: flex;
+  min-height: 56px;
+  flex: 0 0 auto;
   align-items: center;
   gap: 7px;
   padding: 7px 9px;
@@ -3457,6 +3488,14 @@ input[type='checkbox'] {
 .roulette-fullscreen-chat-composer button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+body.keyboard-open .roulette-wheel-machine.is-fullscreen {
+  top: var(--visible-viewport-offset-top, 0px);
+  height: var(--visible-viewport-height, 100dvh);
+}
+body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
+  width: min(42vw, 23dvh, 190px);
+  margin-top: 40px;
 }
 .roulette-wheel-machine::before,
 .roulette-wheel-machine::after {
