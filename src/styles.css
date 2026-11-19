@@ -3347,7 +3347,7 @@ input[type='checkbox'] {
   font-size: clamp(16px, 3vmin, 22px);
 }
 .roulette-fullscreen-chat {
-  display: grid;
+  display: none;
   width: min(760px, 100%);
   min-height: 0;
   flex: 1 1 auto;
@@ -3357,6 +3357,10 @@ input[type='checkbox'] {
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.74);
   text-align: left;
+}
+.roulette-wheel-machine:fullscreen .roulette-fullscreen-chat,
+.roulette-wheel-machine.is-fullscreen .roulette-fullscreen-chat {
+  display: grid;
 }
 .roulette-fullscreen-chat-heading {
   display: flex;
