@@ -575,19 +575,19 @@ export default function Roulette() {
                 <div className="roulette-results">
                   {[...savedDraws]
                     .sort((a, b) => a.period_no - b.period_no)
-                    .map((draw) => (
-                      <article className="card roulette-result" key={`${draw.period_no}-${draw.participants?.[0]?.user_id}`}>
-                        <ol>
-                          {(draw.participants || [])
-                            .slice(0, draw.participants?.length === 2 ? 2 : 1)
-                            .map((participant, index) => (
+                    .flatMap((draw) => (
+                      (draw.participants || [])
+                        .slice(0, draw.participants?.length === 2 ? 2 : 1)
+                        .map((participant, index) => (
+                          <article className="card roulette-result" key={`${draw.period_no}-${participant.user_id}-${index}`}>
+                            <ol>
                               <li key={`${participant.user_id}-${index}`}>
                                 <span className="roulette-rank">{draw.period_no + index}</span>
                                 <span>{participant.full_name}</span>
                               </li>
-                            ))}
-                        </ol>
-                      </article>
+                            </ol>
+                          </article>
+                        ))
                     ))}
                 </div>
               ) : (
