@@ -3421,9 +3421,9 @@ input[type='checkbox'] {
 .roulette-wheel-machine.is-fullscreen .roulette-attendance-toggle {
   position: absolute;
   z-index: 5;
-  top: 50%;
+  top: 8%;
   left: 0;
-  transform: translate(-15%, -50%);
+  transform: translate(-15%, -20%);
 }
 .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   width: min(78vw, 42dvh, 420px);
