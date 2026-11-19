@@ -46,7 +46,42 @@ export default function Roulette() {
   const [wheelTransitionDuration, setWheelTransitionDuration] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [fallbackFullscreen, setFallbackFullscreen] = useState(false);
+  const [countdownEndsAt, setCountdownEndsAt] = useState(null);
+  const [countdownNow, setCountdownNow] = useState(Date.now());
   const wheelMachineRef = useRef(null);
+  const countdownChannelRef = useRef(null);
+  const countdownEndsAtRef = useRef(null);
+
+  useEffect(() => {
+    if (!groupId) return undefined;
+    const channel = supabase.channel(`roulette-countdown-${groupId}`);
+    countdownChannelRef.current = channel;
+    channel
+      .on('broadcast', { event: 'countdown' }, ({ payload }) => {
+        if (payload?.endsAt) {
+          countdownEndsAtRef.current = payload.endsAt;
+          setCountdownEndsAt(payload.endsAt);
+        }
+      })
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.error(`Realtime channel "roulette-countdown-${groupId}" failed: ${status}`);
+        }
+      });
+
+    return () => {
+      countdownChannelRef.current = null;
+      countdownEndsAtRef.current = null;
+      setCountdownEndsAt(null);
+      void supabase.removeChannel(channel);
+    };
+  }, [groupId]);
+
+  useEffect(() => {
+    if (!countdownEndsAt) return undefined;
+    const timer = window.setInterval(() => setCountdownNow(Date.now()), 100);
+    return () => window.clearInterval(timer);
+  }, [countdownEndsAt]);
 
   useEffect(() => {
     const syncFullscreen = () => {
@@ -243,16 +278,40 @@ export default function Roulette() {
   }, [isAdmin, liveState.reload, session?.id, session?.spin_started_at, session?.status, spinDuration, toast]);
 
   async function startRoulette() {
-    if (!groupId) return;
-    setBusy(true);
+    if (!groupId || busy || countdownEndsAtRef.current) return;
+    const endsAt = Date.now() + 5000;
+    countdownEndsAtRef.current = endsAt;
+    setCountdownEndsAt(endsAt);
+
     try {
-      await q(supabase.rpc('start_roulette_session', { p_group: groupId, p_period: periodNo }));
-      await liveState.reload();
-      toast('Kocokan mulai berputar. Semua peserta dapat memantau hasilnya.', 'success');
+      const channel = countdownChannelRef.current;
+      if (channel?.state === 'joined') {
+        const { error } = await channel.send({
+          type: 'broadcast',
+          event: 'countdown',
+          payload: { endsAt },
+        });
+        if (error) console.error('Gagal mengirim hitung mundur kocokan:', error);
+      }
+
+      window.setTimeout(async () => {
+        countdownEndsAtRef.current = null;
+        setCountdownEndsAt(null);
+        setBusy(true);
+        try {
+          await q(supabase.rpc('start_roulette_session', { p_group: groupId, p_period: periodNo }));
+          await liveState.reload();
+          toast('Kocokan mulai berputar.', 'success');
+        } catch (error) {
+          toast(error.message || 'Gagal memulai kocokan.', 'error');
+        } finally {
+          setBusy(false);
+        }
+      }, Math.max(0, endsAt - Date.now()));
     } catch (error) {
-      toast(error.message || 'Gagal memulai kocokan.', 'error');
-    } finally {
-      setBusy(false);
+      countdownEndsAtRef.current = null;
+      setCountdownEndsAt(null);
+      toast(error.message || 'Hitung mundur kocokan gagal dimulai.', 'error');
     }
   }
 
@@ -327,6 +386,10 @@ export default function Roulette() {
   const saved = session?.status === 'saved';
   const cancelled = session?.status === 'cancelled';
   const displayedName = participantNames.length ? participantNames[spinIndex % participantNames.length] : 'Menunggu peserta';
+  const countdown = countdownEndsAt ? Math.max(0, Math.ceil((countdownEndsAt - countdownNow) / 1000)) : null;
+  const canStart = isAdmin && !rouletteComplete && !spinning
+    && (!session || saved || cancelled)
+    && !busy;
 
   return (
     <section className="roulette-page">
@@ -344,7 +407,7 @@ export default function Roulette() {
             <CustomSelect
               value={groupId}
               onValueChange={(value) => setGroupId(value)}
-              disabled={groupsState.loading || !groups.length || spinning || busy}
+              disabled={groupsState.loading || !groups.length || spinning || busy || countdown !== null}
               ariaLabel="Kelompok"
               options={groups.map((group) => ({ value: group.id, label: group.name }))}
             />
@@ -370,6 +433,12 @@ export default function Roulette() {
               className={`roulette-machine roulette-wheel-machine${spinning ? ' is-spinning' : ''}${fullscreen && fallbackFullscreen ? ' is-fullscreen' : ''}`}
               aria-live="polite"
             >
+              {countdown !== null && (
+                <span className="roulette-countdown" role="timer" aria-label={`Mulai dalam ${countdown} detik`}>
+                  <strong>{countdown}</strong>
+                  <span>Mulai dalam</span>
+                </span>
+              )}
               <button
                 type="button"
                 className="roulette-fullscreen-toggle"
@@ -427,18 +496,30 @@ export default function Roulette() {
                     <span>ARISAN</span>
                   </div>
                 </div>
+                {canStart && (
+                  <button
+                    type="button"
+                    className="roulette-center-start"
+                    onClick={startRoulette}
+                    disabled={countdown !== null}
+                    aria-label={`Mulai kocokan putaran ${periodNo}`}
+                  >
+                    <Icon name="shuffle" size={20} />
+                    <span>Mulai</span>
+                  </button>
+                )}
               </div>
-              <span className="roulette-machine-status">
-                {spinning
-                  ? 'Sedang mengacak peserta…'
-                  : rouletteComplete
-                    ? 'Urutan peserta selesai'
-                  : saved
-                    ? 'Hasil sudah disimpan'
-                    : session?.status === 'active'
-                      ? 'Hasil sementara · siap disimpan'
-                      : 'Menunggu admin memulai kocokan'}
-              </span>
+              {(spinning || rouletteComplete || saved || session?.status === 'active') && (
+                <span className="roulette-machine-status">
+                  {spinning
+                    ? 'Sedang mengacak peserta…'
+                    : rouletteComplete
+                      ? 'Urutan peserta selesai'
+                      : saved
+                        ? 'Hasil sudah disimpan'
+                        : 'Hasil sementara · siap disimpan'}
+                </span>
+              )}
               {fullscreen && <RouletteChat />}
             </div>
 
@@ -454,13 +535,9 @@ export default function Roulette() {
               </p>
             )}
 
-            {isAdmin && (
+            {isAdmin && !rouletteComplete && session && !saved && !cancelled && (
               <div className="roulette-admin-controls">
-                {rouletteComplete ? null : !session || saved || cancelled ? (
-                  <button className="btn primary" onClick={startRoulette} disabled={busy || spinning}>
-                    <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : `Mulai putaran ${periodNo}`}
-                  </button>
-                ) : spinning ? (
+                {spinning ? (
                   <p className="muted small">Kocokan sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
                 ) : (
                   <div className="row wrap">

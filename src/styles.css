@@ -3245,6 +3245,35 @@ input[type='checkbox'] {
   place-content: center;
   padding: 22px 14px 18px;
 }
+.roulette-countdown {
+  position: absolute;
+  z-index: 8;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  min-width: 58px;
+  min-height: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(95, 128, 224, 0.22);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-d);
+  box-shadow: 0 4px 14px rgba(31, 39, 78, 0.12);
+  font-variant-numeric: tabular-nums;
+}
+.roulette-countdown strong {
+  font-size: 25px;
+  line-height: 1;
+}
+.roulette-countdown span {
+  margin-top: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .roulette-fullscreen-toggle {
   position: absolute;
   z-index: 8;
@@ -3300,6 +3329,11 @@ input[type='checkbox'] {
 .roulette-wheel-machine.is-fullscreen .roulette-fullscreen-toggle {
   top: max(16px, env(safe-area-inset-top));
   right: max(16px, env(safe-area-inset-right));
+}
+.roulette-wheel-machine:fullscreen .roulette-countdown,
+.roulette-wheel-machine.is-fullscreen .roulette-countdown {
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
 }
 .roulette-wheel-machine:fullscreen .roulette-wheel-wrap,
 .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
@@ -3504,6 +3538,51 @@ input[type='checkbox'] {
   line-height: 1;
   writing-mode: vertical-rl;
   transform: rotate(180deg);
+}
+.roulette-center-start {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  width: clamp(48px, 18%, 72px);
+  aspect-ratio: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  transform: translate(-50%, -50%);
+  border: 3px solid #fff3e7;
+  border-radius: 50%;
+  background: #171936;
+  color: #ffd76b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.roulette-center-start span {
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+.roulette-center-start:hover:not(:disabled) {
+  transform: translate(-50%, -50%) scale(1.08);
+  background: #292c55;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+.roulette-center-start:active:not(:disabled) {
+  transform: translate(-50%, -50%) scale(0.96);
+}
+.roulette-center-start:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+.roulette-center-start:disabled {
+  cursor: default;
 }
 .roulette-pointer {
   position: absolute;
