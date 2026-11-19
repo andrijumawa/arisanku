@@ -1,9 +1,12 @@
+import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { bestPaymentByPeriod, fmtDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
+
+let homeDataCache = null;
 
 function getPaymentDate(startDate, payPeriod, periodNo) {
   if (!startDate || !periodNo) return null;
@@ -44,22 +47,28 @@ export default function Home() {
       : [];
     return { ms, pays };
   }, [uid]);
+  const cachedData = homeDataCache?.uid === uid ? homeDataCache.data : null;
+  const displayedData = data || cachedData;
+  useEffect(() => {
+    if (data) homeDataCache = { uid, data };
+  }, [data, uid]);
   const realtimeSubscriptions = [
     { table: 'memberships', filter: `user_id=eq.${uid}` },
-    ...(data?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
+    ...(displayedData?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
   ];
   useRealtimeRefresh(reload, `home-${uid}`, realtimeSubscriptions);
 
-  if (loading) return <Spinner />;
-  if (error) return <ErrorBox error={error} onRetry={reload} />;
+  if (loading && !displayedData) return <Spinner />;
+  if (error && !displayedData) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { ms, pays } = data;
+  const { ms, pays } = displayedData;
   const aktif = ms.filter((m) => m.status === 'aktif').length;
   const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
   const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
 
   return (
     <>
+      {error && <ErrorBox error={error} onRetry={reload} />}
       <h2>Halo, {profile?.full_name?.split(' ')[0] || 'Peserta'}</h2>
 
       <div className="stats">
