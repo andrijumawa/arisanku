@@ -428,28 +428,30 @@ export default function Roulette() {
                   <span>Mulai dalam</span>
                 </span>
               )}
-              {canRegisterAttendance && !attendanceState.loading && countdown === null && (
+              <div className="roulette-machine-controls">
+                {canRegisterAttendance && !attendanceState.loading && countdown === null && (
+                  <button
+                    type="button"
+                    className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
+                    onClick={registerAttendance}
+                    disabled={busy || hasRegistered}
+                    aria-label={hasRegistered ? 'Kehadiran sudah terdaftar' : 'Daftar hadir untuk kocokan'}
+                  >
+                    <Icon name={hasRegistered ? 'check' : 'userPlus'} size={16} />
+                    <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
+                    <span className="roulette-attendance-count">{registeredUserIds.size}</span>
+                  </button>
+                )}
                 <button
                   type="button"
-                  className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
-                  onClick={registerAttendance}
-                  disabled={busy || hasRegistered}
-                  aria-label={hasRegistered ? 'Kehadiran sudah terdaftar' : 'Daftar hadir untuk kocokan'}
+                  className="roulette-fullscreen-toggle"
+                  onClick={toggleFullscreen}
+                  aria-label={fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
+                  title={fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
                 >
-                  <Icon name={hasRegistered ? 'check' : 'userPlus'} size={16} />
-                  <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
-                  <span className="roulette-attendance-count">{registeredUserIds.size}</span>
+                  <Icon name={fallbackFullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
                 </button>
-              )}
-              <button
-                type="button"
-                className="roulette-fullscreen-toggle"
-                onClick={toggleFullscreen}
-                aria-label={fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
-                title={fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
-              >
-                <Icon name={fallbackFullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
-              </button>
+              </div>
               <div className="roulette-wheel-wrap">
                 <div className="roulette-pointer" aria-hidden="true"><span /></div>
                 <div

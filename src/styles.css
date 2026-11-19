@@ -3308,13 +3308,18 @@ input[type='checkbox'] {
   box-shadow: 0 4px 14px rgba(31, 39, 78, 0.12);
   font-variant-numeric: tabular-nums;
 }
-.roulette-attendance-toggle {
+.roulette-machine-controls {
   position: absolute;
   z-index: 8;
   top: 10px;
-  left: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.roulette-attendance-toggle {
   display: inline-flex;
-  min-height: 42px;
+  min-height: 48px;
   align-items: center;
   gap: 6px;
   padding: 0 10px;
@@ -3358,10 +3363,6 @@ input[type='checkbox'] {
   text-transform: uppercase;
 }
 .roulette-fullscreen-toggle {
-  position: absolute;
-  z-index: 8;
-  top: 10px;
-  right: 10px;
   display: grid;
   width: 48px;
   height: 48px;
@@ -3408,15 +3409,11 @@ input[type='checkbox'] {
     radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, 0.96), transparent 68%),
     var(--brand-l);
 }
-.roulette-wheel-machine.is-fullscreen .roulette-fullscreen-toggle {
+.roulette-wheel-machine.is-fullscreen .roulette-machine-controls {
   top: max(16px, env(safe-area-inset-top));
   right: max(16px, env(safe-area-inset-right));
 }
 .roulette-wheel-machine.is-fullscreen .roulette-countdown {
-  top: max(16px, env(safe-area-inset-top));
-  left: max(16px, env(safe-area-inset-left));
-}
-.roulette-wheel-machine.is-fullscreen .roulette-attendance-toggle {
   top: max(16px, env(safe-area-inset-top));
   left: max(16px, env(safe-area-inset-left));
 }
