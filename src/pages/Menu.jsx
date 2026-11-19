@@ -72,8 +72,8 @@ export default function Menu() {
   const items = [
     { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
     { to: '/arisan', icon: 'target', label: 'Arisan', description: 'Cari kelompok & daftar', disabled: accountPending || accountRejected },
-    { to: '/rolet', icon: 'dice', label: 'Rolet', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
-    { to: '/hasil-rolet', icon: 'check', label: 'Hasil Rolet', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
+    { to: '/rolet', icon: 'dice', label: 'Kocokan', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
+    { to: '/hasil-rolet', icon: 'check', label: 'Hasil Kocokan', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
     { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
     ...(isAdmin ? [{
       to: '/admin',

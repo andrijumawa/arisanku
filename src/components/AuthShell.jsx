@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Login from '../pages/Login.jsx';
 import Register from '../pages/Register.jsx';
@@ -8,6 +8,31 @@ export default function AuthShell() {
   const isLogin = pathname === '/masuk';
   const previousPath = useRef(pathname);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [visibleViewport, setVisibleViewport] = useState(null);
+
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return undefined;
+
+    const syncKeyboardState = () => {
+      setVisibleViewport({
+        height: viewport.height,
+        offsetTop: viewport.offsetTop,
+        keyboardOpen: viewport.height < window.innerHeight - 120,
+      });
+    };
+
+    syncKeyboardState();
+    viewport.addEventListener('resize', syncKeyboardState);
+    viewport.addEventListener('scroll', syncKeyboardState);
+    window.addEventListener('resize', syncKeyboardState);
+
+    return () => {
+      viewport.removeEventListener('resize', syncKeyboardState);
+      viewport.removeEventListener('scroll', syncKeyboardState);
+      window.removeEventListener('resize', syncKeyboardState);
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (previousPath.current === pathname) return undefined;
@@ -18,7 +43,13 @@ export default function AuthShell() {
   }, [pathname]);
 
   return (
-    <main className="auth">
+    <main
+      className={`auth${visibleViewport?.keyboardOpen ? ' keyboard-open' : ''}`}
+      style={visibleViewport?.keyboardOpen ? {
+        '--auth-visible-height': `${visibleViewport.height}px`,
+        '--auth-viewport-top': `${visibleViewport.offsetTop}px`,
+      } : undefined}
+    >
       <section className={`auth-shell${isLogin ? ' is-login' : ''}${isTransitioning ? ' is-transitioning' : ''}`} aria-label="Autentikasi Arisan">
         <Login />
         <Register />

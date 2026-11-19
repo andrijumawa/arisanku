@@ -131,9 +131,9 @@ export default function AdminGroup() {
 
           {rounds.length === 0 ? (
             <div className="card">
-              <div className="muted small" style={{ marginBottom: 8 }}>Belum ada hasil putaran. Pemilihan pemenang dilakukan melalui menu Rolet.</div>
+              <div className="muted small" style={{ marginBottom: 8 }}>Belum ada hasil putaran. Pemilihan pemenang dilakukan melalui menu Kocokan.</div>
               <Link to="/rolet" className="btn gold block">
-                <Icon name="dice" size={18} /> Buka Rolet
+                <Icon name="dice" size={18} /> Buka Kocokan
               </Link>
             </div>
           ) : (

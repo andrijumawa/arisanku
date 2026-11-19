@@ -204,7 +204,7 @@ export default function Roulette() {
         await q(supabase.rpc('finish_roulette_attempt', { p_session: session.id }));
         liveState.reload();
       } catch (error) {
-        toast(error.message || 'Gagal menyelesaikan putaran Rolet.', 'error');
+        toast(error.message || 'Gagal menyelesaikan putaran kocokan.', 'error');
       }
     }, Math.max(0, spinDuration - elapsed + 250));
     return () => clearTimeout(timeout);
@@ -216,9 +216,9 @@ export default function Roulette() {
     try {
       await q(supabase.rpc('start_roulette_session', { p_group: groupId, p_period: periodNo }));
       await liveState.reload();
-      toast('Rolet mulai berputar. Semua peserta dapat memantau hasilnya.', 'success');
+      toast('Kocokan mulai berputar. Semua peserta dapat memantau hasilnya.', 'success');
     } catch (error) {
-      toast(error.message || 'Gagal memulai Rolet.', 'error');
+      toast(error.message || 'Gagal memulai kocokan.', 'error');
     } finally {
       setBusy(false);
     }
@@ -237,7 +237,7 @@ export default function Roulette() {
         'success'
       );
     } catch (error) {
-      toast(error.message || 'Gagal menyimpan hasil Rolet.', 'error');
+      toast(error.message || 'Gagal menyimpan hasil kocokan.', 'error');
     } finally {
       setBusy(false);
     }
@@ -245,14 +245,14 @@ export default function Roulette() {
 
   async function cancelResult() {
     if (!session?.id) return;
-    if (!window.confirm('Batalkan hasil Rolet ini? Hasil belum disimpan, jadi putaran ini bisa dimulai ulang.')) return;
+    if (!window.confirm('Batalkan hasil kocokan ini? Hasil belum disimpan, jadi putaran ini bisa dimulai ulang.')) return;
     setBusy(true);
     try {
       await q(supabase.rpc('cancel_roulette_session', { p_session: session.id }));
       await liveState.reload();
-      toast('Hasil Rolet dibatalkan. Putaran ini bisa dimulai ulang.', 'success');
+      toast('Hasil kocokan dibatalkan. Putaran ini bisa dimulai ulang.', 'success');
     } catch (error) {
-      toast(error.message || 'Gagal membatalkan hasil Rolet.', 'error');
+      toast(error.message || 'Gagal membatalkan hasil kocokan.', 'error');
     } finally {
       setBusy(false);
     }
@@ -268,7 +268,7 @@ export default function Roulette() {
       <header className="roulette-heading">
         <span className="roulette-heading-icon"><Icon name="shuffle" size={25} /></span>
         <div>
-          <h1>Rolet peserta</h1>
+          <h1>Kocokan peserta</h1>
         </div>
       </header>
 
@@ -289,14 +289,14 @@ export default function Roulette() {
         {groupsState.loading ? <Spinner text="Memuat kelompok…" /> : groupsState.error ? (
           <ErrorBox error={groupsState.error} onRetry={groupsState.reload} />
         ) : !groups.length ? (
-          <Empty icon="users" title="Belum ada kelompok untuk Rolet">
-            Rolet tersedia pada kelompok arisan uang dengan metode acak.
+          <Empty icon="users" title="Belum ada kelompok untuk kocokan">
+            Kocokan tersedia pada kelompok arisan uang dengan metode acak.
           </Empty>
         ) : drawsState.error ? (
           <ErrorBox error={drawsState.error} onRetry={drawsState.reload} />
         ) : participantsState.error ? (
           <ErrorBox error={participantsState.error} onRetry={participantsState.reload} />
-        ) : liveState.loading ? <Spinner text="Menyambungkan ke Rolet…" /> : liveState.error ? (
+        ) : liveState.loading ? <Spinner text="Menyambungkan ke kocokan…" /> : liveState.error ? (
           <ErrorBox error={liveState.error} onRetry={liveState.reload} />
         ) : (
           <>
@@ -313,7 +313,7 @@ export default function Roulette() {
                       : 'none',
                     background: wheelBackground
                   }}
-                  aria-label="Mesin Rolet peserta"
+                  aria-label="Mesin kocokan peserta"
                 >
                   <div className="roulette-wheel-labels">
                     {participantNames.map((name, index) => {
@@ -359,7 +359,7 @@ export default function Roulette() {
                     ? 'Hasil sudah disimpan'
                     : session?.status === 'active'
                       ? 'Hasil sementara · siap disimpan'
-                      : 'Menunggu admin memulai Rolet'}
+                      : 'Menunggu admin memulai kocokan'}
               </span>
             </div>
 
@@ -370,7 +370,7 @@ export default function Roulette() {
 
             {rouletteComplete && (
               <p className="muted small">
-                Urutan Rolet selesai. {remainingParticipants[0]?.full_name || 'Peserta terakhir'} otomatis mendapat nomor terakhir
+                Urutan kocokan selesai. {remainingParticipants[0]?.full_name || 'Peserta terakhir'} otomatis mendapat nomor terakhir
                 {' '}({activeParticipants.length}).
               </p>
             )}
@@ -382,7 +382,7 @@ export default function Roulette() {
                     <Icon name="shuffle" size={18} /> {busy ? 'Memulai…' : `Mulai putaran ${periodNo}`}
                   </button>
                 ) : spinning ? (
-                  <p className="muted small">Rolet sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
+                  <p className="muted small">Kocokan sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
                 ) : (
                   <div className="row wrap">
                     <button className="btn primary" onClick={saveResult} disabled={busy}>
@@ -406,7 +406,7 @@ export default function Roulette() {
             )}
 
             {savedWinners.length > 0 && (
-              <ol className="roulette-final-order" aria-label="Urutan sementara peserta Rolet">
+              <ol className="roulette-final-order" aria-label="Urutan sementara peserta kocokan">
                 {savedWinners.map((participant, index) => (
                   <li key={`${participant.user_id}-${index}`}>
                     <span className="roulette-rank">{index + 1}</span>

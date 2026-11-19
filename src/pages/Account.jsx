@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../lib/auth.jsx';
-import { supabase } from '../lib/supabase';
+import { phoneToEmail, supabase } from '../lib/supabase';
 import { currentSubscription, disablePush, enablePush, pushSupported } from '../lib/push';
 import { useToast } from '../components/Toast.jsx';
 
@@ -13,6 +13,10 @@ export default function Account() {
   const toast = useToast();
   const [name, setName] = useState(profile?.full_name || '');
   const [saving, setSaving] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordBusy, setPasswordBusy] = useState(false);
   const [pushOn, setPushOn] = useState(false);
   const [pushBusy, setPushBusy] = useState(false);
   const supported = pushSupported();
@@ -36,6 +40,38 @@ export default function Account() {
     setSaving(false);
     if (error) return toast(error.message, 'error');
     toast('Nama diperbarui.', 'success');
+  }
+
+  async function changePassword(e) {
+    e.preventDefault();
+    if (newPassword.length < 6) return toast('Password baru minimal 6 karakter.', 'error');
+    if (newPassword !== confirmPassword) return toast('Konfirmasi password baru tidak cocok.', 'error');
+
+    setPasswordBusy(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: phoneToEmail(profile?.phone),
+        password: currentPassword,
+      });
+      if (signInError) {
+        if (/invalid login credentials/i.test(signInError.message)) {
+          throw new Error('Password saat ini salah.');
+        }
+        throw signInError;
+      }
+
+      const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+      if (updateError) throw updateError;
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      toast('Password berhasil diperbarui.', 'success');
+    } catch (error) {
+      toast(error.message || 'Password gagal diperbarui.', 'error');
+    } finally {
+      setPasswordBusy(false);
+    }
   }
 
   async function togglePush() {
@@ -75,6 +111,45 @@ export default function Account() {
         </button>
       </form>
 
+      <form className="card" onSubmit={changePassword}>
+        <h3>Ganti password</h3>
+        <label className="field">
+          <span>Password saat ini</span>
+          <input
+            type="password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+            required
+          />
+        </label>
+        <label className="field">
+          <span>Password baru</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            minLength={6}
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            required
+          />
+        </label>
+        <label className="field">
+          <span>Konfirmasi password baru</span>
+          <input
+            type="password"
+            autoComplete="new-password"
+            minLength={6}
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            required
+          />
+        </label>
+        <button className="btn primary" disabled={passwordBusy}>
+          {passwordBusy ? 'Memperbarui…' : 'Simpan password baru'}
+        </button>
+      </form>
+
       <div className="card">
         <div className="row between">
           <div>
@@ -98,13 +173,6 @@ export default function Account() {
             Di iPhone notifikasi hanya jalan jika aplikasi dipasang ke Layar Utama (Bagikan → Tambah ke Layar Utama).
           </div>
         )}
-      </div>
-
-      <div className="card">
-        <h3>Pasang aplikasi</h3>
-        <p className="muted small" style={{ marginBottom: 0 }}>
-          Android (Chrome): menu ⋮ → <b>Instal aplikasi</b>. iPhone (Safari): tombol Bagikan → <b>Tambah ke Layar Utama</b>.
-        </p>
       </div>
 
       <button className="btn danger block" onClick={signOut}>

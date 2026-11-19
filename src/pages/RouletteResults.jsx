@@ -87,7 +87,7 @@ export default function RouletteResults() {
       <header className="roulette-heading">
         <span className="roulette-heading-icon"><Icon name="dice" size={25} /></span>
         <div>
-          <h1>Hasil Rolet</h1>
+          <h1>Hasil Kocokan</h1>
         </div>
       </header>
 
@@ -107,7 +107,7 @@ export default function RouletteResults() {
           </label>
         </div>
 
-        {groupsState.loading || historyState.loading ? <Spinner text="Memuat hasil Rolet…" /> : groupsState.error ? (
+        {groupsState.loading || historyState.loading ? <Spinner text="Memuat hasil kocokan…" /> : groupsState.error ? (
           <ErrorBox error={groupsState.error} onRetry={groupsState.reload} />
         ) : historyState.error ? (
           <ErrorBox error={historyState.error} onRetry={historyState.reload} />
