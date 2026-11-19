@@ -2,6 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../lib/auth.jsx';
 import { q, supabase } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
+import {
+  loadRouletteAttendance,
+  loadRouletteDraws,
+  loadRouletteGroups,
+  loadRouletteParticipants,
+  loadRouletteSession,
+} from '../lib/menuData';
 import { Empty, ErrorBox, Spinner } from '../components/Ui.jsx';
 import Icon from '../components/Icon.jsx';
 import RouletteChat from '../components/RouletteChat.jsx';
@@ -67,29 +74,7 @@ export default function Roulette() {
     return () => document.body.classList.remove('roulette-fullscreen-open');
   }, [fallbackFullscreen]);
 
-  const groupsState = useAsync(async () => {
-    if (isAdmin) {
-      return q(
-        supabase
-          .from('groups')
-          .select('id,name,durasi,type,draw_mode,pay_period,start_date')
-          .eq('type', 'uang')
-          .eq('draw_mode', 'acak')
-          .order('name')
-      );
-    }
-
-    const memberships = await q(
-      supabase
-        .from('memberships')
-        .select('group_id,groups(id,name,durasi,type,draw_mode,pay_period,start_date)')
-        .eq('user_id', authSession.user.id)
-        .eq('status', 'aktif')
-    );
-    return memberships
-      .map((membership) => membership.groups)
-      .filter((group) => group?.type === 'uang' && group?.draw_mode === 'acak');
-  }, [isAdmin, authSession.user.id]);
+  const groupsState = useAsync(loadRouletteGroups, [isAdmin, authSession.user.id]);
   useRealtimeRefresh(
     groupsState.reload,
     `roulette-access-groups-${authSession.user.id}-${isAdmin ? 'admin' : 'member'}`,
@@ -105,16 +90,7 @@ export default function Roulette() {
     }
   }, [groupId, groups]);
 
-  const drawsState = useAsync(async () => {
-    if (!groupId) return [];
-    return q(
-      supabase
-        .from('roulette_draws')
-        .select('period_no,participants')
-        .eq('group_id', groupId)
-        .order('period_no')
-    );
-  }, [groupId]);
+  const drawsState = useAsync(loadRouletteDraws, [groupId]);
   useRealtimeRefresh(
     drawsState.reload,
     `roulette-draws-${groupId || 'none'}`,
@@ -123,16 +99,7 @@ export default function Roulette() {
   );
   const savedDraws = drawsState.loading ? [] : drawsState.data || [];
   const periodNo = savedDraws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) + 1;
-  const attendanceState = useAsync(async () => {
-    if (!groupId || !periodNo) return [];
-    return q(
-      supabase
-        .from('roulette_attendance')
-        .select('user_id')
-        .eq('group_id', groupId)
-        .eq('period_no', periodNo)
-    );
-  }, [groupId, periodNo]);
+  const attendanceState = useAsync(loadRouletteAttendance, [groupId, periodNo]);
   useRealtimeRefresh(
     attendanceState.reload,
     `roulette-attendance-${groupId || 'none'}-${periodNo}`,
@@ -147,19 +114,7 @@ export default function Roulette() {
     () => new Set(savedDraws.map((draw) => draw.participants?.[0]?.user_id).filter(Boolean)),
     [savedDraws]
   );
-  const liveState = useAsync(async () => {
-    if (!groupId || !periodNo) return null;
-    const { data, error } = await supabase
-      .from('roulette_sessions')
-      .select('id,group_id,period_no,attempt_count,selected_user_ids,draft_order,status,spin_started_at,created_at')
-      .eq('group_id', groupId)
-      .eq('period_no', periodNo)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) throw error;
-    return data;
-  }, [groupId, periodNo]);
+  const liveState = useAsync(loadRouletteSession, [groupId, periodNo]);
   const session = liveState.data;
   useRealtimeRefresh(
     liveState.reload,
@@ -168,19 +123,7 @@ export default function Roulette() {
     Boolean(groupId)
   );
 
-  const participantsState = useAsync(async () => {
-    if (!groupId) return [];
-    const memberships = await q(
-      supabase
-        .from('memberships')
-        .select('user_id,profiles(full_name)')
-        .eq('group_id', groupId)
-        .eq('status', 'aktif')
-    );
-    return memberships
-      .filter((membership) => membership.profiles?.full_name)
-      .map((membership) => ({ user_id: membership.user_id, full_name: membership.profiles.full_name }));
-  }, [groupId]);
+  const participantsState = useAsync(loadRouletteParticipants, [groupId]);
   useRealtimeRefresh(
     participantsState.reload,
     `roulette-participants-${groupId || 'none'}`,

@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { fmtDay, fmtTime, sameDay } from '../lib/format';
 import { compressImage } from '../lib/image';
 import { Spinner } from '../components/Ui.jsx';
+import { takePrefetchedChatData } from '../lib/menuData';
 import SignedImage from '../components/SignedImage.jsx';
 import { useToast } from '../components/Toast.jsx';
 import Icon from '../components/Icon.jsx';
@@ -11,11 +12,13 @@ import Icon from '../components/Icon.jsx';
 export default function Chat() {
   const { session, isAdmin } = useAuth();
   const uid = session.user.id;
+  const [initialData] = useState(() => takePrefetchedChatData(uid));
+  const initialDataRef = useRef(initialData);
   const toast = useToast();
-  const [allowed, setAllowed] = useState(null);
-  const [msgs, setMsgs] = useState([]);
-  const [names, setNames] = useState({});
-  const [adminIds, setAdminIds] = useState([]);
+  const [allowed, setAllowed] = useState(initialData?.allowed ?? null);
+  const [msgs, setMsgs] = useState(initialData?.messages || []);
+  const [names, setNames] = useState(initialData?.names || {});
+  const [adminIds, setAdminIds] = useState(initialData?.adminIds || []);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const bottom = useRef(null);
@@ -103,6 +106,20 @@ export default function Chat() {
       }
     };
     const checkAccess = async () => {
+      if (initialDataRef.current) {
+        const bootstrap = initialDataRef.current;
+        initialDataRef.current = undefined;
+        allowedRef.current = bootstrap.allowed;
+        setAllowed(bootstrap.allowed);
+        if (bootstrap.allowed) {
+          historyLoaded.current = true;
+        } else {
+          historyLoaded.current = false;
+          setMsgs([]);
+          setAdminIds([]);
+        }
+        return;
+      }
       const { data: ok, error } = await supabase.rpc('can_chat');
       if (!alive) return;
       if (error) {

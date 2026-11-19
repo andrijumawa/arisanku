@@ -29,6 +29,14 @@ export function finishInitialLoad() {
   initialLoadFinished = true;
 }
 
+export function prefetchAsync(fn, deps = []) {
+  const key = getAsyncCacheKey(fn, deps);
+  const cachedData = getCachedData(key);
+  if (cachedData !== undefined) return Promise.resolve(cachedData);
+  const finishTrackedLoad = trackInitialLoad();
+  return loadAsyncData(key, () => fn(...deps)).finally(finishTrackedLoad);
+}
+
 function trackInitialLoad() {
   if (initialLoadFinished) return () => {};
   initialLoadPending += 1;
@@ -43,6 +51,7 @@ function trackInitialLoad() {
 }
 
 const asyncDataCache = new Map();
+const inFlightAsyncData = new Map();
 const ASYNC_CACHE_LIMIT = 100;
 let cachedUserId = null;
 
@@ -78,6 +87,22 @@ function setCachedData(key, data) {
   }
 }
 
+function loadAsyncData(key, loader) {
+  const existing = inFlightAsyncData.get(key);
+  if (existing) return existing;
+  const request = Promise.resolve()
+    .then(loader)
+    .then((data) => {
+      setCachedData(key, data);
+      return data;
+    })
+    .finally(() => {
+      if (inFlightAsyncData.get(key) === request) inFlightAsyncData.delete(key);
+    });
+  inFlightAsyncData.set(key, request);
+  return request;
+}
+
 export function useAsync(fn, deps = []) {
   const fnRef = useRef(fn);
   fnRef.current = fn;
@@ -107,11 +132,9 @@ export function useAsync(fn, deps = []) {
         error: null,
       });
 
-    Promise.resolve()
-      .then(() => fnRef.current())
+    loadAsyncData(cacheKey, () => fnRef.current())
       .then((data) => {
         if (!alive) return;
-        setCachedData(cacheKey, data);
         setState((current) => {
           if (current.key !== cacheKey) return { key: cacheKey, loading: false, hasData: true, data, error: null };
           if (current.hasData && sameData(current.data, data)) return { ...current, loading: false, error: null };

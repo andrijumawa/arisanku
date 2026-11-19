@@ -1,7 +1,18 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { useAuth } from './lib/auth.jsx';
-import { finishInitialLoad, getInitialLoadPending, subscribeToInitialLoad } from './lib/hooks';
+import { finishInitialLoad, getInitialLoadPending, prefetchAsync, subscribeToInitialLoad } from './lib/hooks';
+import {
+  loadAdminCounts,
+  loadBrowseData,
+  loadChatData,
+  loadHomeData,
+  loadRouletteAttendance,
+  loadRouletteDraws,
+  loadRouletteGroups,
+  loadRouletteParticipants,
+  loadRouletteSession,
+} from './lib/menuData';
 import { configured, supabase } from './lib/supabase';
 import { Spinner } from './components/Ui.jsx';
 
@@ -31,7 +42,7 @@ const AdminHome = lazy(loadAdminHome);
 const GroupForm = lazy(loadGroupForm);
 const AdminGroup = lazy(loadAdminGroup);
 
-function loadInitialRoute(pathname, hasSession) {
+function loadInitialRoute(pathname, hasSession, isAdmin) {
   if (!hasSession || pathname === '/masuk' || pathname === '/daftar') {
     return Promise.all([loadAuthShell()]);
   }
@@ -54,7 +65,45 @@ function loadInitialRoute(pathname, hasSession) {
                   : /^\/admin\/kelompok\/[^/]+$/.test(pathname)
                     ? loadAdminGroup
                     : loadMenu;
-  return Promise.all([loadLayout(), pageLoader()]);
+  const menuRouteLoaders = [
+    loadLayout,
+    loadMenu,
+    loadHome,
+    loadBrowse,
+    loadChat,
+    loadAccount,
+    loadRoulette,
+    ...(isAdmin ? [loadAdminHome] : []),
+  ];
+  return Promise.all([...new Set([...menuRouteLoaders, pageLoader])].map((loader) => loader()));
+}
+
+function preloadMenuData(uid, isAdmin) {
+  const warm = (loader, deps, description) => prefetchAsync(loader, deps).catch((error) => {
+    console.error(`Gagal menyiapkan data ${description}:`, error);
+    return undefined;
+  });
+  const tasks = [
+    warm(loadHomeData, [uid], 'Beranda'),
+    warm(loadBrowseData, [uid], 'Arisan'),
+    warm(loadChatData, [uid], 'Chat'),
+  ];
+  if (isAdmin) tasks.push(warm(loadAdminCounts, [], 'Admin'));
+  tasks.push(
+    warm(loadRouletteGroups, [isAdmin, uid], 'Kocokan').then(async (groups) => {
+      const groupId = groups?.[0]?.id;
+      if (!groupId) return;
+      const draws = await warm(loadRouletteDraws, [groupId], 'hasil kocokan');
+      if (!draws) return;
+      const periodNo = draws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) + 1;
+      await Promise.all([
+        warm(loadRouletteAttendance, [groupId, periodNo], 'daftar hadir kocokan'),
+        warm(loadRouletteSession, [groupId, periodNo], 'sesi kocokan'),
+        warm(loadRouletteParticipants, [groupId], 'peserta kocokan'),
+      ]);
+    })
+  );
+  return Promise.all(tasks);
 }
 
 function StartupSplash({ imageUrl, error, onRetry }) {
@@ -164,7 +213,7 @@ function SetupNotice() {
 }
 
 export default function App() {
-  const { ready, session } = useAuth();
+  const { ready, session, isAdmin } = useAuth();
   const { pathname } = useLocation();
   const [routeModulesReady, setRouteModulesReady] = useState(false);
   const [initialPending, setInitialPending] = useState(getInitialLoadPending());
@@ -202,7 +251,7 @@ export default function App() {
     let active = true;
     setRouteModulesReady(false);
     setStartupError(null);
-    loadInitialRoute(pathname, Boolean(session))
+    loadInitialRoute(pathname, Boolean(session), isAdmin)
       .then(() => {
         if (active) setRouteModulesReady(true);
       })
@@ -213,7 +262,13 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [pathname, ready, session, showSplash]);
+  }, [isAdmin, pathname, ready, session, showSplash]);
+
+  useEffect(() => {
+    if (!configured || !ready || !session || !showSplash) return undefined;
+    void preloadMenuData(session.user.id, isAdmin);
+    return undefined;
+  }, [isAdmin, ready, session, showSplash]);
 
   useEffect(() => {
     if (!configured || !showSplash) return undefined;

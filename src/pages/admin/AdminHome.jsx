@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../lib/auth.jsx';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
+import { loadAdminCounts } from '../../lib/menuData';
 import { fmtDate, rupiah, typeLabel } from '../../lib/format';
 import { Empty, ErrorBox, Spinner } from '../../components/Ui.jsx';
 import SignedImage from '../../components/SignedImage.jsx';
@@ -24,17 +25,7 @@ export default function AdminHome() {
   const [newNotifications, setNewNotifications] = useState({ daftar: 0, bayar: 0 });
   const requestedTab = params.get('tab');
   const activeSection = sections.find(([key]) => key === requestedTab);
-  const { data, error, reload } = useAsync(async () => {
-    const [pendingMem, pendingPay, pendingAccounts] = await Promise.all([
-      supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
-      supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_status', 'menunggu'),
-    ]);
-    if (pendingMem.error) throw pendingMem.error;
-    if (pendingPay.error) throw pendingPay.error;
-    if (pendingAccounts.error) throw pendingAccounts.error;
-    return { mem: pendingMem.count || 0, pay: pendingPay.count || 0, accounts: pendingAccounts.count || 0 };
-  }, []);
+  const { data, error, reload } = useAsync(loadAdminCounts, []);
   const onRealtimeChange = useCallback((tables) => {
     setNewNotifications((current) => ({
       ...current,

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
-import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
+import { loadHomeData } from '../lib/menuData';
 import { addDaysToDate, bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
 
@@ -9,20 +9,7 @@ export default function Home() {
   const { profile, session } = useAuth();
   const uid = session.user.id;
 
-  const { data, loading, error, reload } = useAsync(async () => {
-    const ms = await q(
-      supabase
-        .from('memberships')
-        .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,pay_period,package_type,start_date)')
-        .eq('user_id', uid)
-        .order('created_at', { ascending: false })
-    );
-    const ids = ms.map((m) => m.id);
-    const pays = ids.length
-      ? await q(supabase.from('payments').select('membership_id,period_no,status').in('membership_id', ids))
-      : [];
-    return { ms, pays };
-  }, [uid]);
+  const { data, loading, error, reload } = useAsync(loadHomeData, [uid]);
   const displayedData = data;
   const realtimeSubscriptions = [
     { table: 'memberships', filter: `user_id=eq.${uid}` },
