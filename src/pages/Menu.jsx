@@ -276,7 +276,7 @@ export default function Menu() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}`}
+                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/rolet' ? ' menu-tile-kocok' : ''}`}
               >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
