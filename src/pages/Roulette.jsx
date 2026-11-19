@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../lib/auth.jsx';
 import { q, supabase } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
@@ -24,6 +24,26 @@ export default function Roulette() {
   const [spinIndex, setSpinIndex] = useState(0);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [wheelTransitionDuration, setWheelTransitionDuration] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [fallbackFullscreen, setFallbackFullscreen] = useState(false);
+  const wheelMachineRef = useRef(null);
+
+  useEffect(() => {
+    const syncFullscreen = () => {
+      setFullscreen(document.fullscreenElement === wheelMachineRef.current || fallbackFullscreen);
+    };
+    const exitFallbackOnEscape = (event) => {
+      if (event.key === 'Escape' && fallbackFullscreen) setFallbackFullscreen(false);
+    };
+
+    document.addEventListener('fullscreenchange', syncFullscreen);
+    document.addEventListener('keydown', exitFallbackOnEscape);
+    syncFullscreen();
+    return () => {
+      document.removeEventListener('fullscreenchange', syncFullscreen);
+      document.removeEventListener('keydown', exitFallbackOnEscape);
+    };
+  }, [fallbackFullscreen]);
 
   const groupsState = useAsync(async () => {
     if (isAdmin) {
@@ -258,6 +278,35 @@ export default function Roulette() {
     }
   }
 
+  async function toggleFullscreen() {
+    const machine = wheelMachineRef.current;
+    if (!machine) return;
+
+    if (fullscreen) {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        setFallbackFullscreen(false);
+        setFullscreen(false);
+      }
+      return;
+    }
+
+    if (machine.requestFullscreen) {
+      try {
+        await machine.requestFullscreen();
+        return;
+      } catch {
+        setFallbackFullscreen(true);
+        setFullscreen(true);
+        return;
+      }
+    }
+
+    setFallbackFullscreen(true);
+    setFullscreen(true);
+  }
+
   const spinning = session?.status === 'spinning';
   const saved = session?.status === 'saved';
   const cancelled = session?.status === 'cancelled';
@@ -300,7 +349,20 @@ export default function Roulette() {
           <ErrorBox error={liveState.error} onRetry={liveState.reload} />
         ) : (
           <>
-            <div className={`roulette-machine roulette-wheel-machine${spinning ? ' is-spinning' : ''}`} aria-live="polite">
+            <div
+              ref={wheelMachineRef}
+              className={`roulette-machine roulette-wheel-machine${spinning ? ' is-spinning' : ''}${fullscreen && fallbackFullscreen ? ' is-fullscreen' : ''}`}
+              aria-live="polite"
+            >
+              <button
+                type="button"
+                className="roulette-fullscreen-toggle"
+                onClick={toggleFullscreen}
+                aria-label={fullscreen ? 'Keluar dari layar penuh' : 'Tampilkan kocokan layar penuh'}
+                title={fullscreen ? 'Keluar dari layar penuh' : 'Layar penuh'}
+              >
+                <Icon name={fullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
+              </button>
               <div className="roulette-wheel-wrap">
                 <div className="roulette-pointer" aria-hidden="true"><span /></div>
                 <div

@@ -156,6 +156,8 @@ const shapes = {
   ),
   arrowRight: <path d="M4 12h16m-7-7 7 7-7 7" />,
   chevronDown: <path d="m6 9 6 6 6-6" />,
+  fullscreen: <path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3" />,
+  fullscreenExit: <path d="M8 3v3a2 2 0 0 1-2 2H3m13-5v3a2 2 0 0 0 2 2h3M3 16h3a2 2 0 0 1 2 2v3m13-5h-3a2 2 0 0 0-2 2v3" />,
 };
 
 export default function Icon({ name, size = 24, className = '' }) {

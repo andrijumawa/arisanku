@@ -3291,6 +3291,67 @@ input[type='checkbox'] {
   place-content: center;
   padding: 22px 14px 18px;
 }
+.roulette-fullscreen-toggle {
+  position: absolute;
+  z-index: 8;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgba(95, 128, 224, 0.22);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--brand-d);
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+.roulette-fullscreen-toggle:hover {
+  background: #fff;
+  transform: scale(1.04);
+}
+.roulette-fullscreen-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.roulette-wheel-machine:fullscreen,
+.roulette-wheel-machine.is-fullscreen {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+  align-content: center;
+  justify-items: center;
+  gap: 24px;
+  margin: 0;
+  padding: 64px 20px 24px;
+  overflow: auto;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, 0.96), transparent 68%),
+    var(--brand-l);
+}
+.roulette-wheel-machine:fullscreen::backdrop {
+  background: var(--brand-l);
+}
+.roulette-wheel-machine:fullscreen .roulette-fullscreen-toggle,
+.roulette-wheel-machine.is-fullscreen .roulette-fullscreen-toggle {
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+}
+.roulette-wheel-machine:fullscreen .roulette-wheel-wrap,
+.roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
+  width: min(78vmin, 520px);
+}
+.roulette-wheel-machine:fullscreen .roulette-machine-status,
+.roulette-wheel-machine.is-fullscreen .roulette-machine-status {
+  font-size: clamp(16px, 3vmin, 22px);
+}
 .roulette-wheel-machine::before,
 .roulette-wheel-machine::after {
   display: none;
