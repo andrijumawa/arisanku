@@ -375,6 +375,7 @@ code {
   flex: 1;
   min-height: 0;
   flex-direction: column;
+  animation: none;
 }
 .main-admin .page-enter,
 .main-chat .page-enter {

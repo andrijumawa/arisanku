@@ -198,7 +198,7 @@ export default function App() {
   }, [imageUrl]);
 
   useEffect(() => {
-    if (!configured || !ready) return undefined;
+    if (!configured || !ready || !showSplash) return undefined;
     let active = true;
     setRouteModulesReady(false);
     setStartupError(null);
@@ -213,7 +213,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [pathname, ready, session]);
+  }, [pathname, ready, session, showSplash]);
 
   useEffect(() => {
     if (!configured || !showSplash) return undefined;
@@ -234,7 +234,7 @@ export default function App() {
       || initialPending > 0
     ) return undefined;
 
-    const minimumVisibleTime = 1200;
+    const minimumVisibleTime = 3000;
     const exitDuration = 320;
     const delay = Math.max(0, minimumVisibleTime - (Date.now() - startedAt.current));
     const prepareExit = window.setTimeout(() => {
