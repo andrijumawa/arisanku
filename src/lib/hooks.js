@@ -64,7 +64,7 @@ export function useAsync(fn, deps = []) {
     setState((current) => current.key === cacheKey
       ? {
         ...current,
-        loading: false,
+        loading: cachedData === undefined ? !current.hasData : false,
         error: null,
         ...(cachedData === undefined ? {} : { hasData: true, data: cachedData }),
       }
