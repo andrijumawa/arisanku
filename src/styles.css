@@ -3308,6 +3308,44 @@ input[type='checkbox'] {
   box-shadow: 0 4px 14px rgba(31, 39, 78, 0.12);
   font-variant-numeric: tabular-nums;
 }
+.roulette-attendance-toggle {
+  position: absolute;
+  z-index: 8;
+  top: 10px;
+  left: 10px;
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid rgba(95, 128, 224, 0.22);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--brand-d);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.roulette-attendance-toggle:disabled {
+  cursor: default;
+}
+.roulette-attendance-toggle.is-registered {
+  background: #e7f5ec;
+  border-color: #b6dfc4;
+  color: #267345;
+}
+.roulette-attendance-count {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  padding: 0 4px;
+  border-radius: 6px;
+  background: var(--brand-l);
+  font-variant-numeric: tabular-nums;
+}
 .roulette-countdown strong {
   font-size: 25px;
   line-height: 1;
@@ -3375,6 +3413,10 @@ input[type='checkbox'] {
   right: max(16px, env(safe-area-inset-right));
 }
 .roulette-wheel-machine.is-fullscreen .roulette-countdown {
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
+}
+.roulette-wheel-machine.is-fullscreen .roulette-attendance-toggle {
   top: max(16px, env(safe-area-inset-top));
   left: max(16px, env(safe-area-inset-left));
 }
@@ -3481,6 +3523,17 @@ input[type='checkbox'] {
   justify-self: end;
   color: var(--muted);
   font-size: 9px;
+}
+.roulette-chat-notice {
+  align-self: center;
+  max-width: min(94%, 520px);
+  padding: 5px 10px;
+  border-radius: 9px;
+  background: rgba(116, 148, 236, 0.12);
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 .roulette-fullscreen-chat-empty {
   margin: auto;

@@ -123,6 +123,26 @@ export default function Roulette() {
   );
   const savedDraws = drawsState.loading ? [] : drawsState.data || [];
   const periodNo = savedDraws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) + 1;
+  const attendanceState = useAsync(async () => {
+    if (!groupId || !periodNo) return [];
+    return q(
+      supabase
+        .from('roulette_attendance')
+        .select('user_id')
+        .eq('group_id', groupId)
+        .eq('period_no', periodNo)
+    );
+  }, [groupId, periodNo]);
+  useRealtimeRefresh(
+    attendanceState.reload,
+    `roulette-attendance-${groupId || 'none'}-${periodNo}`,
+    groupId ? [{ table: 'roulette_attendance', filter: `group_id=eq.${groupId}` }] : [],
+    Boolean(groupId)
+  );
+  const registeredUserIds = useMemo(
+    () => new Set((attendanceState.data || []).map((attendance) => attendance.user_id)),
+    [attendanceState.data]
+  );
   const previousWinnerIds = useMemo(
     () => new Set(savedDraws.map((draw) => draw.participants?.[0]?.user_id).filter(Boolean)),
     [savedDraws]
@@ -169,11 +189,15 @@ export default function Roulette() {
 
   const activeParticipants = participantsState.loading ? [] : participantsState.data || [];
   const remainingParticipants = activeParticipants.filter((participant) => !previousWinnerIds.has(participant.user_id));
+  const orderedParticipants = useMemo(
+    () => [...remainingParticipants].sort((a, b) => Number(registeredUserIds.has(b.user_id)) - Number(registeredUserIds.has(a.user_id))),
+    [remainingParticipants, registeredUserIds]
+  );
   const participantNames = useMemo(
     () => (session?.draft_order?.length
       ? session.draft_order.map((participant) => participant.full_name)
-      : remainingParticipants.map((participant) => participant.full_name)),
-    [session?.draft_order, remainingParticipants]
+      : orderedParticipants.map((participant) => participant.full_name)),
+    [session?.draft_order, orderedParticipants]
   );
   const rouletteComplete = !drawsState.loading
     && !participantsState.loading
@@ -282,6 +306,26 @@ export default function Roulette() {
     }
   }
 
+  async function registerAttendance() {
+    if (!groupId || busy || hasRegistered || !canRegisterAttendance) return;
+    setBusy(true);
+    try {
+      const registered = await q(supabase.rpc('register_roulette_attendance', {
+        p_group: groupId,
+        p_period: periodNo,
+      }));
+      await attendanceState.reload();
+      toast(
+        registered ? `Kehadiran Anda tercatat untuk ${selectedGroup?.name || 'kelompok ini'}.` : 'Anda sudah terdaftar hadir.',
+        registered ? 'success' : 'info'
+      );
+    } catch (error) {
+      toast(error.message || 'Gagal mendaftarkan kehadiran.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function saveResult() {
     if (!session?.id) return;
     setBusy(true);
@@ -328,6 +372,12 @@ export default function Roulette() {
   const canStart = isAdmin && !rouletteComplete && !spinning
     && (!session || saved || cancelled)
     && !busy;
+  const canRegisterAttendance = remainingParticipants.some((participant) => participant.user_id === authSession.user.id)
+    && !spinning
+    && session?.status !== 'active'
+    && !saved
+    && !rouletteComplete;
+  const hasRegistered = registeredUserIds.has(authSession.user.id);
 
   return (
     <section className="roulette-page">
@@ -360,6 +410,8 @@ export default function Roulette() {
           </Empty>
         ) : drawsState.error ? (
           <ErrorBox error={drawsState.error} onRetry={drawsState.reload} />
+        ) : attendanceState.error ? (
+          <ErrorBox error={attendanceState.error} onRetry={attendanceState.reload} />
         ) : participantsState.error ? (
           <ErrorBox error={participantsState.error} onRetry={participantsState.reload} />
         ) : liveState.loading ? <Spinner text="Menyambungkan ke kocokan…" /> : liveState.error ? (
@@ -375,6 +427,19 @@ export default function Roulette() {
                   <strong>{countdown}</strong>
                   <span>Mulai dalam</span>
                 </span>
+              )}
+              {canRegisterAttendance && !attendanceState.loading && countdown === null && (
+                <button
+                  type="button"
+                  className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
+                  onClick={registerAttendance}
+                  disabled={busy || hasRegistered}
+                  aria-label={hasRegistered ? 'Kehadiran sudah terdaftar' : 'Daftar hadir untuk kocokan'}
+                >
+                  <Icon name={hasRegistered ? 'check' : 'userPlus'} size={16} />
+                  <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
+                  <span className="roulette-attendance-count">{registeredUserIds.size}</span>
+                </button>
               )}
               <button
                 type="button"

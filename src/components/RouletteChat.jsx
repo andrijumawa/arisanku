@@ -42,6 +42,7 @@ export default function RouletteChat({ groupId }) {
           setMessages((current) => current.some((item) => item.id === message.id)
             ? current
             : [...current, message].slice(-50));
+          if (message.is_system) return;
           const { data: profile, error } = await supabase
             .from('public_profiles')
             .select('id,full_name')
@@ -88,7 +89,7 @@ export default function RouletteChat({ groupId }) {
 
       const { data, error } = await supabase
         .from('roulette_chat_messages')
-        .select('id,group_id,user_id,body,created_at')
+        .select('id,group_id,user_id,body,is_system,created_at')
         .eq('group_id', groupId)
         .order('created_at', { ascending: false })
         .limit(50);
@@ -104,7 +105,9 @@ export default function RouletteChat({ groupId }) {
         return [...latestMessages, ...current.filter((message) => !ids.has(message.id))].slice(-50);
       });
 
-      const userIds = [...new Set(latestMessages.map((message) => message.user_id))];
+      const userIds = [...new Set(latestMessages
+        .filter((message) => !message.is_system)
+        .map((message) => message.user_id))];
       if (userIds.length) {
         const { data: profiles, error: profilesError } = await supabase
           .from('public_profiles')
@@ -138,7 +141,7 @@ export default function RouletteChat({ groupId }) {
     const { data, error } = await supabase
       .from('roulette_chat_messages')
       .insert({ group_id: groupId, user_id: uid, body })
-      .select('id,group_id,user_id,body,created_at')
+      .select('id,group_id,user_id,body,is_system,created_at')
       .single();
     setBusy(false);
     if (error) {
@@ -168,6 +171,13 @@ export default function RouletteChat({ groupId }) {
               <p className="roulette-fullscreen-chat-empty">Menghubungkan chat…</p>
             ) : messages.length ? (
               messages.map((message) => {
+                if (message.is_system) {
+                  return (
+                    <div className="roulette-chat-notice" key={message.id} role="status">
+                      {message.body}
+                    </div>
+                  );
+                }
                 const isAdminMessage = adminIds.includes(message.user_id);
                 return (
                   <article

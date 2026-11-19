@@ -45,11 +45,23 @@ create table if not exists public.roulette_chat_messages (
   group_id   uuid not null references public.groups(id) on delete cascade,
   user_id    uuid not null references public.profiles(id) on delete cascade,
   body       text not null check (char_length(body) between 1 and 1000),
+  is_system  boolean not null default false,
   created_at timestamptz not null default now()
 );
 
+alter table public.roulette_chat_messages
+  add column if not exists is_system boolean not null default false;
+
 create index if not exists roulette_chat_messages_group_created_idx
   on public.roulette_chat_messages (group_id, created_at desc);
+
+create table if not exists public.roulette_attendance (
+  group_id  uuid not null references public.groups(id) on delete cascade,
+  period_no integer not null check (period_no >= 1),
+  user_id   uuid not null references public.profiles(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (group_id, period_no, user_id)
+);
 
 alter table public.roulette_draws add column if not exists period_no int not null default 1;
 alter table public.roulette_draws drop constraint if exists roulette_draws_attempt_no_check;
@@ -63,6 +75,7 @@ create index if not exists roulette_draws_group_period_created_idx
 alter table public.roulette_sessions enable row level security;
 alter table public.roulette_draws enable row level security;
 alter table public.roulette_chat_messages enable row level security;
+alter table public.roulette_attendance enable row level security;
 
 create or replace function public.can_access_roulette_chat(p_group uuid)
 returns boolean language sql stable security definer set search_path = public as $$
@@ -107,11 +120,92 @@ create policy "rolet chat: anggota kelompok kirim" on public.roulette_chat_messa
   for insert to authenticated
   with check (
     user_id = auth.uid()
+    and not is_system
     and public.can_access_roulette_chat(group_id)
   );
 
+drop policy if exists "rolet hadir: anggota kelompok lihat" on public.roulette_attendance;
+create policy "rolet hadir: anggota kelompok lihat" on public.roulette_attendance
+  for select to authenticated using (public.can_access_roulette_chat(group_id));
+
 grant select, insert on public.roulette_chat_messages to authenticated;
 grant usage, select on sequence public.roulette_chat_messages_id_seq to authenticated;
+grant select on public.roulette_attendance to authenticated;
+
+create or replace function public.register_roulette_attendance(p_group uuid, p_period integer)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  participant_name text;
+  group_name text;
+  inserted_count integer;
+begin
+  if auth.uid() is null or not public.is_verified() or not exists (
+    select 1
+    from public.memberships m
+    where m.group_id = p_group
+      and m.user_id = auth.uid()
+      and m.status = 'aktif'
+  ) then
+    raise exception 'Hanya peserta aktif kelompok yang dapat mendaftar hadir';
+  end if;
+  if not exists (
+    select 1 from public.groups g
+    where g.id = p_group and g.type = 'uang' and g.draw_mode = 'acak'
+  ) then
+    raise exception 'Kelompok tidak tersedia untuk Kocokan';
+  end if;
+  if exists (
+    select 1
+    from public.roulette_draws d
+    cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
+    where d.group_id = p_group
+      and winner.ord = 1
+      and winner.value->>'user_id' = auth.uid()::text
+  ) then
+    raise exception 'Anda sudah mendapat giliran Kocokan';
+  end if;
+
+  if p_period is null or p_period <> (
+    select coalesce(max(d.period_no), 0) + 1
+    from public.roulette_draws d
+    where d.group_id = p_group
+  ) then
+    raise exception 'Periode pendaftaran hadir tidak valid';
+  end if;
+
+  if exists (
+    select 1 from public.roulette_sessions s
+    where s.group_id = p_group
+      and s.period_no = p_period
+      and s.status in ('active', 'spinning', 'saved')
+  ) then
+    raise exception 'Pendaftaran hadir ditutup karena kocokan sudah dimulai';
+  end if;
+
+  insert into public.roulette_attendance (group_id, period_no, user_id)
+  values (p_group, p_period, auth.uid())
+  on conflict do nothing;
+  get diagnostics inserted_count = row_count;
+  if inserted_count = 0 then
+    return false;
+  end if;
+
+  select p.full_name into participant_name
+  from public.profiles p where p.id = auth.uid();
+  select g.name into group_name
+  from public.groups g where g.id = p_group;
+
+  insert into public.roulette_chat_messages (group_id, user_id, body, is_system)
+  values (
+    p_group,
+    auth.uid(),
+    format('%s telah bergabung di kelompok %s.', participant_name, group_name),
+    true
+  );
+  return true;
+end $$;
+revoke all on function public.register_roulette_attendance(uuid, integer) from public;
+grant execute on function public.register_roulette_attendance(uuid, integer) to authenticated;
 
 do $$
 begin
@@ -123,6 +217,15 @@ begin
         and tablename = 'roulette_chat_messages'
     ) then
     alter publication supabase_realtime add table public.roulette_chat_messages;
+  end if;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+    and not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'roulette_attendance'
+    ) then
+    alter publication supabase_realtime add table public.roulette_attendance;
   end if;
 end $$;
 
@@ -180,10 +283,18 @@ begin
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
 
-  select jsonb_agg(jsonb_build_object('user_id', id, 'full_name', full_name) order by order_key)
+  select jsonb_agg(jsonb_build_object('user_id', id, 'full_name', full_name) order by is_registered desc, order_key)
   into shuffled_participants
   from (
-    select p.id, p.full_name, gen_random_uuid() as order_key
+    select p.id, p.full_name,
+      exists (
+        select 1
+        from public.roulette_attendance a
+        where a.group_id = p_group
+          and a.period_no = p_period
+          and a.user_id = p.id
+      ) as is_registered,
+      gen_random_uuid() as order_key
     from public.profiles p
     where p.id = any(active_ids)
   ) participants;
@@ -230,10 +341,18 @@ begin
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
 
-  select jsonb_agg(jsonb_build_object('user_id', id, 'full_name', full_name) order by order_key)
+  select jsonb_agg(jsonb_build_object('user_id', id, 'full_name', full_name) order by is_registered desc, order_key)
   into shuffled_participants
   from (
-    select p.id, p.full_name, gen_random_uuid() as order_key
+    select p.id, p.full_name,
+      exists (
+        select 1
+        from public.roulette_attendance a
+        where a.group_id = s.group_id
+          and a.period_no = s.period_no
+          and a.user_id = p.id
+      ) as is_registered,
+      gen_random_uuid() as order_key
     from public.profiles p
     where p.id = any(active_ids)
   ) participants;
