@@ -641,6 +641,16 @@ body.roulette-fullscreen-open .roulette-live {
 .menu-tile-kocok:active {
   transform: none;
 }
+.menu-tile-kocok.is-loading,
+.menu-tile-kocok.is-loading:hover,
+.menu-tile-kocok.is-loading:active {
+  cursor: wait;
+}
+.menu-tile-kocok:hover .menu-tile-arrow {
+  transform: none;
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
 .menu-tile-admin::after {
   border-color: rgba(130, 113, 35, 0.2);
 }

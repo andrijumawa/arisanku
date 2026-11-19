@@ -72,7 +72,14 @@ export default function Menu() {
   const items = [
     { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
     { to: '/arisan', icon: 'target', label: 'Arisan', description: 'Cari kelompok & daftar', disabled: accountPending || accountRejected },
-    { to: '/rolet', icon: 'dice', label: 'Kocokan', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
+    {
+      to: '/rolet',
+      icon: 'dice',
+      label: 'Kocokan',
+      description: 'Pantau pengacakan peserta',
+      loading: !isAdmin && rouletteAccessState.loading && !accountPending && !accountRejected,
+      disabled: accountPending || accountRejected || (!isAdmin && (!rouletteAccess || rouletteAccessState.loading)),
+    },
     { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
     ...(isAdmin ? [{
       to: '/admin',
@@ -257,12 +264,15 @@ export default function Menu() {
               <button
                 key={item.to}
                 type="button"
-                className="menu-tile is-disabled"
+                className={`menu-tile${item.loading ? ' menu-tile-kocok is-loading' : ' is-disabled'}`}
                 disabled
+                aria-busy={item.loading || undefined}
               >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
-                  <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>
+                  {item.loading
+                    ? <span className="menu-tile-arrow"><Icon name="arrowRight" size={17} /></span>
+                    : <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>}
                 </span>
                 <span className="menu-tile-copy">
                   <strong>{item.label}</strong>
