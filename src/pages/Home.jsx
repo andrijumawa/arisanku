@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
-import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
+import { addDaysToDate, bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
 
 export default function Home() {
@@ -78,42 +78,76 @@ export default function Home() {
           const paymentsByPeriod = bestPaymentByPeriod(membershipPayments);
           const done = Object.values(paymentsByPeriod).filter((payment) => payment.status === 'disetujui').length;
           const nextPeriod = Array.from({ length: g.durasi }, (_, index) => index + 1)
-            .find((period) => !paymentsByPeriod[period] || paymentsByPeriod[period].status === 'ditolak');
+            .find((period) => paymentsByPeriod[period]?.status !== 'disetujui');
           const dueDate = nextPeriod ? paymentDueDate(g.start_date, g.pay_period, nextPeriod) : null;
+          const withdrawalDate = dueDate ? addDaysToDate(dueDate, 7) : null;
+          const nextPayment = paymentsByPeriod[nextPeriod];
           return (
-            <Link key={m.id} to={`/g/${g.id}`} state={{ from: '/beranda' }} className="card link">
-              <div className="card-head">
-                <div>
-                  <h3>{g.name}</h3>
-                  <div className="muted small">
-                    {typeLabel(g)} · {rupiah(g.nominal)}/{periodUnit(g)}
-                    {m.slot_count > 1 ? ` · ${m.slot_count} slot` : ''}
+            <article key={m.id} className="card home-membership-card">
+              <Link to={`/g/${g.id}`} state={{ from: '/beranda' }} className="home-membership-link">
+                <div className="card-head">
+                  <div>
+                    <h3>{g.name}</h3>
+                    <div className="muted small">
+                      {typeLabel(g)} · {rupiah(g.nominal)}/{periodUnit(g)}
+                      {m.slot_count > 1 ? ` · ${m.slot_count} slot` : ''}
+                    </div>
                   </div>
+                  <Badge status={m.status} />
                 </div>
-                <Badge status={m.status} />
-              </div>
-              {m.status === 'aktif' && (
-                <>
-                  <Progress value={done} max={g.durasi} />
-                  <div className="row between small muted" style={{ marginTop: 6 }}>
-                    <span>
-                      Lunas {done} dari {g.durasi} {periodName(g).toLowerCase()}
-                    </span>
-                    {membershipPayments.filter((payment) => payment.status === 'menunggu').length > 0 && (
-                      <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
-                    )}
-                  </div>
-                </>
+                {m.status === 'aktif' && (
+                  <>
+                    <Progress value={done} max={g.durasi} />
+                    <div className="row between small muted home-payment-progress">
+                      <span>
+                        Lunas {done} dari {g.durasi} {periodName(g).toLowerCase()}
+                      </span>
+                      {membershipPayments.filter((payment) => payment.status === 'menunggu').length > 0 && (
+                        <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
+                      )}
+                    </div>
+                  </>
+                )}
+                {m.status === 'menunggu' && <div className="muted small">Menunggu persetujuan admin…</div>}
+              </Link>
+              {m.status === 'aktif' && nextPeriod && (
+                <details className="home-payment-details">
+                  <summary>Jadwal pembayaran</summary>
+                  {dueDate ? (
+                    <table>
+                      <tbody>
+                        <tr>
+                          <th scope="row">{periodName(g)}</th>
+                          <td>Ke-{nextPeriod}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Jatuh tempo</th>
+                          <td>{fmtDate(dueDate)}</td>
+                        </tr>
+                        <tr>
+                          <th scope="row">Tanggal penarikan</th>
+                          <td>{fmtDate(withdrawalDate)}</td>
+                        </tr>
+                        {nextPayment && (
+                          <tr>
+                            <th scope="row">Status</th>
+                            <td>
+                              {nextPayment.status === 'menunggu'
+                                ? 'Bukti menunggu verifikasi'
+                                : nextPayment.status === 'ditolak'
+                                  ? 'Bukti ditolak'
+                                  : 'Belum dibayar'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="muted small">Tanggal jatuh tempo belum ditentukan.</p>
+                  )}
+                </details>
               )}
-              <div className="muted small home-payment-due">
-                {dueDate
-                  ? `Jatuh tempo pembayaran ${nextPeriod}: ${fmtDate(dueDate)}`
-                  : nextPeriod
-                    ? 'Tanggal jatuh tempo belum ditentukan'
-                    : 'Tidak ada pembayaran berikutnya'}
-              </div>
-              {m.status === 'menunggu' && <div className="muted small">Menunggu persetujuan admin…</div>}
-            </Link>
+            </article>
           );
         })
       )}

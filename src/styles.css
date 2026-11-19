@@ -275,6 +275,82 @@ code {
   font-size: 12px;
   line-height: 1.45;
 }
+.admin-payment-schedule,
+.home-payment-details {
+  margin-top: 10px;
+  color: var(--ink);
+}
+.admin-payment-schedule {
+  padding: 0 10px 4px;
+  border: 1px solid rgba(95, 128, 224, 0.16);
+  border-radius: 10px;
+  background: rgba(232, 239, 255, 0.7);
+}
+.admin-payment-schedule summary,
+.home-payment-details summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  color: var(--brand-d);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+.admin-payment-schedule summary::-webkit-details-marker,
+.home-payment-details summary::-webkit-details-marker {
+  display: none;
+}
+.admin-payment-schedule summary::after,
+.home-payment-details summary::after {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  content: '';
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 160ms ease;
+}
+.admin-payment-schedule[open] summary::after,
+.home-payment-details[open] summary::after {
+  transform: translateY(2px) rotate(225deg);
+}
+.admin-payment-schedule table,
+.home-payment-details table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.admin-payment-schedule th,
+.admin-payment-schedule td,
+.home-payment-details th,
+.home-payment-details td {
+  padding: 7px 0;
+  border-top: 1px solid rgba(214, 224, 245, 0.72);
+}
+.admin-payment-schedule th,
+.home-payment-details th {
+  color: var(--muted);
+  font-weight: 500;
+  text-align: left;
+}
+.admin-payment-schedule td,
+.home-payment-details td {
+  font-weight: 650;
+  text-align: right;
+}
+.admin-payment-schedule summary:focus-visible,
+.home-payment-details summary:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: -3px;
+}
+.admin-payment-schedule-status {
+  margin-top: 3px;
+  color: var(--muted);
+}
 .admin-payment-overdue svg {
   flex: 0 0 auto;
   margin-top: 1px;
@@ -1080,6 +1156,33 @@ body.roulette-fullscreen-open .roulette-live {
 .card.link {
   display: block;
   color: inherit;
+}
+.home-membership-card {
+  padding: 0;
+  overflow: hidden;
+}
+.home-membership-link {
+  display: block;
+  padding: 14px 14px 10px;
+  color: inherit;
+}
+.home-membership-link:hover {
+  color: inherit;
+}
+.home-membership-link:focus-visible,
+.home-payment-details summary:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: -3px;
+}
+.home-payment-progress {
+  margin-top: 6px;
+}
+.home-payment-details {
+  margin: 0 14px 12px;
+  border-top: 1px solid var(--line);
+}
+.home-payment-details p {
+  margin: 0 0 10px;
 }
 .card-head {
   display: flex;

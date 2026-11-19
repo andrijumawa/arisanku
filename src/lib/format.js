@@ -27,6 +27,15 @@ export function paymentDueDate(startDate, payPeriod, periodNo) {
   return date.toISOString().slice(0, 10);
 }
 
+export function addDaysToDate(dateString, days) {
+  if (!dateString || !Number.isInteger(days)) return null;
+  const [year, month, day] = dateString.split('-').map(Number);
+  if (![year, month, day].every(Number.isFinite)) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
 export const fmtDay = (d) =>
   toDate(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 
