@@ -3318,6 +3318,12 @@ input[type='checkbox'] {
   align-items: center;
   gap: 8px;
 }
+.roulette-attendance-controls {
+  position: absolute;
+  z-index: 8;
+  top: 10px;
+  left: 10px;
+}
 .roulette-attendance-toggle {
   display: inline-flex;
   min-height: 48px;
@@ -3418,12 +3424,9 @@ input[type='checkbox'] {
   top: max(16px, env(safe-area-inset-top));
   right: max(16px, env(safe-area-inset-right));
 }
-.roulette-wheel-machine.is-fullscreen .roulette-attendance-toggle {
-  position: absolute;
-  z-index: 5;
-  top: 8%;
-  left: 0;
-  transform: translate(-15%, -20%);
+.roulette-wheel-machine.is-fullscreen .roulette-attendance-controls {
+  top: max(16px, env(safe-area-inset-top));
+  left: max(16px, env(safe-area-inset-left));
 }
 .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   width: min(78vw, 42dvh, 420px);

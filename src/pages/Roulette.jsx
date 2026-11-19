@@ -423,19 +423,8 @@ export default function Roulette() {
                   <span>Mulai dalam</span>
                 </span>
               )}
-              <div className="roulette-machine-controls">
-                <button
-                  type="button"
-                  className="roulette-fullscreen-toggle"
-                  onClick={toggleFullscreen}
-                  aria-label={fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
-                  title={fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
-                >
-                  <Icon name={fallbackFullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
-                </button>
-              </div>
-              <div className="roulette-wheel-wrap">
-                {fallbackFullscreen && groupId && (
+              {fallbackFullscreen && groupId && (
+                <div className="roulette-attendance-controls">
                   <button
                     type="button"
                     className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
@@ -454,7 +443,20 @@ export default function Roulette() {
                     <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
                     <span className="roulette-attendance-count">{registeredUserIds.size}</span>
                   </button>
-                )}
+                </div>
+              )}
+              <div className="roulette-machine-controls">
+                <button
+                  type="button"
+                  className="roulette-fullscreen-toggle"
+                  onClick={toggleFullscreen}
+                  aria-label={fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
+                  title={fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
+                >
+                  <Icon name={fallbackFullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
+                </button>
+              </div>
+              <div className="roulette-wheel-wrap">
                 <div className="roulette-pointer" aria-hidden="true"><span /></div>
                 <div
                   className="roulette-wheel"
