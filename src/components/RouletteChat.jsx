@@ -11,6 +11,7 @@ export default function RouletteChat({ groupId }) {
   const [allowed, setAllowed] = useState(null);
   const [messages, setMessages] = useState([]);
   const [names, setNames] = useState({});
+  const [adminIds, setAdminIds] = useState([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const listRef = useRef(null);
@@ -21,6 +22,7 @@ export default function RouletteChat({ groupId }) {
       setAllowed(false);
       setMessages([]);
       setNames({});
+      setAdminIds([]);
       return undefined;
     }
 
@@ -63,6 +65,7 @@ export default function RouletteChat({ groupId }) {
       setAllowed(null);
       setMessages([]);
       setNames({});
+      setAdminIds([]);
       const { data: canChat, error: accessError } = await supabase.rpc('can_access_roulette_chat', {
         p_group: groupId,
       });
@@ -74,6 +77,14 @@ export default function RouletteChat({ groupId }) {
       }
       setAllowed(Boolean(canChat));
       if (!canChat) return;
+
+      const { data: groupAdminIds, error: adminIdsError } = await supabase.rpc('chat_admin_ids');
+      if (!active) return;
+      if (adminIdsError) {
+        toast(adminIdsError.message, 'error');
+        return;
+      }
+      setAdminIds(groupAdminIds || []);
 
       const { data, error } = await supabase
         .from('roulette_chat_messages')
@@ -156,16 +167,22 @@ export default function RouletteChat({ groupId }) {
             {allowed === null ? (
               <p className="roulette-fullscreen-chat-empty">Menghubungkan chat…</p>
             ) : messages.length ? (
-              messages.map((message) => (
-                <article
-                  className={`roulette-chat-message${message.user_id === uid ? ' is-mine' : ''}`}
-                  key={message.id}
-                >
-                  <strong>{message.user_id === uid ? (names[uid] || 'Saya') : (names[message.user_id] || 'Peserta')}</strong>
-                  <p>{message.body}</p>
-                  <time>{fmtTime(message.created_at)}</time>
-                </article>
-              ))
+              messages.map((message) => {
+                const isAdminMessage = adminIds.includes(message.user_id);
+                return (
+                  <article
+                    className={`roulette-chat-message${message.user_id === uid ? ' is-mine' : ''}${isAdminMessage ? ' is-admin' : ''}`}
+                    key={message.id}
+                  >
+                    <strong>
+                      {message.user_id === uid ? (names[uid] || 'Saya') : (names[message.user_id] || 'Peserta')}
+                      {isAdminMessage && <span className="roulette-chat-admin-badge">Admin</span>}
+                    </strong>
+                    <p>{message.body}</p>
+                    <time>{fmtTime(message.created_at)}</time>
+                  </article>
+                );
+              })
             ) : (
               <p className="roulette-fullscreen-chat-empty">Belum ada pesan. Sapa peserta lain.</p>
             )}

@@ -356,6 +356,15 @@ returns boolean language sql stable security definer set search_path = public as
   ));
 $$;
 
+create or replace function public.chat_admin_ids()
+returns uuid[] language sql stable security definer set search_path = public as $$
+  select coalesce(array_agg(id order by id), '{}'::uuid[])
+  from public.profiles
+  where role = 'admin' and public.can_chat();
+$$;
+revoke all on function public.chat_admin_ids() from public;
+grant execute on function public.chat_admin_ids() to authenticated;
+
 create policy "chat: baca" on public.chat_messages
   for select to authenticated using (public.can_chat());
 create policy "chat: kirim" on public.chat_messages

@@ -15,6 +15,7 @@ export default function Chat() {
   const [allowed, setAllowed] = useState(null);
   const [msgs, setMsgs] = useState([]);
   const [names, setNames] = useState({});
+  const [adminIds, setAdminIds] = useState([]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const bottom = useRef(null);
@@ -112,10 +113,21 @@ export default function Chat() {
       }
       allowedRef.current = !!ok;
       setAllowed(!!ok);
-      if (ok) void loadMessages();
+      if (ok) {
+        const { data: ids, error: adminsError } = await supabase.rpc('chat_admin_ids');
+        if (!alive) return;
+        if (adminsError) {
+          setAdminIds([]);
+          toast(adminsError.message, 'error');
+        } else {
+          setAdminIds(ids || []);
+        }
+        void loadMessages();
+      }
       else {
         historyLoaded.current = false;
         setMsgs([]);
+        setAdminIds([]);
       }
     };
     const connect = () => {
@@ -248,12 +260,18 @@ export default function Chat() {
         )}
         {msgs.map((m, i) => {
           const mine = m.user_id === uid;
+          const adminMessage = isAdmin || adminIds.includes(m.user_id);
           const newDay = i === 0 || !sameDay(msgs[i - 1].created_at, m.created_at);
           return (
             <div key={m.id} style={{ display: 'contents' }}>
               {newDay && <div className="day-sep">{fmtDay(m.created_at)}</div>}
-              <div className={`bubble ${mine ? 'me' : ''}`}>
-                {!mine && <div className="who">{names[m.user_id] || '…'}</div>}
+              <div className={`bubble ${mine ? 'me' : ''}${adminMessage ? ' admin' : ''}`}>
+                {(!mine || adminMessage) && (
+                  <div className="who">
+                    {mine ? (names[uid] || 'Saya') : (names[m.user_id] || '…')}
+                    {adminMessage && <span className="chat-admin-badge">Admin</span>}
+                  </div>
+                )}
                 {m.image_path && <SignedImage bucket="chat-images" path={m.image_path} alt="Foto" />}
                 {m.body && <div className="txt">{m.body}</div>}
                 <div className="meta">
