@@ -12,6 +12,36 @@ const sameData = (a, b) => {
   }
 };
 
+let initialLoadPending = 0;
+let initialLoadFinished = false;
+const initialLoadListeners = new Set();
+
+export function getInitialLoadPending() {
+  return initialLoadPending;
+}
+
+export function subscribeToInitialLoad(listener) {
+  initialLoadListeners.add(listener);
+  return () => initialLoadListeners.delete(listener);
+}
+
+export function finishInitialLoad() {
+  initialLoadFinished = true;
+}
+
+function trackInitialLoad() {
+  if (initialLoadFinished) return () => {};
+  initialLoadPending += 1;
+  initialLoadListeners.forEach((listener) => listener(initialLoadPending));
+  let active = true;
+  return () => {
+    if (!active) return;
+    active = false;
+    initialLoadPending = Math.max(0, initialLoadPending - 1);
+    initialLoadListeners.forEach((listener) => listener(initialLoadPending));
+  };
+}
+
 const asyncDataCache = new Map();
 const ASYNC_CACHE_LIMIT = 100;
 let cachedUserId = null;
@@ -60,6 +90,7 @@ export function useAsync(fn, deps = []) {
 
   useEffect(() => {
     let alive = true;
+    const finishTrackedLoad = trackInitialLoad();
     const cachedData = getCachedData(cacheKey);
     setState((current) => current.key === cacheKey
       ? {
@@ -92,7 +123,8 @@ export function useAsync(fn, deps = []) {
         setState((current) => current.key === cacheKey && current.hasData
           ? { ...current, loading: false, error }
           : { key: cacheKey, loading: false, hasData: false, data: null, error });
-      });
+      })
+      .finally(finishTrackedLoad);
     return () => {
       alive = false;
     };
