@@ -132,7 +132,7 @@ export function useAsync(fn, deps = []) {
         error: null,
       });
 
-    loadAsyncData(cacheKey, () => fnRef.current())
+    loadAsyncData(cacheKey, () => fnRef.current(...deps))
       .then((data) => {
         if (!alive) return;
         setState((current) => {
