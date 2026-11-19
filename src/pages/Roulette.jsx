@@ -424,7 +424,7 @@ export default function Roulette() {
                 </span>
               )}
               <div className="roulette-machine-controls">
-                {groupId && (
+                {fallbackFullscreen && groupId && (
                   <button
                     type="button"
                     className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
