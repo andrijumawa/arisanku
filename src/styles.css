@@ -250,6 +250,12 @@ code {
   width: 100%;
   animation: page-enter 260ms cubic-bezier(0.2, 0.75, 0.3, 1) both;
 }
+.main-menu .page-enter {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
 .main-admin .page-enter,
 .main-chat .page-enter {
   flex: 1;
