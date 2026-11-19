@@ -628,6 +628,9 @@ body.roulette-fullscreen-open .roulette-live {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
+.menu-tile-kocok .menu-tile-copy > span {
+  color: rgba(255, 255, 255, 0.84);
+}
 .menu-tile-kocok:hover {
   border-color: rgba(255, 255, 255, 0.55);
   background: linear-gradient(105deg, var(--brand-d), var(--brand));
