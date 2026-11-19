@@ -257,7 +257,9 @@ export default function Layout() {
               : `main${loc.pathname === '/admin' ? ' main-admin' : ''}`
         }
       >
-        <Outlet context={{ unread }} />
+        <div key={loc.pathname} className="page-enter">
+          <Outlet context={{ unread }} />
+        </div>
       </main>
 
       {loc.pathname !== '/' && (
