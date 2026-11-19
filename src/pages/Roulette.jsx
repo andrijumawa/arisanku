@@ -307,7 +307,7 @@ export default function Roulette() {
   }
 
   async function registerAttendance() {
-    if (!groupId || busy || hasRegistered || !canRegisterAttendance) return;
+    if (!groupId || busy || hasRegistered) return;
     setBusy(true);
     try {
       const registered = await q(supabase.rpc('register_roulette_attendance', {
@@ -372,11 +372,6 @@ export default function Roulette() {
   const canStart = isAdmin && !rouletteComplete && !spinning
     && (!session || saved || cancelled)
     && !busy;
-  const canRegisterAttendance = remainingParticipants.some((participant) => participant.user_id === authSession.user.id)
-    && !spinning
-    && session?.status !== 'active'
-    && !saved
-    && !rouletteComplete;
   const hasRegistered = registeredUserIds.has(authSession.user.id);
 
   return (
@@ -429,12 +424,20 @@ export default function Roulette() {
                 </span>
               )}
               <div className="roulette-machine-controls">
-                {canRegisterAttendance && !attendanceState.loading && countdown === null && (
+                {groupId && (
                   <button
                     type="button"
                     className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
                     onClick={registerAttendance}
-                    disabled={busy || hasRegistered}
+                    disabled={
+                      busy
+                      || attendanceState.loading
+                      || hasRegistered
+                      || countdown !== null
+                      || spinning
+                      || saved
+                      || rouletteComplete
+                    }
                     aria-label={hasRegistered ? 'Kehadiran sudah terdaftar' : 'Daftar hadir untuk kocokan'}
                   >
                     <Icon name={hasRegistered ? 'check' : 'userPlus'} size={16} />
