@@ -3292,15 +3292,16 @@ input[type='checkbox'] {
   -webkit-tap-highlight-color: transparent;
   transition: background 160ms ease, transform 160ms ease;
 }
-.roulette-fullscreen-toggle:hover {
-  background: #fff;
-  transform: scale(1.04);
+@media (hover: hover) and (pointer: fine) {
+  .roulette-fullscreen-toggle:hover {
+    background: #fff;
+    transform: scale(1.04);
+  }
 }
 .roulette-fullscreen-toggle:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
 }
-.roulette-wheel-machine:fullscreen,
 .roulette-wheel-machine.is-fullscreen {
   position: fixed;
   z-index: 1000;
@@ -3322,26 +3323,19 @@ input[type='checkbox'] {
     radial-gradient(ellipse at 50% 35%, rgba(255, 255, 255, 0.96), transparent 68%),
     var(--brand-l);
 }
-.roulette-wheel-machine:fullscreen::backdrop {
-  background: var(--brand-l);
-}
-.roulette-wheel-machine:fullscreen .roulette-fullscreen-toggle,
 .roulette-wheel-machine.is-fullscreen .roulette-fullscreen-toggle {
   top: max(16px, env(safe-area-inset-top));
   right: max(16px, env(safe-area-inset-right));
 }
-.roulette-wheel-machine:fullscreen .roulette-countdown,
 .roulette-wheel-machine.is-fullscreen .roulette-countdown {
   top: max(16px, env(safe-area-inset-top));
   left: max(16px, env(safe-area-inset-left));
 }
-.roulette-wheel-machine:fullscreen .roulette-wheel-wrap,
 .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   width: min(78vw, 42dvh, 420px);
   flex: 0 0 auto;
   margin: 6px auto 0;
 }
-.roulette-wheel-machine:fullscreen .roulette-machine-status,
 .roulette-wheel-machine.is-fullscreen .roulette-machine-status {
   flex: 0 0 auto;
   font-size: clamp(16px, 3vmin, 22px);
@@ -3358,7 +3352,6 @@ input[type='checkbox'] {
   background: rgba(255, 255, 255, 0.74);
   text-align: left;
 }
-.roulette-wheel-machine:fullscreen .roulette-fullscreen-chat,
 .roulette-wheel-machine.is-fullscreen .roulette-fullscreen-chat {
   display: grid;
 }

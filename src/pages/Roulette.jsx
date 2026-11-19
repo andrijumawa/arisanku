@@ -25,11 +25,9 @@ export default function Roulette() {
   const [spinIndex, setSpinIndex] = useState(0);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [wheelTransitionDuration, setWheelTransitionDuration] = useState(0);
-  const [fullscreen, setFullscreen] = useState(false);
   const [fallbackFullscreen, setFallbackFullscreen] = useState(false);
   const [countdownEndsAt, setCountdownEndsAt] = useState(null);
   const [countdownNow, setCountdownNow] = useState(Date.now());
-  const wheelMachineRef = useRef(null);
   const countdownChannelRef = useRef(null);
   const countdownEndsAtRef = useRef(null);
 
@@ -63,23 +61,6 @@ export default function Roulette() {
     const timer = window.setInterval(() => setCountdownNow(Date.now()), 100);
     return () => window.clearInterval(timer);
   }, [countdownEndsAt]);
-
-  useEffect(() => {
-    const syncFullscreen = () => {
-      setFullscreen(document.fullscreenElement === wheelMachineRef.current || fallbackFullscreen);
-    };
-    const exitFallbackOnEscape = (event) => {
-      if (event.key === 'Escape' && fallbackFullscreen) setFallbackFullscreen(false);
-    };
-
-    document.addEventListener('fullscreenchange', syncFullscreen);
-    document.addEventListener('keydown', exitFallbackOnEscape);
-    syncFullscreen();
-    return () => {
-      document.removeEventListener('fullscreenchange', syncFullscreen);
-      document.removeEventListener('keydown', exitFallbackOnEscape);
-    };
-  }, [fallbackFullscreen]);
 
   const groupsState = useAsync(async () => {
     if (isAdmin) {
@@ -330,37 +311,8 @@ export default function Roulette() {
     }
   }
 
-  async function toggleFullscreen() {
-    const machine = wheelMachineRef.current;
-    if (!machine) return;
-
-    try {
-      if (fullscreen) {
-        if (document.fullscreenElement) {
-          await document.exitFullscreen();
-        } else {
-          setFallbackFullscreen(false);
-          setFullscreen(false);
-        }
-        return;
-      }
-
-      if (machine.requestFullscreen) {
-        try {
-          await machine.requestFullscreen();
-          return;
-        } catch {
-          setFallbackFullscreen(true);
-          setFullscreen(true);
-          return;
-        }
-      }
-
-      setFallbackFullscreen(true);
-      setFullscreen(true);
-    } catch (error) {
-      toast(error.message || 'Tidak dapat mengubah tampilan layar penuh.', 'error');
-    }
+  function toggleFullscreen() {
+    setFallbackFullscreen((current) => !current);
   }
 
   const spinning = session?.status === 'spinning';
@@ -410,8 +362,7 @@ export default function Roulette() {
         ) : (
           <>
             <div
-              ref={wheelMachineRef}
-              className={`roulette-machine roulette-wheel-machine${spinning ? ' is-spinning' : ''}${fullscreen && fallbackFullscreen ? ' is-fullscreen' : ''}`}
+              className={`roulette-machine roulette-wheel-machine${spinning ? ' is-spinning' : ''}${fallbackFullscreen ? ' is-fullscreen' : ''}`}
               aria-live="polite"
             >
               {countdown !== null && (
@@ -424,10 +375,10 @@ export default function Roulette() {
                 type="button"
                 className="roulette-fullscreen-toggle"
                 onClick={toggleFullscreen}
-                aria-label={fullscreen ? 'Keluar dari layar penuh' : 'Tampilkan kocokan layar penuh'}
-                title={fullscreen ? 'Keluar dari layar penuh' : 'Layar penuh'}
+                aria-label={fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
+                title={fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
               >
-                <Icon name={fullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
+                <Icon name={fallbackFullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
               </button>
               <div className="roulette-wheel-wrap">
                 <div className="roulette-pointer" aria-hidden="true"><span /></div>
@@ -501,7 +452,7 @@ export default function Roulette() {
                         : 'Hasil sementara · siap disimpan'}
                 </span>
               )}
-              {fullscreen && <RouletteChat />}
+              {fallbackFullscreen && <RouletteChat />}
             </div>
 
             <div className="roulette-live-meta">
