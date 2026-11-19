@@ -234,7 +234,7 @@ export default function App() {
       || initialPending > 0
     ) return undefined;
 
-    const minimumVisibleTime = 700;
+    const minimumVisibleTime = 1200;
     const exitDuration = 320;
     const delay = Math.max(0, minimumVisibleTime - (Date.now() - startedAt.current));
     const prepareExit = window.setTimeout(() => {
