@@ -14,13 +14,14 @@ export default function Home() {
   const realtimeSubscriptions = [
     { table: 'memberships', filter: `user_id=eq.${uid}` },
     ...(displayedData?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
+    ...(displayedData?.ms || []).map((m) => ({ table: 'rounds', filter: `group_id=eq.${m.group_id}` })),
   ];
   useRealtimeRefresh(reload, `home-${uid}`, realtimeSubscriptions);
 
   if (loading && !displayedData) return <Spinner />;
   if (error && !displayedData) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { ms, pays } = displayedData;
+  const { ms, pays, rounds = [] } = displayedData;
   const aktif = ms.filter((m) => m.status === 'aktif').length;
   const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
   const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
@@ -67,7 +68,17 @@ export default function Home() {
           const nextPeriod = Array.from({ length: g.durasi }, (_, index) => index + 1)
             .find((period) => paymentsByPeriod[period]?.status !== 'disetujui');
           const dueDate = nextPeriod ? paymentDueDate(g.start_date, g.pay_period, nextPeriod) : null;
-          const withdrawalDate = dueDate ? addDaysToDate(dueDate, 7) : null;
+          const winningRound = nextPeriod
+            ? rounds.find((round) => round.group_id === g.id && round.round_no === nextPeriod && round.winner_user_id === uid)
+            : null;
+          const withdrawalDate = winningRound?.pickup_date || (dueDate ? addDaysToDate(dueDate, 7) : null);
+          const today = new Date();
+          const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+          const withdrawalInactive = Boolean(winningRound && (
+            winningRound.status === 'selesai'
+            || winningRound.status === 'diserahkan'
+            || withdrawalDate <= todayString
+          ));
           const nextPayment = paymentsByPeriod[nextPeriod];
           return (
             <article key={m.id} className="card home-membership-card">
@@ -111,9 +122,12 @@ export default function Home() {
                           <th scope="row">Jatuh tempo</th>
                           <td>{fmtDate(dueDate)}</td>
                         </tr>
-                        <tr>
+                        <tr className={withdrawalInactive ? 'withdrawal-inactive' : ''}>
                           <th scope="row">Tanggal penarikan</th>
-                          <td>{fmtDate(withdrawalDate)}</td>
+                          <td>
+                            {fmtDate(withdrawalDate)}
+                            {withdrawalInactive && <span className="withdrawal-state">Sudah diterima</span>}
+                          </td>
                         </tr>
                         {nextPayment && (
                           <tr>

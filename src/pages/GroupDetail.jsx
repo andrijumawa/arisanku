@@ -36,14 +36,10 @@ export default function GroupDetail() {
       supabase.from('memberships').select('id,slot_count,status').eq('group_id', id).eq('user_id', uid).maybeSingle()
     );
     let payments = [];
-    let slots = [];
     if (mem) {
       payments = await q(
         supabase.from('payments').select('period_no,status,note,created_at').eq('membership_id', mem.id).order('created_at', { ascending: false })
       );
-      if (group.type === 'uang') {
-        slots = await q(supabase.from('slots').select('id,slot_no').eq('membership_id', mem.id).order('slot_no'));
-      }
     }
     let rounds = [];
     let names = {};
@@ -57,14 +53,14 @@ export default function GroupDetail() {
         names = Object.fromEntries(ps.map((p) => [p.id, p.full_name]));
       }
     }
-    return { group, mem, payments, slots, rounds, names };
+    return { group, mem, payments, rounds, names };
   }, [id, uid]);
 
   const realtimeSubscriptions = useMemo(
     () => [
       { table: 'groups', filter: `id=eq.${id}` },
       { table: 'memberships', filter: `user_id=eq.${uid}` },
-      ...(data?.mem ? [{ table: 'payments', filter: `membership_id=eq.${data.mem.id}` }, { table: 'slots', filter: `membership_id=eq.${data.mem.id}` }] : []),
+      ...(data?.mem ? [{ table: 'payments', filter: `membership_id=eq.${data.mem.id}` }] : []),
       { table: 'rounds', filter: `group_id=eq.${id}` },
       ...[...new Set((data?.rounds || []).map((r) => r.winner_user_id).filter(Boolean))].map((winnerId) => ({
         table: 'profiles',
@@ -87,7 +83,7 @@ export default function GroupDetail() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { group: g, mem, payments, slots, rounds, names } = data;
+  const { group: g, mem, payments, rounds, names } = data;
   const amount = mem ? Number(g.nominal) * mem.slot_count : Number(g.nominal);
   const done = Object.values(byPeriod).filter((p) => p.status === 'disetujui').length;
   const label = periodName(g);
@@ -166,19 +162,6 @@ export default function GroupDetail() {
       {mem?.status === 'ditolak' && <div className="alert err">Pendaftaran ditolak admin. Hubungi admin lewat chat.</div>}
       {mem?.status === 'nonaktif' && (
         <div className="alert warn">Keanggotaanmu sedang nonaktif. Hubungi admin untuk mengaktifkan kembali.</div>
-      )}
-
-      {mem && g.type === 'uang' && slots.length > 0 && (
-        <div className="card">
-          <div className="muted small">Nomor slot saya</div>
-          <div className="row wrap" style={{ marginTop: 6 }}>
-            {slots.map((s) => (
-              <span key={s.id} className="badge type">
-                #{s.slot_no}
-              </span>
-            ))}
-          </div>
-        </div>
       )}
 
       {mem?.status === 'aktif' && (

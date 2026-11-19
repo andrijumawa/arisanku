@@ -484,6 +484,22 @@ code {
   outline: 3px solid var(--brand);
   outline-offset: -3px;
 }
+.withdrawal-inactive th,
+.withdrawal-inactive td {
+  color: var(--muted);
+  opacity: 0.58;
+}
+.withdrawal-inactive td {
+  text-decoration: line-through;
+}
+.withdrawal-state {
+  display: block;
+  margin-top: 2px;
+  text-decoration: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--green);
+}
 .admin-payment-schedule-status {
   margin-top: 3px;
   color: var(--muted);

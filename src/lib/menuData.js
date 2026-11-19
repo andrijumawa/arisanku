@@ -14,7 +14,11 @@ export async function loadHomeData(uid) {
   const pays = ids.length
     ? await q(supabase.from('payments').select('membership_id,period_no,status').in('membership_id', ids))
     : [];
-  return { ms, pays };
+  const groupIds = [...new Set(ms.map((membership) => membership.group_id).filter(Boolean))];
+  const rounds = groupIds.length
+    ? await q(supabase.from('rounds').select('id,group_id,round_no,winner_user_id,pickup_date,status').in('group_id', groupIds).order('round_no'))
+    : [];
+  return { ms, pays, rounds };
 }
 
 export async function loadBrowseData(uid) {

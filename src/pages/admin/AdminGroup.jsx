@@ -84,11 +84,22 @@ export default function AdminGroup() {
     if (!periodNo) return null;
     const payment = memberPayments[periodNo];
     const dueDate = paymentDueDate(g.start_date, g.pay_period, periodNo);
+    const winningRound = isUang
+      ? rounds.find((round) => round.round_no === periodNo && round.winner_user_id === member.user_id)
+      : null;
+    const withdrawalDate = winningRound?.pickup_date || (dueDate ? addDaysToDate(dueDate, 7) : null);
+    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const withdrawalInactive = Boolean(winningRound && (
+      winningRound.status === 'selesai'
+      || winningRound.status === 'diserahkan'
+      || (withdrawalDate && withdrawalDate <= todayString)
+    ));
     return {
       periodNo,
       payment,
       dueDate,
-      withdrawalDate: dueDate ? addDaysToDate(dueDate, 7) : null,
+      withdrawalDate,
+      withdrawalInactive,
     };
   };
   const overdueByMember = new Map(members.map((member) => [member.id, overduePeriodsOf(member)]));
@@ -241,9 +252,12 @@ export default function AdminGroup() {
                     <th scope="row">Jatuh tempo</th>
                     <td>{fmtDate(paymentScheduleByMember.get(m.id).dueDate)}</td>
                   </tr>
-                  <tr>
+                  <tr className={paymentScheduleByMember.get(m.id).withdrawalInactive ? 'withdrawal-inactive' : ''}>
                     <th scope="row">Tanggal penarikan</th>
-                    <td>{fmtDate(paymentScheduleByMember.get(m.id).withdrawalDate)}</td>
+                    <td>
+                      {fmtDate(paymentScheduleByMember.get(m.id).withdrawalDate)}
+                      {paymentScheduleByMember.get(m.id).withdrawalInactive && <span className="withdrawal-state">Sudah diterima</span>}
+                    </td>
                   </tr>
                   {paymentScheduleByMember.get(m.id).payment && (
                     <tr>
