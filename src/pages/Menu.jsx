@@ -73,7 +73,6 @@ export default function Menu() {
     { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
     { to: '/arisan', icon: 'target', label: 'Arisan', description: 'Cari kelompok & daftar', disabled: accountPending || accountRejected },
     { to: '/rolet', icon: 'dice', label: 'Kocokan', description: 'Pantau pengacakan peserta', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
-    { to: '/hasil-rolet', icon: 'check', label: 'Hasil Kocokan', description: 'Lihat hasil yang tersimpan', disabled: accountPending || accountRejected || (!isAdmin && !rouletteAccess) },
     { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
     ...(isAdmin ? [{
       to: '/admin',
@@ -258,7 +257,7 @@ export default function Menu() {
               <button
                 key={item.to}
                 type="button"
-                className={`menu-tile is-disabled${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}`}
+                className="menu-tile is-disabled"
                 disabled
               >
                 <span className="menu-tile-top">
@@ -277,7 +276,7 @@ export default function Menu() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`menu-tile${item.to === '/hasil-rolet' ? ' menu-tile-results' : ''}${item.to === '/admin' ? ' menu-tile-admin' : ''}`}
+                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}`}
               >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>

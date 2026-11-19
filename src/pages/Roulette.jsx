@@ -14,6 +14,25 @@ function getSpinDuration(roundNo, totalRounds) {
   return Math.max(3000, Math.round(3000 + 4000 * remainingRatio));
 }
 
+function payoutDate(group, periodNo) {
+  if (!group?.start_date || !Number.isInteger(periodNo) || periodNo < 1) return null;
+  const date = new Date(`${group.start_date}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  const offset = periodNo - 1;
+
+  if (group.pay_period === 'harian') date.setDate(date.getDate() + offset);
+  else if (group.pay_period === 'mingguan') date.setDate(date.getDate() + offset * 7);
+  else if (group.pay_period === 'bulanan') {
+    const day = date.getDate();
+    date.setDate(1);
+    date.setMonth(date.getMonth() + offset);
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    date.setDate(Math.min(day, lastDay));
+  } else return null;
+
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 const WHEEL_COLORS = ['#ee746e', '#e7b955', '#4fba9a', '#9b78d8', '#d96388', '#7566e8', '#5598d4', '#e58b61'];
 
 export default function Roulette() {
@@ -50,7 +69,7 @@ export default function Roulette() {
       return q(
         supabase
           .from('groups')
-          .select('id,name,durasi,type,draw_mode,pay_period')
+          .select('id,name,durasi,type,draw_mode,pay_period,start_date')
           .eq('type', 'uang')
           .eq('draw_mode', 'acak')
           .order('name')
@@ -60,7 +79,7 @@ export default function Roulette() {
     const memberships = await q(
       supabase
         .from('memberships')
-        .select('group_id,groups(id,name,durasi,type,draw_mode,pay_period)')
+        .select('group_id,groups(id,name,durasi,type,draw_mode,pay_period,start_date)')
         .eq('user_id', authSession.user.id)
         .eq('status', 'aktif')
     );
@@ -105,14 +124,6 @@ export default function Roulette() {
     () => new Set(savedDraws.map((draw) => draw.participants?.[0]?.user_id).filter(Boolean)),
     [savedDraws]
   );
-  const savedWinners = useMemo(
-    () => [...savedDraws]
-      .sort((a, b) => a.period_no - b.period_no)
-      .map((draw) => draw.participants?.[0])
-      .filter(Boolean),
-    [savedDraws]
-  );
-
   const liveState = useAsync(async () => {
     if (!groupId || !periodNo) return null;
     const { data, error } = await supabase
@@ -467,22 +478,43 @@ export default function Roulette() {
               </p>
             )}
 
-            {savedWinners.length > 0 && (
-              <ol className="roulette-final-order" aria-label="Urutan sementara peserta kocokan">
-                {savedWinners.map((participant, index) => (
-                  <li key={`${participant.user_id}-${index}`}>
-                    <span className="roulette-rank">{index + 1}</span>
-                    <span>{participant.full_name}</span>
-                  </li>
-                ))}
-                {rouletteComplete && (
-                  <li>
-                    <span className="roulette-rank">{savedWinners.length + 1}</span>
-                    <span>{remainingParticipants[0].full_name}</span>
-                  </li>
-                )}
-              </ol>
-            )}
+            <section className="roulette-history" aria-label="Hasil kocokan tersimpan">
+              <h2 className="section-title">Hasil kocokan</h2>
+              {drawsState.loading ? <Spinner text="Memuat hasil kocokan…" /> : savedDraws.length ? (
+                <div className="roulette-results">
+                  {[...savedDraws]
+                    .sort((a, b) => a.period_no - b.period_no)
+                    .map((draw) => (
+                      <article className="card roulette-result" key={`${draw.period_no}-${draw.participants?.[0]?.user_id}`}>
+                        <div className="roulette-result-head">
+                          <div>
+                            <h2>{selectedGroup?.name || 'Kelompok arisan'}</h2>
+                            <p className="muted small">
+                              Putaran {draw.period_no} · Tanggal pencairan:{' '}
+                              <strong>{payoutDate(selectedGroup, draw.period_no) || 'belum ditentukan'}</strong>
+                            </p>
+                          </div>
+                          <Icon name="dice" size={23} className="roulette-result-icon" />
+                        </div>
+                        <ol>
+                          {(draw.participants || [])
+                            .slice(0, draw.participants?.length === 2 ? 2 : 1)
+                            .map((participant, index) => (
+                              <li key={`${participant.user_id}-${index}`}>
+                                <span className="roulette-rank">{draw.period_no + index}</span>
+                                <span>{participant.full_name}</span>
+                              </li>
+                            ))}
+                        </ol>
+                      </article>
+                    ))}
+                </div>
+              ) : (
+                <Empty icon="dice" title="Belum ada hasil tersimpan">
+                  Hasil yang disimpan admin akan tampil di sini.
+                </Empty>
+              )}
+            </section>
           </>
         )}
       </section>

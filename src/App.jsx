@@ -13,7 +13,6 @@ const Chat = lazy(() => import('./pages/Chat.jsx'));
 const Account = lazy(() => import('./pages/Account.jsx'));
 const Menu = lazy(() => import('./pages/Menu.jsx'));
 const Roulette = lazy(() => import('./pages/Roulette.jsx'));
-const RouletteResults = lazy(() => import('./pages/RouletteResults.jsx'));
 const AdminHome = lazy(() => import('./pages/admin/AdminHome.jsx'));
 const GroupForm = lazy(() => import('./pages/admin/GroupForm.jsx'));
 const AdminGroup = lazy(() => import('./pages/admin/AdminGroup.jsx'));
@@ -123,7 +122,7 @@ export default function App() {
           <Route path="chat" element={<Guard verified><Chat /></Guard>} />
           <Route path="akun" element={<Guard verified><Account /></Guard>} />
           <Route path="rolet" element={<Guard verified member><Roulette /></Guard>} />
-          <Route path="hasil-rolet" element={<Guard verified member><RouletteResults /></Guard>} />
+          <Route path="hasil-rolet" element={<Navigate to="/rolet" replace />} />
           <Route
             path="admin"
             element={

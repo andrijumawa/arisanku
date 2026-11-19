@@ -634,43 +634,6 @@ body.keyboard-open .main select {
 @keyframes menu-admin-count-pulse {
  50% { transform: scale(1.08); }
 }
-.menu-tile-results:not(.is-disabled) {
-  isolation: isolate;
-  border-color: rgba(255, 255, 255, 0.3);
-  background:
-    radial-gradient(ellipse at 92% 8%, rgba(255, 255, 255, 0.24), transparent 42%),
-    linear-gradient(115deg, var(--brand-d), var(--brand));
-  color: #fff;
-  box-shadow: 0 12px 24px rgba(69, 102, 190, 0.25), inset 0 1px rgba(255, 255, 255, 0.24);
-}
-.menu-tile-results:not(.is-disabled) > * {
-  position: relative;
-  z-index: 1;
-}
-.menu-tile-results:not(.is-disabled)::after {
-  border-color: rgba(255, 255, 255, 0.22);
-}
-.menu-tile-results:not(.is-disabled) .menu-tile-icon-wrap {
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.22);
-}
-.menu-tile-results:not(.is-disabled) .menu-tile-arrow {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff;
-}
-.menu-tile-results:not(.is-disabled) .menu-tile-copy > span {
-  color: rgba(255, 255, 255, 0.8);
-}
-.menu-tile-results:not(.is-disabled):hover {
-  border-color: rgba(255, 255, 255, 0.56);
-  color: #fff;
-  background:
-    radial-gradient(ellipse at 92% 8%, rgba(255, 255, 255, 0.3), transparent 42%),
-    linear-gradient(115deg, #5879d7, #82a0f2);
-  box-shadow: 0 16px 30px rgba(69, 102, 190, 0.32), inset 0 1px rgba(255, 255, 255, 0.32);
-}
 .menu-tile:active {
   transform: translateY(-1px) scale(0.99);
 }
@@ -764,15 +727,6 @@ body.keyboard-open .main select {
   border-color: rgba(255, 255, 255, 0.2);
   background: linear-gradient(145deg, #8299d5, #718acb);
   box-shadow: 0 4px 9px rgba(75, 96, 145, 0.12), inset 0 1px rgba(255, 255, 255, 0.22);
-}
-.menu-tile-results.is-disabled .menu-tile-icon-wrap {
-  border-color: rgba(95, 128, 224, 0.14);
-  background: linear-gradient(145deg, #eef3ff, #dce6ff);
-  color: #6382dc;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.92);
-}
-.menu-tile-results.is-disabled .menu-tile-icon {
-  color: #6382dc;
 }
 .menu-tile-locked {
   z-index: 1;
@@ -3491,7 +3445,6 @@ input[type='checkbox'] {
 .roulette-admin-controls p {
   margin: 0;
 }
-.roulette-final-order,
 .roulette-result ol {
   display: grid;
   gap: 5px;
@@ -3499,7 +3452,6 @@ input[type='checkbox'] {
   margin: 10px 0 0;
   padding: 0;
 }
-.roulette-final-order li,
 .roulette-result li {
   display: flex;
   align-items: center;
