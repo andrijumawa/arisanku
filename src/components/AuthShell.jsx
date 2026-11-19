@@ -7,18 +7,39 @@ export default function AuthShell() {
   const { pathname } = useLocation();
   const isLogin = pathname === '/masuk';
   const previousPath = useRef(pathname);
+  const keyboardWasOpen = useRef(false);
+  const keyboardCloseTimer = useRef(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [visibleViewport, setVisibleViewport] = useState(null);
+  const [keyboardClosing, setKeyboardClosing] = useState(false);
 
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return undefined;
 
     const syncKeyboardState = () => {
+      const keyboardOpen = viewport.height < window.innerHeight - 120;
+      if (keyboardCloseTimer.current !== null) {
+        window.clearTimeout(keyboardCloseTimer.current);
+        keyboardCloseTimer.current = null;
+      }
+
+      if (keyboardOpen) {
+        keyboardWasOpen.current = true;
+        setKeyboardClosing(false);
+      } else if (keyboardWasOpen.current) {
+        keyboardWasOpen.current = false;
+        setKeyboardClosing(true);
+        keyboardCloseTimer.current = window.setTimeout(() => {
+          setKeyboardClosing(false);
+          keyboardCloseTimer.current = null;
+        }, 400);
+      }
+
       setVisibleViewport({
         height: viewport.height,
         offsetTop: viewport.offsetTop,
-        keyboardOpen: viewport.height < window.innerHeight - 120,
+        keyboardOpen,
       });
     };
 
@@ -31,6 +52,9 @@ export default function AuthShell() {
       viewport.removeEventListener('resize', syncKeyboardState);
       viewport.removeEventListener('scroll', syncKeyboardState);
       window.removeEventListener('resize', syncKeyboardState);
+      if (keyboardCloseTimer.current !== null) {
+        window.clearTimeout(keyboardCloseTimer.current);
+      }
     };
   }, []);
 
@@ -44,7 +68,7 @@ export default function AuthShell() {
 
   return (
     <main
-      className={`auth${visibleViewport?.keyboardOpen ? ' keyboard-open' : ''}`}
+      className={`auth${visibleViewport?.keyboardOpen ? ' keyboard-open' : ''}${keyboardClosing ? ' keyboard-closing' : ''}`}
       style={visibleViewport?.keyboardOpen ? {
         '--auth-visible-height': `${visibleViewport.height}px`,
         '--auth-viewport-top': `${visibleViewport.offsetTop}px`,
