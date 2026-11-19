@@ -9,6 +9,13 @@ export default function Layout() {
   const { isAdmin, profile, session } = useAuth();
   const toast = useToast();
   const loc = useLocation();
+  const isGroupDetail = /^\/g\/[^/]+$/.test(loc.pathname);
+  const backTarget = isGroupDetail && ['/beranda', '/arisan'].includes(loc.state?.from)
+    ? loc.state.from
+    : isGroupDetail
+      ? '/beranda'
+      : '/';
+  const backLabel = backTarget === '/beranda' ? 'Kembali ke Beranda' : 'Kembali ke Menu';
   const [unread, setUnread] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [pullState, setPullState] = useState('idle');
@@ -255,8 +262,8 @@ export default function Layout() {
 
       {loc.pathname !== '/' && (
         <footer className="app-back">
-          <Link to="/" className="app-back-button">
-            <Icon name="back" size={19} /> Kembali ke Menu
+          <Link to={backTarget} className="app-back-button">
+            <Icon name="back" size={19} /> {backLabel}
           </Link>
         </footer>
       )}

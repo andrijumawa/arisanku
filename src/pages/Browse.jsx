@@ -99,7 +99,7 @@ function BrowseGroupCard({ group, status, onJoin }) {
 
           <footer className="browse-group-actions">
             {status ? (
-              <Link to={`/g/${group.id}`} className="btn browse-group-button">
+              <Link to={`/g/${group.id}`} state={{ from: '/arisan' }} className="btn browse-group-button">
                 Lihat detail <Icon name="arrowRight" size={17} />
               </Link>
             ) : (

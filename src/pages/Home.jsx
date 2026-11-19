@@ -100,7 +100,7 @@ export default function Home() {
             .find((period) => !paymentsByPeriod[period] || paymentsByPeriod[period].status === 'ditolak');
           const dueDate = nextPeriod ? getPaymentDate(g.start_date, g.pay_period, nextPeriod) : null;
           return (
-            <Link key={m.id} to={`/g/${g.id}`} className="card link">
+            <Link key={m.id} to={`/g/${g.id}`} state={{ from: '/beranda' }} className="card link">
               <div className="card-head">
                 <div>
                   <h3>{g.name}</h3>

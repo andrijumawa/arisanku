@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
@@ -13,10 +13,12 @@ import Icon from '../components/Icon.jsx';
 
 export default function GroupDetail() {
   const { id } = useParams();
+  const location = useLocation();
   const { session } = useAuth();
   const uid = session.user.id;
   const nav = useNavigate();
   const toast = useToast();
+  const returnTo = ['/beranda', '/arisan'].includes(location.state?.from) ? location.state.from : '/beranda';
   const [uploading, setUploading] = useState(null); // nomor periode
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -132,7 +134,7 @@ export default function GroupDetail() {
 
   return (
     <>
-      <Link to="/" className="small">
+      <Link to={returnTo} className="small">
         <Icon name="back" size={16} /> Kembali
       </Link>
       <div className="card" style={{ marginTop: 8 }}>
