@@ -457,7 +457,7 @@ export default function Roulette() {
                         : 'Hasil sementara · siap disimpan'}
                 </span>
               )}
-              {fallbackFullscreen && <RouletteChat />}
+              {fallbackFullscreen && <RouletteChat groupId={groupId} />}
             </div>
 
             <div className="roulette-live-meta">

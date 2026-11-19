@@ -40,6 +40,17 @@ create table if not exists public.roulette_draws (
   created_at   timestamptz not null default now()
 );
 
+create table if not exists public.roulette_chat_messages (
+  id         bigint generated always as identity primary key,
+  group_id   uuid not null references public.groups(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  body       text not null check (char_length(body) between 1 and 1000),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists roulette_chat_messages_group_created_idx
+  on public.roulette_chat_messages (group_id, created_at desc);
+
 alter table public.roulette_draws add column if not exists period_no int not null default 1;
 alter table public.roulette_draws drop constraint if exists roulette_draws_attempt_no_check;
 alter table public.roulette_draws alter column attempt_no type integer using attempt_no::integer;
@@ -51,6 +62,50 @@ create index if not exists roulette_draws_group_period_created_idx
 
 alter table public.roulette_sessions enable row level security;
 alter table public.roulette_draws enable row level security;
+alter table public.roulette_chat_messages enable row level security;
+
+create or replace function public.can_access_roulette_chat(p_group uuid)
+returns boolean language sql stable security definer set search_path = public as $$
+  select public.is_admin() or (
+    public.is_verified() and exists (
+      select 1
+      from public.memberships m
+      where m.group_id = p_group
+        and m.user_id = auth.uid()
+        and m.status = 'aktif'
+    )
+  );
+$$;
+revoke all on function public.can_access_roulette_chat(uuid) from public;
+grant execute on function public.can_access_roulette_chat(uuid) to authenticated;
+
+drop policy if exists "rolet chat: anggota kelompok baca" on public.roulette_chat_messages;
+create policy "rolet chat: anggota kelompok baca" on public.roulette_chat_messages
+  for select to authenticated using (public.can_access_roulette_chat(group_id));
+
+drop policy if exists "rolet chat: anggota kelompok kirim" on public.roulette_chat_messages;
+create policy "rolet chat: anggota kelompok kirim" on public.roulette_chat_messages
+  for insert to authenticated
+  with check (
+    user_id = auth.uid()
+    and public.can_access_roulette_chat(group_id)
+  );
+
+grant select, insert on public.roulette_chat_messages to authenticated;
+grant usage, select on sequence public.roulette_chat_messages_id_seq to authenticated;
+
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+    and not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'roulette_chat_messages'
+    ) then
+    alter publication supabase_realtime add table public.roulette_chat_messages;
+  end if;
+end $$;
 
 drop policy if exists "rolet: admin lihat sesi" on public.roulette_sessions;
 drop policy if exists "rolet: peserta pantau sesi" on public.roulette_sessions;

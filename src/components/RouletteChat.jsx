@@ -5,7 +5,7 @@ import { fmtTime } from '../lib/format';
 import { useToast } from './Toast.jsx';
 import Icon from './Icon.jsx';
 
-export default function RouletteChat() {
+export default function RouletteChat({ groupId }) {
   const { session } = useAuth();
   const toast = useToast();
   const [allowed, setAllowed] = useState(null);
@@ -17,34 +17,55 @@ export default function RouletteChat() {
   const uid = session.user.id;
 
   useEffect(() => {
+    if (!groupId) {
+      setAllowed(false);
+      setMessages([]);
+      setNames({});
+      return undefined;
+    }
+
     let active = true;
     const channel = supabase
-      .channel(`roulette-chat-${uid}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async ({ new: message }) => {
-        if (!active || !message.body) return;
-        setMessages((current) => current.some((item) => item.id === message.id)
-          ? current
-          : [...current, message].slice(-50));
-        const { data: profile, error } = await supabase
-          .from('public_profiles')
-          .select('id,full_name')
-          .eq('id', message.user_id)
-          .maybeSingle();
-        if (!active) return;
-        if (error) {
-          console.error('Gagal memuat nama peserta chat:', error);
-          return;
+      .channel(`roulette-chat-${groupId}-${uid}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'roulette_chat_messages',
+          filter: `group_id=eq.${groupId}`,
+        },
+        async ({ new: message }) => {
+          if (!active || message.group_id !== groupId || !message.body) return;
+          setMessages((current) => current.some((item) => item.id === message.id)
+            ? current
+            : [...current, message].slice(-50));
+          const { data: profile, error } = await supabase
+            .from('public_profiles')
+            .select('id,full_name')
+            .eq('id', message.user_id)
+            .maybeSingle();
+          if (!active) return;
+          if (error) {
+            console.error('Gagal memuat nama peserta chat:', error);
+            return;
+          }
+          if (profile) setNames((current) => ({ ...current, [profile.id]: profile.full_name }));
         }
-        if (profile) setNames((current) => ({ ...current, [profile.id]: profile.full_name }));
-      })
+      )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.error(`Realtime channel "roulette-chat-${uid}" failed: ${status}`);
+          console.error(`Realtime channel "roulette-chat-${groupId}" failed: ${status}`);
         }
       });
 
     async function load() {
-      const { data: canChat, error: accessError } = await supabase.rpc('can_chat');
+      setAllowed(null);
+      setMessages([]);
+      setNames({});
+      const { data: canChat, error: accessError } = await supabase.rpc('can_access_roulette_chat', {
+        p_group: groupId,
+      });
       if (!active) return;
       if (accessError) {
         setAllowed(false);
@@ -55,10 +76,10 @@ export default function RouletteChat() {
       if (!canChat) return;
 
       const { data, error } = await supabase
-        .from('chat_messages')
-        .select('id,user_id,body,created_at')
-        .not('body', 'is', null)
-        .order('id', { ascending: false })
+        .from('roulette_chat_messages')
+        .select('id,group_id,user_id,body,created_at')
+        .eq('group_id', groupId)
+        .order('created_at', { ascending: false })
         .limit(50);
       if (!active) return;
       if (error) {
@@ -92,7 +113,7 @@ export default function RouletteChat() {
       active = false;
       void supabase.removeChannel(channel);
     };
-  }, [toast, uid]);
+  }, [groupId, toast, uid]);
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
@@ -104,9 +125,9 @@ export default function RouletteChat() {
     if (!body || busy) return;
     setBusy(true);
     const { data, error } = await supabase
-      .from('chat_messages')
-      .insert({ user_id: uid, body })
-      .select('id,user_id,body,created_at')
+      .from('roulette_chat_messages')
+      .insert({ group_id: groupId, user_id: uid, body })
+      .select('id,group_id,user_id,body,created_at')
       .single();
     setBusy(false);
     if (error) {
@@ -125,10 +146,10 @@ export default function RouletteChat() {
       <div className="roulette-fullscreen-chat-heading">
         <Icon name="message" size={17} />
         <strong>Chat peserta</strong>
-        <span>Ruang bersama</span>
+        <span>Kelompok ini</span>
       </div>
       {allowed === false ? (
-        <p className="roulette-fullscreen-chat-empty">Chat hanya tersedia untuk peserta aktif.</p>
+        <p className="roulette-fullscreen-chat-empty">Chat ini hanya untuk peserta aktif kelompok.</p>
       ) : (
         <>
           <div className="roulette-fullscreen-chat-messages" ref={listRef} aria-live="polite">
