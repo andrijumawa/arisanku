@@ -614,7 +614,7 @@ body.roulette-fullscreen-open .roulette-live {
   color: #fff;
   box-shadow: 0 9px 20px rgba(95, 128, 224, 0.2), inset 0 1px rgba(255, 255, 255, 0.24);
   transform: none;
-  transition: box-shadow 200ms ease, border-color 200ms ease;
+  transition: none;
 }
 .menu-tile-kocok::after {
   border-color: rgba(255, 255, 255, 0.2);
@@ -632,10 +632,10 @@ body.roulette-fullscreen-open .roulette-live {
   color: rgba(255, 255, 255, 0.84);
 }
 .menu-tile-kocok:hover {
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(255, 255, 255, 0.3);
   background: linear-gradient(105deg, var(--brand-d), var(--brand));
   color: #fff;
-  box-shadow: 0 14px 24px rgba(95, 128, 224, 0.26), inset 0 1px rgba(255, 255, 255, 0.3);
+  box-shadow: 0 9px 20px rgba(95, 128, 224, 0.2), inset 0 1px rgba(255, 255, 255, 0.24);
   transform: none;
 }
 .menu-tile-kocok:active {
