@@ -260,19 +260,16 @@ export default function Menu() {
               </span>
             </button>
           ) : (
-            item.disabled ? (
+            item.disabled && item.to !== '/rolet' ? (
               <button
                 key={item.to}
                 type="button"
-                className={`menu-tile${item.loading ? ' menu-tile-kocok is-loading' : ' is-disabled'}`}
+                className="menu-tile is-disabled"
                 disabled
-                aria-busy={item.loading || undefined}
               >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
-                  {item.loading
-                    ? <span className="menu-tile-arrow"><Icon name="arrowRight" size={17} /></span>
-                    : <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>}
+                  <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>
                 </span>
                 <span className="menu-tile-copy">
                   <strong>{item.label}</strong>
@@ -286,11 +283,17 @@ export default function Menu() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/rolet' ? ' menu-tile-kocok' : ''}`}
+                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/rolet' ? ` menu-tile-kocok${item.loading ? ' is-loading' : item.disabled ? ' is-disabled' : ''}` : ''}`}
+                aria-disabled={item.to === '/rolet' && item.disabled ? true : undefined}
+                aria-busy={item.to === '/rolet' && item.loading ? true : undefined}
+                tabIndex={item.to === '/rolet' && item.disabled ? -1 : undefined}
+                onClick={item.to === '/rolet' && item.disabled ? (event) => event.preventDefault() : undefined}
               >
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
-                  <span className="menu-tile-arrow"><Icon name="arrowRight" size={17} /></span>
+                  {item.to === '/rolet' && item.disabled && !item.loading
+                    ? <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>
+                    : <span className="menu-tile-arrow"><Icon name="arrowRight" size={17} /></span>}
                   {item.adminNotifications ? (
                     <span className="menu-admin-notifications" aria-label={`${item.adminNotifications.registrations} pendaftaran, ${item.adminNotifications.payments} pembayaran, ${item.adminNotifications.participants} peserta menunggu`}>
                       {item.adminNotifications.registrations > 0 && <span className="menu-admin-notice"><b>Pendaftaran</b>{item.adminNotifications.registrations > 9 ? '9+' : item.adminNotifications.registrations}</span>}
