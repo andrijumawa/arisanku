@@ -8,9 +8,11 @@ export function Badge({ status, children }) {
 
 export function Spinner({ text = 'Memuat…' }) {
   return (
-    <div className="center muted" style={{ padding: 32 }} role="status" aria-live="polite">
-      <div className="spin" aria-hidden="true" />
-      <div style={{ marginTop: 8 }}>{text}</div>
+    <div className="loading-placeholder" role="status" aria-live="polite" aria-label={text}>
+      <span className="loading-placeholder-line is-wide" aria-hidden="true" />
+      <span className="loading-placeholder-line" aria-hidden="true" />
+      <span className="loading-placeholder-line is-short" aria-hidden="true" />
+      <span className="visually-hidden">{text}</span>
     </div>
   );
 }

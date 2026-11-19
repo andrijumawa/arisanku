@@ -1,12 +1,9 @@
-import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { bestPaymentByPeriod, fmtDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
-
-let homeDataCache = null;
 
 function getPaymentDate(startDate, payPeriod, periodNo) {
   if (!startDate || !periodNo) return null;
@@ -47,11 +44,7 @@ export default function Home() {
       : [];
     return { ms, pays };
   }, [uid]);
-  const cachedData = homeDataCache?.uid === uid ? homeDataCache.data : null;
-  const displayedData = data || cachedData;
-  useEffect(() => {
-    if (data) homeDataCache = { uid, data };
-  }, [data, uid]);
+  const displayedData = data;
   const realtimeSubscriptions = [
     { table: 'memberships', filter: `user_id=eq.${uid}` },
     ...(displayedData?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),

@@ -12,47 +12,100 @@ const sameData = (a, b) => {
   }
 };
 
+const asyncDataCache = new Map();
+const ASYNC_CACHE_LIMIT = 100;
+let cachedUserId = null;
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  const nextUserId = session?.user?.id || null;
+  if (cachedUserId !== nextUserId) asyncDataCache.clear();
+  cachedUserId = nextUserId;
+});
+
+function getAsyncCacheKey(fn, deps) {
+  let serializedDeps;
+  try {
+    serializedDeps = JSON.stringify(deps);
+  } catch {
+    serializedDeps = deps.map((dep) => String(dep)).join('|');
+  }
+  return `${fn.toString()}::${serializedDeps}`;
+}
+
+function getCachedData(key) {
+  if (!asyncDataCache.has(key)) return undefined;
+  const cached = asyncDataCache.get(key);
+  asyncDataCache.delete(key);
+  asyncDataCache.set(key, cached);
+  return cached;
+}
+
+function setCachedData(key, data) {
+  asyncDataCache.delete(key);
+  asyncDataCache.set(key, data);
+  if (asyncDataCache.size > ASYNC_CACHE_LIMIT) {
+    asyncDataCache.delete(asyncDataCache.keys().next().value);
+  }
+}
+
 export function useAsync(fn, deps = []) {
-  const [state, setState] = useState({ loading: true, data: null, error: null });
-  const [tick, setTick] = useState(0);
   const fnRef = useRef(fn);
   fnRef.current = fn;
-  const lastDeps = useRef(null);
-  const hasData = useRef(false);
+  const cacheKey = getAsyncCacheKey(fn, deps);
+  const [state, setState] = useState(() => {
+    const data = getCachedData(cacheKey);
+    return { key: cacheKey, loading: data === undefined, hasData: data !== undefined, data, error: null };
+  });
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     let alive = true;
-    const prev = lastDeps.current;
-    const depsChanged = !prev || prev.length !== deps.length || deps.some((d, i) => !Object.is(d, prev[i]));
-    lastDeps.current = deps;
-    if (depsChanged) hasData.current = false;
-    const silent = !depsChanged && hasData.current;
+    const cachedData = getCachedData(cacheKey);
+    setState((current) => current.key === cacheKey
+      ? {
+        ...current,
+        loading: false,
+        error: null,
+        ...(cachedData === undefined ? {} : { hasData: true, data: cachedData }),
+      }
+      : {
+        key: cacheKey,
+        loading: cachedData === undefined,
+        hasData: cachedData !== undefined,
+        data: cachedData,
+        error: null,
+      });
 
-    if (!silent) setState((s) => ({ ...s, loading: true, error: null }));
-    fnRef
-      .current()
+    Promise.resolve()
+      .then(() => fnRef.current())
       .then((data) => {
         if (!alive) return;
-        hasData.current = true;
-        setState((s) => (silent && sameData(s.data, data) ? s : { loading: false, data, error: null }));
+        setCachedData(cacheKey, data);
+        setState((current) => {
+          if (current.key !== cacheKey) return { key: cacheKey, loading: false, hasData: true, data, error: null };
+          if (current.hasData && sameData(current.data, data)) return { ...current, loading: false, error: null };
+          return { key: cacheKey, loading: false, hasData: true, data, error: null };
+        });
       })
       .catch((error) => {
         if (!alive) return;
-        if (silent) {
-          console.error('Gagal memperbarui data:', error);
-          return;
-        }
-        hasData.current = false;
-        setState({ loading: false, data: null, error });
+        setState((current) => current.key === cacheKey && current.hasData
+          ? { ...current, loading: false, error }
+          : { key: cacheKey, loading: false, hasData: false, data: null, error });
       });
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [...deps, tick]);
+  }, [cacheKey, tick]);
 
   const reload = useCallback(() => setTick((t) => t + 1), []);
-  return { ...state, reload };
+  const currentState = state.key === cacheKey
+    ? state
+    : (() => {
+      const data = getCachedData(cacheKey);
+      return { key: cacheKey, loading: data === undefined, hasData: data !== undefined, data, error: null };
+    })();
+  return { loading: currentState.loading, data: currentState.data, error: currentState.error, reload };
 }
 
 export function useRealtimeRefresh(reload, channelName, subscriptions, enabled = true, onChange) {
