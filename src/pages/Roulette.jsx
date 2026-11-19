@@ -368,6 +368,7 @@ export default function Roulette() {
   const cancelled = session?.status === 'cancelled';
   const displayedName = participantNames.length ? participantNames[spinIndex % participantNames.length] : 'Menunggu peserta';
   const countdown = countdownEndsAt ? Math.max(0, Math.ceil((countdownEndsAt - countdownNow) / 1000)) : null;
+  const isWheelFullscreen = fallbackFullscreen || document.fullscreenElement === wheelMachineRef.current;
   const canStart = isAdmin && !rouletteComplete && !spinning
     && (!session || saved || cancelled)
     && !busy;
@@ -501,7 +502,7 @@ export default function Roulette() {
                         : 'Hasil sementara · siap disimpan'}
                 </span>
               )}
-              {fullscreen && <RouletteChat />}
+              {isWheelFullscreen && <RouletteChat />}
             </div>
 
             <div className="roulette-live-meta">
