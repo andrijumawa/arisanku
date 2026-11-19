@@ -10,12 +10,19 @@ export default function Layout() {
   const toast = useToast();
   const loc = useLocation();
   const isGroupDetail = /^\/g\/[^/]+$/.test(loc.pathname);
-  const backTarget = isGroupDetail && ['/beranda', '/arisan'].includes(loc.state?.from)
-    ? loc.state.from
-    : isGroupDetail
-      ? '/beranda'
-      : '/';
-  const backLabel = backTarget === '/beranda' ? 'Kembali ke Beranda' : 'Kembali ke Menu';
+  const isAdminGroupDetail = /^\/admin\/kelompok\/[^/]+$/.test(loc.pathname);
+  const backTarget = isAdminGroupDetail
+    ? '/admin?tab=kelompok'
+    : isGroupDetail && ['/beranda', '/arisan'].includes(loc.state?.from)
+      ? loc.state.from
+      : isGroupDetail
+        ? '/beranda'
+        : '/';
+  const backLabel = isAdminGroupDetail
+    ? 'Kembali ke Kelompok'
+    : backTarget === '/beranda'
+      ? 'Kembali ke Beranda'
+      : 'Kembali ke Menu';
   const [unread, setUnread] = useState(0);
   const [pullDistance, setPullDistance] = useState(0);
   const [pullState, setPullState] = useState('idle');
