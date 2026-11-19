@@ -2,8 +2,29 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
-import { periodName, rupiah, typeLabel } from '../lib/format';
+import { bestPaymentByPeriod, fmtDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
+
+function getPaymentDate(startDate, payPeriod, periodNo) {
+  if (!startDate || !periodNo) return null;
+  const [year, month, day] = startDate.split('-').map(Number);
+  if (![year, month, day].every(Number.isFinite)) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const offset = periodNo - 1;
+
+  if (payPeriod === 'harian') date.setUTCDate(date.getUTCDate() + offset);
+  else if (payPeriod === 'mingguan') date.setUTCDate(date.getUTCDate() + offset * 7);
+  else if (payPeriod === 'bulanan') {
+    const targetMonth = date.getUTCMonth() + offset;
+    const targetYear = date.getUTCFullYear() + Math.floor(targetMonth / 12);
+    const normalizedMonth = targetMonth % 12;
+    const lastDay = new Date(Date.UTC(targetYear, normalizedMonth + 1, 0)).getUTCDate();
+    date.setUTCDate(1);
+    date.setUTCFullYear(targetYear, normalizedMonth, Math.min(day, lastDay));
+  } else return null;
+
+  return date.toISOString().slice(0, 10);
+}
 
 export default function Home() {
   const { profile, session } = useAuth();
@@ -13,13 +34,13 @@ export default function Home() {
     const ms = await q(
       supabase
         .from('memberships')
-        .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,pay_period,package_type)')
+        .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,pay_period,package_type,start_date)')
         .eq('user_id', uid)
         .order('created_at', { ascending: false })
     );
     const ids = ms.map((m) => m.id);
     const pays = ids.length
-      ? await q(supabase.from('payments').select('membership_id,status').in('membership_id', ids))
+      ? await q(supabase.from('payments').select('membership_id,period_no,status').in('membership_id', ids))
       : [];
     return { ms, pays };
   }, [uid]);
@@ -33,7 +54,6 @@ export default function Home() {
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
   const { ms, pays } = data;
-  const count = (mid, st) => pays.filter((p) => p.membership_id === mid && p.status === st).length;
   const aktif = ms.filter((m) => m.status === 'aktif').length;
   const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
   const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
@@ -73,14 +93,19 @@ export default function Home() {
       ) : (
         ms.map((m) => {
           const g = m.groups;
-          const done = count(m.id, 'disetujui');
+          const membershipPayments = pays.filter((payment) => payment.membership_id === m.id);
+          const paymentsByPeriod = bestPaymentByPeriod(membershipPayments);
+          const done = Object.values(paymentsByPeriod).filter((payment) => payment.status === 'disetujui').length;
+          const nextPeriod = Array.from({ length: g.durasi }, (_, index) => index + 1)
+            .find((period) => !paymentsByPeriod[period] || paymentsByPeriod[period].status === 'ditolak');
+          const dueDate = nextPeriod ? getPaymentDate(g.start_date, g.pay_period, nextPeriod) : null;
           return (
             <Link key={m.id} to={`/g/${g.id}`} className="card link">
               <div className="card-head">
                 <div>
                   <h3>{g.name}</h3>
                   <div className="muted small">
-                    {typeLabel(g)} · {rupiah(g.nominal)}/{g.type === 'uang' ? 'bulan' : periodName(g).toLowerCase()}
+                    {typeLabel(g)} · {rupiah(g.nominal)}/{periodUnit(g)}
                     {m.slot_count > 1 ? ` · ${m.slot_count} slot` : ''}
                   </div>
                 </div>
@@ -93,10 +118,19 @@ export default function Home() {
                     <span>
                       Lunas {done} dari {g.durasi} {periodName(g).toLowerCase()}
                     </span>
-                    {count(m.id, 'menunggu') > 0 && <span>{count(m.id, 'menunggu')} menunggu verifikasi</span>}
+                    {membershipPayments.filter((payment) => payment.status === 'menunggu').length > 0 && (
+                      <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
+                    )}
                   </div>
                 </>
               )}
+              <div className="muted small home-payment-due">
+                {dueDate
+                  ? `Jatuh tempo pembayaran ${nextPeriod}: ${fmtDate(dueDate)}`
+                  : nextPeriod
+                    ? 'Tanggal jatuh tempo belum ditentukan'
+                    : 'Tidak ada pembayaran berikutnya'}
+              </div>
               {m.status === 'menunggu' && <div className="muted small">Menunggu persetujuan admin…</div>}
             </Link>
           );
