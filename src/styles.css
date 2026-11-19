@@ -73,6 +73,7 @@ body {
   overflow: hidden;
   place-items: start center;
   background: linear-gradient(160deg, #dce5ff, #7d9bea);
+  animation: startup-splash-enter 420ms ease-out both;
 }
 .startup-splash-image,
 .startup-splash-shade {
@@ -155,6 +156,10 @@ body {
   from { transform: translateX(0); }
   to { transform: translateX(160%); }
 }
+@keyframes startup-splash-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 @media (min-width: 720px) {
   .startup-splash {
     place-items: center;
@@ -168,6 +173,9 @@ body {
     transition: none;
   }
   .startup-splash-progress span {
+    animation: none;
+  }
+  .startup-splash {
     animation: none;
   }
 }
