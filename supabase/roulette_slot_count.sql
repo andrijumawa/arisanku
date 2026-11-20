@@ -197,7 +197,8 @@ begin
 
   select array_agg(remaining.user_id order by remaining.user_id, remaining.slot_no)
   into active_ids
-  from public.roulette_remaining_slots(p_group) remaining;
+  from public.roulette_remaining_slots(p_group) remaining
+  where remaining.is_registered;
   if coalesce(cardinality(active_ids), 0) < 2 then
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
@@ -215,6 +216,7 @@ begin
   from (
     select remaining.*, gen_random_uuid() as order_key
     from public.roulette_remaining_slots(p_group) remaining
+    where remaining.is_registered
   ) participants;
 
   insert into public.roulette_sessions (
@@ -247,7 +249,8 @@ begin
 
   select array_agg(remaining.user_id order by remaining.user_id, remaining.slot_no)
   into active_ids
-  from public.roulette_remaining_slots(s.group_id) remaining;
+  from public.roulette_remaining_slots(s.group_id) remaining
+  where remaining.is_registered;
   if coalesce(cardinality(active_ids), 0) < 2 then
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
@@ -265,6 +268,7 @@ begin
   from (
     select remaining.*, gen_random_uuid() as order_key
     from public.roulette_remaining_slots(s.group_id) remaining
+    where remaining.is_registered
   ) participants;
 
   update public.roulette_sessions

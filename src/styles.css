@@ -4494,6 +4494,12 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
   overflow-wrap: anywhere;
 }
+.roulette-attendance-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
 .roulette-wheel-center {
   position: absolute;
   top: 50%;

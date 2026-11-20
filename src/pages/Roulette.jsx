@@ -170,7 +170,7 @@ export default function Roulette() {
     && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
   ));
   const orderedParticipants = useMemo(
-    () => [...remainingParticipants].sort((a, b) => Number(registeredUserIds.has(b.user_id)) - Number(registeredUserIds.has(a.user_id))),
+    () => remainingParticipants.filter((participant) => registeredUserIds.has(participant.user_id)),
     [remainingParticipants, registeredUserIds]
   );
   const wheelParticipants = useMemo(() => {
@@ -547,6 +547,12 @@ export default function Roulette() {
               )}
               {fallbackFullscreen && <RouletteChat groupId={groupId} />}
             </div>
+
+            {!participantNames.length && !rouletteComplete && (
+              <p className="roulette-attendance-empty" role="status">
+                Peserta yang sudah daftar hadir akan muncul di roda rolet.
+              </p>
+            )}
 
             <div className="roulette-live-meta">
               <span>{selectedGroup?.name}</span>
