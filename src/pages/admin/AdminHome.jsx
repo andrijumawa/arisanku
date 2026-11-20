@@ -121,7 +121,7 @@ function Registrations({ revision }) {
       q(
         supabase
           .from('memberships')
-      .select('id,user_id,slot_count,status,created_at,profiles(full_name,phone),groups(name,type,nominal,package_type)')
+      .select('id,user_id,slot_count,status,created_at,profiles(full_name,phone,avatar_path),groups(name,type,nominal,package_type)')
           .eq('status', 'menunggu')
           .order('created_at')
       ),
@@ -156,7 +156,9 @@ function Registrations({ revision }) {
   return data.map((m) => (
     <div key={m.id} className="card">
       <div className="person">
-        <div className="avatar">{initial(m.profiles?.full_name)}</div>
+      {m.profiles?.avatar_path
+        ? <SignedImage bucket="profile-avatars" path={m.profiles.avatar_path} alt={`Foto ${m.profiles.full_name}`} className="avatar admin-person-photo" />
+        : <div className="avatar">{initial(m.profiles?.full_name)}</div>}
         <div style={{ flex: 1 }}>
           <b>{m.profiles?.full_name}</b>
           <div className="muted small">{m.profiles?.phone}</div>
@@ -295,7 +297,7 @@ function People({ revision }) {
   const { data, loading, error, reload } = useAsync(
     () => q(supabase
       .from('profiles')
-      .select('id,full_name,phone,role,account_status,created_at')
+      .select('id,full_name,phone,avatar_path,role,account_status,created_at')
       .order('created_at', { ascending: false })),
     [revision]
   );
@@ -363,7 +365,9 @@ function People({ revision }) {
       {list.map((p) => (
         <div key={p.id} className="card admin-person-card">
           <div className="admin-person-row">
-            <div className="avatar">{initial(p.full_name)}</div>
+            {p.avatar_path
+              ? <SignedImage bucket="profile-avatars" path={p.avatar_path} alt={`Foto ${p.full_name}`} className="avatar admin-person-photo" />
+              : <div className="avatar">{initial(p.full_name)}</div>}
             <div className="admin-person-info">
               <div className="admin-person-name-line">
                 <b>{p.full_name}</b>

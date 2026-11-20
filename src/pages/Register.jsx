@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { isValidPhone } from '../lib/supabase';
-import AuthSocialIcons from '../components/AuthSocialIcons.jsx';
 import Icon from '../components/Icon.jsx';
 
 export default function Register() {
   const { signUp, session } = useAuth();
   const nav = useNavigate();
+  const selfieInput = useRef(null);
   const [form, setForm] = useState({ fullName: '', phone: '', password: '' });
+  const [selfie, setSelfie] = useState(null);
+  const [selfiePreview, setSelfiePreview] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -21,9 +23,36 @@ export default function Register() {
     return () => query.removeEventListener('change', update);
   }, []);
 
+  useEffect(() => {
+    if (!selfie) {
+      setSelfiePreview('');
+      return undefined;
+    }
+
+    const previewUrl = URL.createObjectURL(selfie);
+    setSelfiePreview(previewUrl);
+    return () => URL.revokeObjectURL(previewUrl);
+  }, [selfie]);
+
   if (session) return <Navigate to="/" replace />;
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  function chooseSelfie(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setErr('Gunakan foto selfie berformat JPG, PNG, atau WebP.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErr('Ukuran foto selfie maksimal 5 MB.');
+      return;
+    }
+    setSelfie(file);
+    setErr('');
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -31,9 +60,15 @@ export default function Register() {
     if (form.fullName.trim().length < 3) return setErr('Nama lengkap minimal 3 huruf.');
     if (!isValidPhone(form.phone)) return setErr('Nomor telepon tidak valid. Contoh: 081234567890');
     if (form.password.length < 6) return setErr('Password minimal 6 karakter.');
+    if (!selfie) return setErr('Ambil foto selfie untuk profil sebelum mendaftar.');
     setBusy(true);
     try {
-      await signUp({ phone: form.phone, password: form.password, fullName: form.fullName });
+      await signUp({
+        phone: form.phone,
+        password: form.password,
+        fullName: form.fullName,
+        avatarFile: selfie,
+      });
       nav('/', { replace: true });
     } catch (x) {
       setErr(x.message);
@@ -91,6 +126,35 @@ export default function Register() {
           <Icon name={showPassword ? 'eyeOff' : 'eye'} size={20} />
         </button>
       </label>
+      <div className="auth-selfie">
+        <div className="auth-selfie-preview">
+          {selfiePreview
+            ? <img src={selfiePreview} alt="Pratinjau foto selfie profil" />
+            : <Icon name="camera" size={28} />}
+        </div>
+        <div className="auth-selfie-copy">
+          <strong>Foto selfie untuk profil <span>(wajib)</span></strong>
+          <span>Pastikan wajah terlihat jelas.</span>
+        </div>
+        <button
+          type="button"
+          className="auth-selfie-button"
+          onClick={() => selfieInput.current?.click()}
+          disabled={busy}
+        >
+          {selfie ? 'Ulangi selfie' : 'Ambil foto selfie'}
+        </button>
+        <input
+          ref={selfieInput}
+          className="visually-hidden"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="user"
+          onChange={chooseSelfie}
+          tabIndex={-1}
+          aria-label="Ambil foto selfie untuk profil"
+        />
+      </div>
       <button className="btn primary block auth-submit" disabled={busy}>
         <span className="auth-copy-desktop">{busy ? 'Memproses…' : 'Daftar'}</span>
         <span className="auth-copy-mobile">{busy ? 'Processing...' : 'Register'}</span>
@@ -99,7 +163,6 @@ export default function Register() {
         Sudah punya akun? <Link to="/masuk">Masuk</Link>
       </p>
       <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="ArisanKu" />
-      <AuthSocialIcons mode="register" />
     </form>
   );
 }

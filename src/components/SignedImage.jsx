@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import Icon from './Icon.jsx';
 
@@ -63,14 +64,33 @@ export default function SignedImage({ bucket, path, alt = '', className = '' }) 
 
   return (
     <>
-      <img ref={setTarget} src={url} alt={alt} className={className} loading="lazy" onClick={() => setOpen(true)} />
+      <img
+        ref={setTarget}
+        src={url}
+        alt={alt}
+        className={className}
+        loading="lazy"
+        role="button"
+        tabIndex={0}
+        aria-label={`Perbesar ${alt || 'gambar'}`}
+        onClick={() => setOpen(true)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            setOpen(true);
+          }
+        }}
+      />
       {open && (
-        <div className="lightbox" onClick={() => setOpen(false)}>
-          <img src={url} alt={alt} />
-          <button className="icon-btn light" aria-label="Tutup">
-            <Icon name="close" size={24} />
-          </button>
-        </div>
+        createPortal(
+          <div className="lightbox" role="dialog" aria-modal="true" aria-label={alt || 'Foto'} onClick={() => setOpen(false)}>
+            <img src={url} alt={alt} />
+            <button className="icon-btn light" aria-label="Tutup" onClick={() => setOpen(false)}>
+              <Icon name="close" size={24} />
+            </button>
+          </div>,
+          document.body
+        )
       )}
     </>
   );

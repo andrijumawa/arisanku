@@ -24,7 +24,7 @@ drop policy if exists "avatar: lihat sendiri" on storage.objects;
 create policy "avatar: lihat sendiri" on storage.objects
   for select to authenticated
   using (bucket_id = 'profile-avatars'
-         and (storage.foldername(name))[1] = auth.uid()::text);
+         and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin()));
 
 drop policy if exists "avatar: ubah sendiri" on storage.objects;
 create policy "avatar: ubah sendiri" on storage.objects

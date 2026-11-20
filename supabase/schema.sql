@@ -305,7 +305,8 @@ create policy "jenis arisan: lihat" on public.arisan_types
 create policy "jenis arisan: admin kelola" on public.arisan_types
   for all to authenticated using (public.is_admin()) with check (public.is_admin());
 
--- membershipscreate policy "member: lihat sendiri / admin" on public.memberships
+-- memberships
+create policy "member: lihat sendiri / admin" on public.memberships
   for select to authenticated using (public.is_admin() or (public.is_verified() and user_id = auth.uid()));
 create policy "member: daftar sendiri" on public.memberships
   for insert to authenticated
@@ -412,7 +413,7 @@ create policy "avatar: upload sendiri" on storage.objects
 create policy "avatar: lihat sendiri" on storage.objects
   for select to authenticated
   using (bucket_id = 'profile-avatars'
-         and (storage.foldername(name))[1] = auth.uid()::text);
+         and ((storage.foldername(name))[1] = auth.uid()::text or public.is_admin()));
 create policy "avatar: ubah sendiri" on storage.objects
   for update to authenticated
   using (bucket_id = 'profile-avatars'

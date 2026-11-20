@@ -75,7 +75,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signUp = useCallback(
-    async ({ phone, password, fullName }) => {
+    async ({ phone, password, fullName, avatarFile }) => {
+      if (!avatarFile) throw new Error('Ambil foto selfie untuk profil sebelum mendaftar.');
+      const avatarExtensions = {
+        'image/jpeg': 'jpg',
+        'image/png': 'png',
+        'image/webp': 'webp',
+      };
+      const extension = avatarExtensions[avatarFile.type];
+      if (!extension) throw new Error('Gunakan foto selfie berformat JPG, PNG, atau WebP.');
+      if (avatarFile.size > 5 * 1024 * 1024) throw new Error('Ukuran foto selfie maksimal 5 MB.');
+
       const { data, error } = await supabase.auth.signUp({
         email: phoneToEmail(phone),
         password,
@@ -87,6 +97,34 @@ export function AuthProvider({ children }) {
           'Akun dibuat tetapi belum bisa masuk otomatis. Admin perlu mematikan "Confirm email" di Supabase (Authentication → Providers → Email).'
         );
       }
+
+      const avatarPath = `${data.user.id}/${Date.now()}.${extension}`;
+      const storage = supabase.storage.from('profile-avatars');
+      const { error: uploadError } = await storage.upload(avatarPath, avatarFile, {
+        cacheControl: '3600',
+        contentType: avatarFile.type,
+        upsert: false,
+      });
+      if (uploadError) {
+        const { error: signOutError } = await supabase.auth.signOut();
+        throw new Error(
+          `Akun berhasil dibuat, tetapi foto selfie gagal disimpan. Silakan masuk dan unggah foto profil lagi. ${friendly(uploadError)}${signOutError ? ` Sesi juga gagal ditutup: ${friendly(signOutError)}` : ''}`
+        );
+      }
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ avatar_path: avatarPath })
+        .eq('id', data.user.id);
+      if (profileError) {
+        const { error: cleanupError } = await storage.remove([avatarPath]);
+        if (cleanupError) console.error('Gagal membersihkan foto profil pendaftaran:', cleanupError);
+        const { error: signOutError } = await supabase.auth.signOut();
+        throw new Error(
+          `Akun berhasil dibuat, tetapi foto selfie gagal ditautkan ke profil. Silakan masuk dan unggah foto profil lagi. ${friendly(profileError)}${signOutError ? ` Sesi juga gagal ditutup: ${friendly(signOutError)}` : ''}`
+        );
+      }
+
       await loadProfile(data.user.id);
     },
     [loadProfile]

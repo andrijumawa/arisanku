@@ -2022,6 +2022,14 @@ input[type='checkbox'] {
   height: 34px;
   flex: 0 0 34px;
 }
+.admin-person-photo {
+  object-fit: cover;
+  cursor: zoom-in;
+}
+.admin-person-photo:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 .admin-person-info {
   flex: 1 1 auto;
   min-width: 0;
@@ -2800,6 +2808,76 @@ input[type='checkbox'] {
 .auth-password-toggle:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
+}
+.auth-selfie {
+  display: grid;
+  width: min(100%, 400px);
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  align-self: center;
+  margin: 8px 0 2px;
+  padding: 10px 12px;
+  border: 1px solid rgba(95, 128, 224, 0.18);
+  border-radius: 12px;
+  background: #f5f7ff;
+  text-align: left;
+}
+.auth-selfie-preview {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid rgba(95, 128, 224, 0.2);
+  border-radius: 50%;
+  background: #e8efff;
+  color: #5f80e0;
+}
+.auth-selfie-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.auth-selfie-copy {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  color: #34415c;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.auth-selfie-copy strong {
+  font-size: 13px;
+  font-weight: 700;
+}
+.auth-selfie-copy strong span,
+.auth-selfie-copy > span {
+  color: #667085;
+  font-size: 11px;
+  font-weight: 500;
+}
+.auth-selfie-button {
+  min-height: 36px;
+  padding: 0 10px;
+  border: 1px solid rgba(95, 128, 224, 0.28);
+  border-radius: 8px;
+  background: #fff;
+  color: #496cc9;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.auth-selfie-button:hover {
+  background: #e8efff;
+}
+.auth-selfie-button:focus-visible {
+  outline: 2px solid #5f80e0;
+  outline-offset: 2px;
+}
+.auth-selfie-button:disabled {
+  cursor: wait;
 }
 .auth-forgot-password {
   width: min(100%, 400px);
