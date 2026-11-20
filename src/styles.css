@@ -1827,8 +1827,8 @@ input[type='checkbox'] {
   height: 100%;
   object-fit: contain;
   object-position: left center;
-  -webkit-mask-image: linear-gradient(to right, #000 48%, transparent 100%);
-  mask-image: linear-gradient(to right, #000 48%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, #000 22%, transparent 88%);
+  mask-image: linear-gradient(to right, #000 22%, transparent 88%);
   pointer-events: none;
 }
 .admin-card::after {
