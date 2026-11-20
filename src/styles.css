@@ -2035,13 +2035,20 @@ input[type='checkbox'] {
   min-width: 0;
 }
 .admin-person-name-line {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 6px;
+}
+.admin-person-identity {
   display: flex;
   min-width: 0;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 4px 6px;
+  gap: 6px;
 }
-.admin-person-name-line > b {
+.admin-person-identity > b {
+  min-width: 0;
   max-width: 100%;
   overflow: hidden;
   font-size: 13px;

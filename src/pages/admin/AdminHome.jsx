@@ -370,8 +370,10 @@ function People({ revision }) {
               : <div className="avatar">{initial(p.full_name)}</div>}
             <div className="admin-person-info">
               <div className="admin-person-name-line">
-                <b>{p.full_name}</b>
-                {p.role === 'admin' && <span className="badge gold">Admin</span>}
+                <span className="admin-person-identity">
+                  <b>{p.full_name}</b>
+                  {p.role === 'admin' && <span className="badge gold">Admin</span>}
+                </span>
                 <span className={`badge ${p.account_status === 'disetujui' ? 'ok' : p.account_status === 'ditolak' ? 'bad' : 'wait'}`}>
                   {p.account_status === 'disetujui' ? 'Terverifikasi' : p.account_status === 'ditolak' ? 'Ditolak' : 'Menunggu verifikasi'}
                 </span>
