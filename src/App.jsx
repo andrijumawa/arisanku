@@ -313,10 +313,7 @@ export default function App() {
   if (!configured) return <SetupNotice />;
   return (
     <>
-      <div
-        className={`startup-app${showSplash ? ' is-preparing' : ''}`}
-        style={{ '--app-background-image': `url("${imageUrl}")` }}
-      >
+      <div className={`startup-app${showSplash ? ' is-preparing' : ''}`}>
         {routeModulesReady && !startupError && (
           <Suspense fallback={showSplash ? null : <Spinner text="Memuat halaman…" />}>
             <Routes>

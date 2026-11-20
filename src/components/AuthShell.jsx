@@ -74,6 +74,7 @@ export default function AuthShell() {
         '--auth-viewport-top': `${visibleViewport.offsetTop}px`,
       } : undefined}
     >
+      <img className="auth-background-image" src={`${import.meta.env.BASE_URL}images/initial-loading.jpeg`} alt="" aria-hidden="true" />
       <section className={`auth-shell${isLogin ? ' is-login' : ''}${isTransitioning ? ' is-transitioning' : ''}`} aria-label="Autentikasi Arisan">
         <Login />
         <Register />
