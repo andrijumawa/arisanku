@@ -501,9 +501,9 @@ export default function Roulette() {
                   Menunggu admin mengaktifkan daftar hadir
                 </span>
               )}
-              {groupId && (isAdmin || fallbackFullscreen) && (
+              {groupId && ((isAdmin && !fallbackFullscreen) || (!isAdmin && fallbackFullscreen)) && (
                 <div className="roulette-attendance-controls">
-                  {isAdmin ? (
+                  {isAdmin && !fallbackFullscreen ? (
                     <button
                       type="button"
                       className={`roulette-attendance-toggle roulette-activation-toggle${periodActivated ? ' is-registered' : ''}`}
@@ -514,7 +514,7 @@ export default function Roulette() {
                       <span>{periodActivated ? 'Pendaftaran dibuka' : 'Aktifkan'}</span>
                       <span className="roulette-attendance-count">{periodNo}</span>
                     </button>
-                  ) : fallbackFullscreen && (
+                  ) : (
                     <button
                       type="button"
                       className={`roulette-attendance-toggle${hasRegistered ? ' is-registered' : ''}`}
