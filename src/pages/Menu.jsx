@@ -73,7 +73,7 @@ export default function Menu() {
     : 'Kelola akun dan kelompok';
   const items = [
     { to: '/beranda', icon: 'home', image: 'menu-home.png', label: 'Beranda', description: 'Ringkasan aktivitas\narisan', disabled: accountPending || accountRejected },
-    { to: '/arisan', icon: 'target', image: 'menu-arisan.png', label: 'Arisan', description: 'Cari kelompok & daftar', disabled: accountPending || accountRejected },
+    { to: '/chat', icon: 'message', image: 'menu-chat.png', label: 'Chat', description: 'Obrolan bersama\npeserta', count: unread, disabled: accountPending || accountRejected },
     {
       to: '/rolet',
       icon: 'dice',
@@ -83,7 +83,6 @@ export default function Menu() {
       loading: !isAdmin && rouletteAccessState.loading && !accountPending && !accountRejected,
       disabled: accountPending || accountRejected || (!isAdmin && (!rouletteAccess || rouletteAccessState.loading)),
     },
-    { to: '/chat', icon: 'message', image: 'menu-chat.png', label: 'Chat', description: 'Obrolan bersama\npeserta', count: unread, disabled: accountPending || accountRejected },
     ...(isAdmin ? [{
       to: '/admin',
       icon: 'tools',
@@ -223,7 +222,9 @@ export default function Menu() {
       <div className="menu-heading">
         <span className="menu-heading-kicker">AKSES CEPAT</span>
         <h1>Menu</h1>
-        <span className="menu-heading-mark" aria-hidden="true"><Icon name="grid" size={27} /></span>
+        <span className="menu-heading-mark" aria-hidden="true">
+          <img src={menuImageUrl('menu-arisan.png')} alt="" />
+        </span>
       </div>
       {accountPending && (
         <div className="account-verification-notice" role="status">
@@ -271,7 +272,7 @@ export default function Menu() {
                 className="menu-tile is-disabled"
                 disabled
               >
-                <img className="menu-tile-character" src={menuImageUrl(item.image)} alt="" aria-hidden="true" loading="eager" decoding="async" />
+                {item.image && <img className="menu-tile-character" src={menuImageUrl(item.image)} alt="" aria-hidden="true" loading="eager" decoding="async" />}
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>
@@ -294,7 +295,7 @@ export default function Menu() {
                 tabIndex={item.to === '/rolet' && item.disabled ? -1 : undefined}
                 onClick={item.to === '/rolet' && item.disabled ? (event) => event.preventDefault() : undefined}
               >
-                <img className="menu-tile-character" src={menuImageUrl(item.image)} alt="" aria-hidden="true" loading="eager" decoding="async" />
+                {item.image && <img className="menu-tile-character" src={menuImageUrl(item.image)} alt="" aria-hidden="true" loading="eager" decoding="async" />}
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   {item.to === '/rolet' && item.disabled && !item.loading

@@ -771,6 +771,7 @@ body.roulette-fullscreen-open .roulette-live {
   line-height: 1;
 }
 .menu-heading-mark {
+  position: relative;
   z-index: 1;
   display: grid;
   width: var(--menu-heading-mark-size);
@@ -779,9 +780,16 @@ body.roulette-fullscreen-open .roulette-live {
   place-items: center;
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 17px;
+  overflow: hidden;
   background: linear-gradient(145deg, #8ca8f3, #6b8ce5);
   box-shadow: 0 8px 16px rgba(84, 115, 199, 0.2), inset 0 1px rgba(255, 255, 255, 0.45);
   color: #fff;
+}
+.menu-heading-mark img {
+  width: 130%;
+  height: 130%;
+  object-fit: cover;
+  object-position: center 18%;
 }
 .menu-heading p:last-child {
   margin: 0;
