@@ -14,6 +14,7 @@ import {
   loadRouletteSession,
 } from './lib/menuData';
 import { configured, supabase } from './lib/supabase';
+import { preloadPublicImages } from './lib/imageAssets';
 import { Spinner } from './components/Ui.jsx';
 
 const loadLayout = () => import('./components/Layout.jsx');
@@ -229,22 +230,13 @@ export default function App() {
 
   useEffect(() => {
     let active = true;
-    const image = new Image();
-    image.onload = () => {
+    preloadPublicImages().then(() => {
       if (active) setImageReady(true);
-    };
-    image.onerror = (error) => {
-      console.error('Gagal memuat gambar pembuka:', error);
-      if (active) setImageReady(true);
-    };
-    image.src = imageUrl;
-    if (image.complete) setImageReady(true);
+    });
     return () => {
       active = false;
-      image.onload = null;
-      image.onerror = null;
     };
-  }, [imageUrl]);
+  }, []);
 
   useEffect(() => {
     if (!configured || !ready || !showSplash) return undefined;
