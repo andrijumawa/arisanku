@@ -687,6 +687,7 @@ body.roulette-fullscreen-open .roulette-live {
 .menu-avatar-image {
   width: 100%;
   height: 100%;
+  clip-path: circle(calc(50% - 1px) at center);
   object-fit: cover;
   object-position: center center;
 }
