@@ -70,26 +70,28 @@ export default function Menu() {
     ? `${adminNotifications.registrations} pendaftaran · ${adminNotifications.payments} pembayaran · ${adminNotifications.participants} peserta menunggu`
     : 'Kelola akun dan kelompok';
   const items = [
-    { to: '/beranda', icon: 'home', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
-    { to: '/arisan', icon: 'target', label: 'Arisan', description: 'Cari kelompok & daftar', disabled: accountPending || accountRejected },
+    { to: '/beranda', icon: 'home', image: 'menu-home.png', label: 'Beranda', description: 'Ringkasan aktivitas arisan', disabled: accountPending || accountRejected },
+    { to: '/arisan', icon: 'target', image: 'menu-arisan.png', label: 'Arisan', description: 'Cari kelompok & daftar', disabled: accountPending || accountRejected },
     {
       to: '/rolet',
       icon: 'dice',
+      image: 'menu-kocokan.png',
       label: 'Kocokan',
       description: 'Pantau pengacakan peserta',
       loading: !isAdmin && rouletteAccessState.loading && !accountPending && !accountRejected,
       disabled: accountPending || accountRejected || (!isAdmin && (!rouletteAccess || rouletteAccessState.loading)),
     },
-    { to: '/chat', icon: 'message', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
+    { to: '/chat', icon: 'message', image: 'menu-chat.png', label: 'Chat', description: 'Obrolan bersama peserta', count: unread, disabled: accountPending || accountRejected },
     ...(isAdmin ? [{
       to: '/admin',
       icon: 'tools',
+      image: 'menu-admin.png',
       label: 'Admin',
       description: adminDescription,
       count: adminPendingCount,
       adminNotifications,
     }] : []),
-    { to: '/akun', icon: 'user', label: 'Akun', description: 'Atur informasi profil', disabled: accountPending || accountRejected },
+    { to: '/akun', icon: 'user', image: 'menu-akun.png', label: 'Akun', description: 'Atur informasi profil', disabled: accountPending || accountRejected },
     { action: 'logout', icon: 'logout', label: signingOut ? 'Keluar…' : 'Keluar', description: 'Akhiri sesi akun' },
   ];
 
@@ -267,6 +269,7 @@ export default function Menu() {
                 className="menu-tile is-disabled"
                 disabled
               >
+                <img className="menu-tile-character" src={`/images/${item.image}`} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>
@@ -289,6 +292,7 @@ export default function Menu() {
                 tabIndex={item.to === '/rolet' && item.disabled ? -1 : undefined}
                 onClick={item.to === '/rolet' && item.disabled ? (event) => event.preventDefault() : undefined}
               >
+                <img className="menu-tile-character" src={`/images/${item.image}`} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   {item.to === '/rolet' && item.disabled && !item.loading
