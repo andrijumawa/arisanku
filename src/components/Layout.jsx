@@ -223,11 +223,6 @@ export default function Layout() {
 
   return (
     <div className={`app${loc.pathname === '/' ? ' is-menu' : ''}`}>
-      <div
-        className="app-watermark"
-        aria-hidden="true"
-        style={{ '--app-watermark-image': `url("${import.meta.env.BASE_URL}icons/arisanku-mark.png")` }}
-      />
       <header className="hdr">
         <img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="ArisanKu" />
         <div className="header-account">
