@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
-import { bestPaymentByPeriod, fmtDate, periodName, rupiah, typeLabel } from '../lib/format';
+import { bestPaymentByPeriod, fmtDate, periodName, rupiah, typeLabel, withdrawalDate } from '../lib/format';
 import { compressImage } from '../lib/image';
 import { Badge, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
@@ -42,18 +42,27 @@ export default function GroupDetail() {
       );
     }
     let rounds = [];
+    let rouletteDraws = [];
     let names = {};
     if (group.type === 'uang') {
       rounds = await q(
         supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')
       );
-      const ids = [...new Set(rounds.map((r) => r.winner_user_id).filter(Boolean))];
+      rouletteDraws = await q(
+        supabase.from('roulette_draws').select('id,period_no,participants').eq('group_id', id).order('period_no')
+      );
+      const ids = [
+        ...new Set([
+          ...rounds.map((round) => round.winner_user_id),
+          ...rouletteDraws.flatMap((draw) => (draw.participants || []).map((participant) => participant.user_id)),
+        ].filter(Boolean)),
+      ];
       if (ids.length) {
         const ps = await q(supabase.from('public_profiles').select('id,full_name').in('id', ids));
         names = Object.fromEntries(ps.map((p) => [p.id, p.full_name]));
       }
     }
-    return { group, mem, payments, rounds, names };
+    return { group, mem, payments, rounds, rouletteDraws, names };
   }, [id, uid]);
 
   const realtimeSubscriptions = useMemo(
@@ -62,7 +71,11 @@ export default function GroupDetail() {
       { table: 'memberships', filter: `user_id=eq.${uid}` },
       ...(data?.mem ? [{ table: 'payments', filter: `membership_id=eq.${data.mem.id}` }] : []),
       { table: 'rounds', filter: `group_id=eq.${id}` },
-      ...[...new Set((data?.rounds || []).map((r) => r.winner_user_id).filter(Boolean))].map((winnerId) => ({
+      { table: 'roulette_draws', filter: `group_id=eq.${id}` },
+      ...[...new Set([
+        ...(data?.rounds || []).map((round) => round.winner_user_id),
+        ...(data?.rouletteDraws || []).flatMap((draw) => (draw.participants || []).map((participant) => participant.user_id)),
+      ].filter(Boolean))].map((winnerId) => ({
         table: 'profiles',
         filter: `id=eq.${winnerId}`,
       })),
@@ -83,7 +96,29 @@ export default function GroupDetail() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { group: g, mem, payments, rounds, names } = data;
+  const { group: g, mem, payments, rounds, rouletteDraws, names } = data;
+  const rouletteRounds = rouletteDraws.flatMap((draw) => {
+    const participants = draw.participants || [];
+    return participants
+      .slice(0, participants.length === 2 ? 2 : 1)
+      .map((participant, index) => {
+        const roundNo = draw.period_no + index;
+        return rounds.find(
+          (round) => round.round_no === roundNo && round.winner_user_id === participant.user_id
+        ) || {
+          id: `roulette-${draw.id}-${participant.user_id}`,
+          round_no: roundNo,
+          winner_user_id: participant.user_id,
+          pickup_date: null,
+          status: 'dijadwalkan',
+        };
+      });
+  });
+  const rouletteRoundNos = new Set(rouletteRounds.map((round) => round.round_no));
+  const displayedRounds = [
+    ...rouletteRounds,
+    ...rounds.filter((round) => !rouletteRoundNos.has(round.round_no)),
+  ].sort((a, b) => a.round_no - b.round_no);
   const amount = mem ? Number(g.nominal) * mem.slot_count : Number(g.nominal);
   const done = Object.values(byPeriod).filter((p) => p.status === 'disetujui').length;
   const label = periodName(g);
@@ -207,18 +242,18 @@ export default function GroupDetail() {
         </>
       )}
 
-      {g.type === 'uang' && rounds.length > 0 && (
+      {g.type === 'uang' && displayedRounds.length > 0 && (
         <>
           <div className="section-title">Hasil undian</div>
           <div className="card">
-            {rounds.map((r) => (
+            {displayedRounds.map((r) => (
               <div key={r.id} className="period-row">
                 <div className="period-no">{r.round_no}</div>
                 <div style={{ flex: 1 }}>
                   <b>{names[r.winner_user_id] || 'Peserta'}</b>
                   {r.winner_user_id === uid && <span className="badge gold" style={{ marginLeft: 6 }}>Kamu</span>}
                   <div className="muted small">
-                    Pengambilan: {r.pickup_date ? fmtDate(r.pickup_date) : 'Belum ditentukan'}
+                    Pengambilan: {fmtDate(r.pickup_date || withdrawalDate(g.start_date, g.pay_period, r.round_no))}
                   </div>
                 </div>
                 <Badge status={r.status} />

@@ -36,6 +36,11 @@ export function addDaysToDate(dateString, days) {
   return date.toISOString().slice(0, 10);
 }
 
+export function withdrawalDate(startDate, payPeriod, roundNo) {
+  const dueDate = paymentDueDate(startDate, payPeriod, roundNo);
+  return dueDate ? addDaysToDate(dueDate, 7) : null;
+}
+
 export const fmtDay = (d) =>
   toDate(d).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
 

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { loadHomeData } from '../lib/menuData';
-import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
+import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel, withdrawalDate } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
 
 export default function Home() {
@@ -165,7 +165,7 @@ export default function Home() {
                           <tr key={round.id} className={round.status === 'diserahkan' ? 'withdrawal-inactive' : ''}>
                             <th scope="row">Penarikan putaran ke-{round.round_no}</th>
                             <td>
-                              {round.pickup_date ? fmtDate(round.pickup_date) : 'Belum ditentukan'}
+                              {fmtDate(round.pickup_date || withdrawalDate(g.start_date, g.pay_period, round.round_no))}
                               {round.status === 'diserahkan' && <span className="withdrawal-state">Sudah diterima</span>}
                             </td>
                           </tr>

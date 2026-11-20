@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
-import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, typeLabel } from '../../lib/format';
+import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, typeLabel, withdrawalDate } from '../../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../../components/Ui.jsx';
 import GroupInfo from '../../components/GroupInfo.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -74,7 +74,7 @@ export default function AdminGroup() {
           id: null,
           round_no: roundNo,
           winner_user_id: participant.user_id,
-          pickup_date: null,
+          pickup_date: withdrawalDate(g.start_date, g.pay_period, roundNo),
           status: 'dijadwalkan',
         };
       });
@@ -146,7 +146,7 @@ export default function AdminGroup() {
             group_id: id,
             round_no: r.round_no,
             winner_user_id: r.winner_user_id,
-            pickup_date: r.pickup_date,
+            pickup_date: withdrawalDate(g.start_date, g.pay_period, r.round_no) || r.pickup_date,
             status: r.status,
             ...patch,
           })
@@ -214,12 +214,16 @@ export default function AdminGroup() {
                   <div style={{ flex: 1 }}>
                     <b>{nameOf[r.winner_user_id] || 'Peserta'}</b>
                     <div className="row wrap" style={{ marginTop: 6 }}>
-                      <input
-                        type="date"
-                        style={{ width: 'auto', padding: '6px 8px' }}
-                        value={r.pickup_date || ''}
-                        onChange={(e) => setRound(r, { pickup_date: e.target.value || null }, 'Tanggal pengambilan disimpan.')}
-                      />
+                      <label className="muted small">
+                        Tanggal pencairan
+                        <input
+                          type="date"
+                          style={{ width: 'auto', padding: '6px 8px', marginLeft: 8 }}
+                          value={r.pickup_date || withdrawalDate(g.start_date, g.pay_period, r.round_no) || ''}
+                          onChange={(e) => setRound(r, { pickup_date: e.target.value || null }, 'Tanggal pencairan disimpan.')}
+                          aria-label={`Tanggal pencairan putaran ke-${r.round_no}`}
+                        />
+                      </label>
                       <Badge status={r.status} />
                     </div>
                   </div>
@@ -296,7 +300,7 @@ export default function AdminGroup() {
                     <tr key={round.id} className={round.status === 'diserahkan' ? 'withdrawal-inactive' : ''}>
                       <th scope="row">Penarikan putaran ke-{round.round_no}</th>
                       <td>
-                        {round.pickup_date ? fmtDate(round.pickup_date) : 'Belum ditentukan'}
+                        {fmtDate(round.pickup_date || withdrawalDate(g.start_date, g.pay_period, round.round_no))}
                         {round.status === 'diserahkan' && <span className="withdrawal-state">Sudah diterima</span>}
                       </td>
                     </tr>
