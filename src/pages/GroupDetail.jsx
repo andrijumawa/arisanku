@@ -5,7 +5,7 @@ import { supabase, q } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { bestPaymentByPeriod, fmtDate, periodName, rupiah, typeLabel, withdrawalDate } from '../lib/format';
 import { compressImage } from '../lib/image';
-import { Badge, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
+import { Badge, ErrorBox, Spinner } from '../components/Ui.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
@@ -135,7 +135,6 @@ export default function GroupDetail() {
     ...rounds.filter((round) => !rouletteRoundNos.has(round.round_no)),
   ].sort((a, b) => a.round_no - b.round_no);
   const amount = mem ? Number(g.nominal) * mem.slot_count : Number(g.nominal);
-  const done = Object.values(byPeriod).filter((p) => p.status === 'disetujui').length;
   const label = periodName(g);
 
   function closeUpload() {
@@ -257,20 +256,6 @@ export default function GroupDetail() {
 
       {mem?.status === 'aktif' && (
         <>
-          <div className="section-title">Pembayaran</div>
-          <div className="card">
-            <div className="row between">
-              <b>{rupiah(amount)}</b>
-              <span className="muted small">per {label.toLowerCase()}</span>
-            </div>
-            <div style={{ margin: '8px 0 4px' }}>
-              <Progress value={done} max={g.durasi} />
-            </div>
-            <div className="muted small">
-              Lunas {done} dari {g.durasi}
-            </div>
-          </div>
-
           <div className="card scroll-list">
             {Array.from({ length: g.durasi }, (_, i) => i + 1).map((n) => {
               const p = byPeriod[n];
