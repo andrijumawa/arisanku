@@ -489,17 +489,21 @@ export default function Roulette() {
                   </svg>
                   <div className="roulette-wheel-labels">
                     {participantNames.map((name, index) => {
-                      const angle = participantNames.length ? -90 + (360 / participantNames.length) * index : -90;
+                      const angle = participantNames.length
+                        ? -90 + (360 / participantNames.length) * (index + 0.5)
+                        : -90;
                       const radians = (angle * Math.PI) / 180;
-                      const radius = 59;
+                      const radius = participantNames.length <= 4 ? 31 : 35;
                       const left = 50 + radius * Math.cos(radians);
                       const top = 50 + radius * Math.sin(radians);
-                      const maxLength = participantNames.length >= 18 ? 7 : participantNames.length >= 13 ? 10 : 20;
+                      const maxLength = participantNames.length >= 13
+                        ? 7
+                        : participantNames.length >= 9
+                          ? 9
+                          : participantNames.length >= 6
+                            ? 11
+                            : 15;
                       const label = name.length > maxLength ? `${name.slice(0, maxLength - 1)}…` : name;
-                      const normalizedAngle = (angle + 360) % 360;
-                      const labelAngle = normalizedAngle >= 90 && normalizedAngle < 270
-                        ? angle - 90
-                        : angle + 90;
                       return (
                         <span
                           key={`${name}-${index}`}
@@ -507,7 +511,7 @@ export default function Roulette() {
                           style={{
                             left: `${left}%`,
                             top: `${top}%`,
-                            '--label-angle': `${labelAngle}deg`
+                            '--wheel-angle': `${wheelAngle}deg`
                           }}
                           title={name}
                         >

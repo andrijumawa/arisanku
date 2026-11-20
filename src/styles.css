@@ -2547,13 +2547,16 @@ input[type='checkbox'] {
   background: linear-gradient(180deg, #e1a735, #f3d37e);
 }
 .home-offer-card.is-active {
-  border-color: rgba(67, 157, 111, 0.48);
+  border-color: rgba(95, 128, 224, 0.48);
   background:
-    radial-gradient(ellipse at 100% 0, rgba(197, 237, 211, 0.62), transparent 58%),
-    rgba(239, 251, 243, 0.94);
+    radial-gradient(ellipse at 100% 0, rgba(210, 224, 255, 0.72), transparent 58%),
+    rgba(239, 244, 255, 0.94);
 }
 .home-offer-card.is-active::before {
-  background: linear-gradient(180deg, #278451, #79c997);
+  background: linear-gradient(180deg, #5f80e0, #9bb2f4);
+}
+.home-offer-card.is-active .home-offer-state {
+  color: #5f80e0;
 }
 .home-offer-card.is-rejected {
   background: rgba(255, 241, 240, 0.92);
@@ -4484,7 +4487,6 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   width: 62%;
   transform:
     translate(-50%, -50%)
-    rotate(var(--label-angle))
     rotate(calc(-1 * var(--wheel-angle)));
   color: #fff;
   font-size: clamp(8px, 2.8vw, 13px);
@@ -4492,6 +4494,7 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   line-height: 1.05;
   text-align: center;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+  text-wrap: balance;
   overflow-wrap: anywhere;
 }
 .roulette-attendance-empty {
