@@ -17,7 +17,6 @@ export default function Menu() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const photoInput = useRef(null);
-  const selfieInput = useRef(null);
   const accountPending = !isAdmin
     && profile?.account_status !== 'disetujui'
     && profile?.account_status !== 'ditolak';
@@ -191,30 +190,11 @@ export default function Menu() {
             : <Icon name="user" size={112} />}
           {uploadingAvatar && <span className="menu-avatar-loading">Menyimpan…</span>}
         </button>
-        <button
-          type="button"
-          className="menu-avatar-camera"
-          aria-label="Ambil selfie untuk foto profil"
-          title="Ambil selfie"
-          onClick={() => selfieInput.current?.click()}
-          disabled={uploadingAvatar}
-        >
-          <Icon name="camera" size={21} />
-        </button>
         <input
           ref={photoInput}
           className="visually-hidden"
           type="file"
           accept="image/*"
-          onChange={handleAvatarChange}
-          tabIndex={-1}
-        />
-        <input
-          ref={selfieInput}
-          className="visually-hidden"
-          type="file"
-          accept="image/*"
-          capture="user"
           onChange={handleAvatarChange}
           tabIndex={-1}
         />

@@ -611,10 +611,8 @@ body.roulette-fullscreen-open .roulette-live {
   --menu-card-gap: clamp(10px, 2vw, 15px);
   --menu-avatar-top: 8px;
   --menu-avatar-size: min(40vw, 310px, 24dvh);
-  --menu-avatar-camera-size: 42px;
   --menu-content-top: clamp(54px, 10dvh, 85px);
   --menu-heading-height: clamp(94px, 15dvh, 164px);
-  --menu-heading-mark-size: 54px;
   --menu-heading-bottom-padding: clamp(12px, 2dvh, 24px);
   --menu-tile-padding: clamp(8px, 1.5dvh, 18px);
   --menu-tile-icon-size: clamp(32px, 5.5dvh, 46px);
@@ -675,13 +673,11 @@ body.roulette-fullscreen-open .roulette-live {
 .menu-avatar:hover {
   transform: translate(-50%, -2px);
 }
-.menu-avatar:focus-visible,
-.menu-avatar-camera:focus-visible {
+.menu-avatar:focus-visible {
   outline: 3px solid #fff;
   outline-offset: 3px;
 }
-.menu-avatar:disabled,
-.menu-avatar-camera:disabled {
+.menu-avatar:disabled {
   cursor: wait;
 }
 .menu-avatar-image {
@@ -692,27 +688,6 @@ body.roulette-fullscreen-open .roulette-live {
   border-radius: 50%;
   object-fit: cover;
   object-position: center center;
-}
-.menu-avatar-camera {
-  position: absolute;
-  top: calc(
-    var(--menu-content-top)
-    + var(--menu-heading-height)
-    - var(--menu-heading-bottom-padding)
-    - (var(--menu-heading-mark-size) + var(--menu-avatar-camera-size)) / 2
-  );
-  left: calc(50% + var(--menu-avatar-size) / 2 - var(--menu-avatar-camera-size) / 2);
-  z-index: 1;
-  display: grid;
-  width: var(--menu-avatar-camera-size);
-  height: var(--menu-avatar-camera-size);
-  place-items: center;
-  border: 3px solid #dce5ff;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--brand-d), var(--brand));
-  box-shadow: 0 5px 12px rgba(57, 84, 162, 0.24);
-  color: #fff;
-  cursor: pointer;
 }
 .menu-avatar-loading {
   position: absolute;
@@ -772,7 +747,7 @@ body.roulette-fullscreen-open .roulette-live {
 }
 .menu-heading-character {
   position: absolute;
-  right: -1%;
+  right: -6%;
   bottom: -28%;
   width: clamp(145px, 42%, 280px);
   height: 170%;
@@ -839,6 +814,7 @@ body.roulette-fullscreen-open .roulette-live {
   display: grid;
   flex: 1;
   min-height: 0;
+  align-items: stretch;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-rows: minmax(0, 1fr);
   gap: var(--menu-card-gap);
@@ -847,8 +823,9 @@ body.roulette-fullscreen-open .roulette-live {
   position: relative;
   isolation: isolate;
   display: flex;
+  box-sizing: border-box;
+  align-self: stretch;
   min-width: 0;
-  height: 100%;
   min-height: 0;
   flex-direction: column;
   align-items: stretch;
@@ -889,7 +866,7 @@ body.roulette-fullscreen-open .roulette-live {
 }
 .menu-tile-character-large .menu-tile-character {
   right: -5%;
-  bottom: -16%;
+  bottom: -12%;
   width: 66%;
   height: 118%;
 }
@@ -1224,7 +1201,6 @@ body.roulette-fullscreen-open .roulette-live {
     --menu-card-gap: clamp(6px, 1.2dvh, 10px);
     --menu-avatar-top: 4px;
     --menu-avatar-size: min(36vw, 250px, 20dvh);
-    --menu-avatar-camera-size: clamp(34px, 5.2dvh, 40px);
     --menu-content-top: clamp(44px, 8dvh, 60px);
     --menu-heading-height: clamp(82px, 13dvh, 96px);
     --menu-heading-bottom-padding: 10px;
