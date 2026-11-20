@@ -2370,6 +2370,162 @@ input[type='checkbox'] {
   gap: 8px;
   margin-bottom: 14px;
 }
+.home-offers {
+  margin-bottom: 16px;
+}
+.home-offer-list {
+  display: grid;
+  gap: 8px;
+}
+.home-offer-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 78px;
+  padding: 11px 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 17px;
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(210, 224, 255, 0.58), transparent 55%),
+    rgba(255, 255, 255, 0.82);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  box-shadow: var(--menu-card-shadow);
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+.home-offer-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, #6f91e8, #a9bdf5);
+  content: '';
+}
+.home-offer-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(62, 91, 165, 0.14);
+}
+.home-offer-card:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
+}
+.home-offer-card.is-pending {
+  border-color: rgba(235, 190, 91, 0.62);
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(255, 231, 173, 0.65), transparent 58%),
+    rgba(255, 250, 234, 0.92);
+}
+.home-offer-card.is-pending::before {
+  background: linear-gradient(180deg, #e1a735, #f3d37e);
+}
+.home-offer-card.is-rejected {
+  background: rgba(255, 241, 240, 0.92);
+}
+.home-offer-card.is-rejected::before {
+  background: #d57870;
+}
+.home-offer-card.is-inactive {
+  background: rgba(245, 247, 251, 0.92);
+}
+.home-offer-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 14px;
+  background: linear-gradient(145deg, #edf2ff, #dce6ff);
+  color: #5578ce;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.8);
+}
+.home-offer-icon.package {
+  background: linear-gradient(145deg, #f2f4ff, #e4e9ff);
+}
+.home-offer-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+.home-offer-type {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+.home-offer-copy strong {
+  overflow: hidden;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-offer-summary {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-offer-state {
+  display: grid;
+  justify-items: end;
+  gap: 4px;
+  color: #6280cd;
+}
+.home-offer-state small {
+  max-width: 104px;
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.2;
+  text-align: right;
+}
+.home-offer-empty {
+  padding: 13px;
+  border: 1px dashed rgba(102, 127, 185, 0.35);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+}
+.home-offer-modal-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px;
+  border-radius: 13px;
+  background: rgba(235, 241, 255, 0.78);
+}
+.home-offer-modal-summary .home-offer-icon {
+  flex: 0 0 42px;
+}
+.home-offer-status {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.home-offer-status.is-pending {
+  background: #fff3d4;
+  color: #78530c;
+}
+.home-offer-status.is-ditolak {
+  background: #fff0ef;
+  color: #983b35;
+}
+.home-offer-status.is-nonaktif {
+  background: #f0f2f6;
+  color: #5e6878;
+}
 .stat {
   background: #fff;
   border: 1px solid var(--line);

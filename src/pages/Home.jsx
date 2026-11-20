@@ -1,18 +1,66 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
+import { supabase } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { loadHomeData } from '../lib/menuData';
 import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel, withdrawalDate } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
+import Icon from '../components/Icon.jsx';
+import Modal from '../components/Modal.jsx';
+import { useToast } from '../components/Toast.jsx';
+
+function AvailableGroupCard({ group, membership, onSelect }) {
+  const isMoney = group.type === 'uang';
+  const statusClass = membership?.status === 'menunggu'
+    ? ' is-pending'
+    : membership?.status === 'ditolak'
+      ? ' is-rejected'
+      : membership?.status === 'nonaktif'
+        ? ' is-inactive'
+        : '';
+  const action = membership?.status === 'menunggu'
+    ? 'Menunggu persetujuan'
+    : membership?.status === 'ditolak'
+      ? 'Pendaftaran ditolak'
+      : membership?.status === 'nonaktif'
+        ? 'Keanggotaan nonaktif'
+        : 'Lihat & daftar';
+
+  return (
+    <button
+      type="button"
+      className={`home-offer-card${statusClass}`}
+      onClick={() => onSelect(group, membership)}
+    >
+      <span className={`home-offer-icon ${isMoney ? 'money' : 'package'}`}>
+        <Icon name={isMoney ? 'coin' : 'gift'} size={21} />
+      </span>
+      <span className="home-offer-copy">
+        <span className="home-offer-type">{typeLabel(group)}</span>
+        <strong>{group.name}</strong>
+        <span className="home-offer-summary">{rupiah(group.nominal)} / {periodUnit(group)} · {group.durasi} kali</span>
+      </span>
+      <span className="home-offer-state">
+        {membership?.status === 'menunggu' ? <Badge status="menunggu" /> : <Icon name="arrowRight" size={18} />}
+        <small>{action}</small>
+      </span>
+    </button>
+  );
+}
 
 export default function Home() {
   const { profile, session } = useAuth();
   const uid = session.user.id;
+  const toast = useToast();
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [slots, setSlots] = useState(1);
+  const [busy, setBusy] = useState(false);
 
   const { data, loading, error, reload } = useAsync(loadHomeData, [uid]);
   const displayedData = data;
   const realtimeSubscriptions = [
     { table: 'memberships', filter: `user_id=eq.${uid}` },
+    { table: 'groups' },
     ...(displayedData?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
     ...(displayedData?.ms || []).map((m) => ({ table: 'rounds', filter: `group_id=eq.${m.group_id}` })),
     ...(displayedData?.ms || []).map((m) => ({ table: 'roulette_draws', filter: `group_id=eq.${m.group_id}` })),
@@ -22,10 +70,58 @@ export default function Home() {
   if (loading && !displayedData) return <Spinner />;
   if (error && !displayedData) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { ms, pays, rounds = [], rouletteDraws = [] } = displayedData;
+  const { ms, groups, pays, rounds = [], rouletteDraws = [] } = displayedData;
   const aktif = ms.filter((m) => m.status === 'aktif').length;
   const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
   const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
+  const membershipByGroup = Object.fromEntries(ms.map((membership) => [membership.group_id, membership]));
+  const activeMemberships = ms.filter((membership) => membership.status === 'aktif');
+  const offerGroups = groups.filter((group) => (
+    membershipByGroup[group.id]?.status !== 'aktif'
+    && (group.is_open || membershipByGroup[group.id])
+  ));
+
+  async function submitRegistration() {
+    if (!selectedGroup) return;
+    setBusy(true);
+    try {
+      const { error: joinError } = await supabase.from('memberships').insert({
+        group_id: selectedGroup.group.id,
+        user_id: uid,
+        slot_count: selectedGroup.group.type === 'uang' ? Math.max(1, Number(slots) || 1) : 1,
+      });
+      if (joinError) throw joinError;
+      toast('Pendaftaran terkirim. Menunggu persetujuan admin.', 'success');
+      setSelectedGroup(null);
+      setSlots(1);
+      reload();
+    } catch (joinError) {
+      toast(joinError.message || 'Pendaftaran gagal dikirim.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function cancelRegistration() {
+    const membership = selectedGroup?.membership;
+    if (!membership || !window.confirm('Batalkan pendaftaran ke kelompok ini?')) return;
+    setBusy(true);
+    try {
+      const { error: cancelError } = await supabase
+        .from('memberships')
+        .delete()
+        .eq('id', membership.id)
+        .eq('user_id', uid);
+      if (cancelError) throw cancelError;
+      toast('Pendaftaran dibatalkan.');
+      setSelectedGroup(null);
+      reload();
+    } catch (cancelError) {
+      toast(cancelError.message || 'Pendaftaran gagal dibatalkan.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <>
@@ -47,6 +143,29 @@ export default function Home() {
         </div>
       </div>
 
+      <section className="home-offers" aria-labelledby="home-offers-title">
+        <div className="row between">
+          <div className="section-title" id="home-offers-title" style={{ margin: '4px 2px 8px' }}>
+            Kelompok tersedia
+          </div>
+          <Link to="/arisan" className="small">Lihat semua</Link>
+        </div>
+        {offerGroups.length > 0 ? (
+          <div className="home-offer-list">
+            {offerGroups.map((group) => (
+              <AvailableGroupCard
+                key={group.id}
+                group={group}
+                membership={membershipByGroup[group.id]}
+                onSelect={(selected, membership) => setSelectedGroup({ group: selected, membership })}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="home-offer-empty">Belum ada kelompok yang dibuka admin.</div>
+        )}
+      </section>
+
       <div className="row between">
         <div className="section-title" style={{ margin: '4px 2px 8px' }}>
           Arisan saya
@@ -56,12 +175,12 @@ export default function Home() {
         </Link>
       </div>
 
-      {ms.length === 0 ? (
-        <Empty icon="target" title="Belum ikut arisan">
-          Pilih arisan uang atau paket lebaran di menu <b>Arisan</b>, lalu tunggu persetujuan admin.
+      {activeMemberships.length === 0 ? (
+        <Empty icon="target" title="Belum ada arisan aktif">
+          Arisan yang sudah disetujui admin akan muncul di sini.
         </Empty>
       ) : (
-        ms.map((m) => {
+        activeMemberships.map((m) => {
           const g = m.groups;
           const membershipPayments = pays.filter((payment) => payment.membership_id === m.id);
           const paymentsByPeriod = bestPaymentByPeriod(membershipPayments);
@@ -110,24 +229,18 @@ export default function Home() {
                       {m.slot_count > 1 ? ` · ${m.slot_count} slot` : ''}
                     </div>
                   </div>
-                  <Badge status={m.status} />
                 </div>
-                {m.status === 'aktif' && (
-                  <>
-                    <Progress value={done} max={g.durasi} />
-                    <div className="row between small muted home-payment-progress">
-                      <span>
-                        Lunas {done} dari {g.durasi} {periodName(g).toLowerCase()}
-                      </span>
-                      {membershipPayments.filter((payment) => payment.status === 'menunggu').length > 0 && (
-                        <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
-                      )}
-                    </div>
-                  </>
-                )}
-                {m.status === 'menunggu' && <div className="muted small">Menunggu persetujuan admin…</div>}
+                <Progress value={done} max={g.durasi} />
+                <div className="row between small muted home-payment-progress">
+                  <span>
+                    Lunas {done} dari {g.durasi} {periodName(g).toLowerCase()}
+                  </span>
+                  {membershipPayments.filter((payment) => payment.status === 'menunggu').length > 0 && (
+                    <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
+                  )}
+                </div>
               </Link>
-              {m.status === 'aktif' && (nextPeriod || winningRounds.length > 0) && (
+              {(nextPeriod || winningRounds.length > 0) && (
                 <details className="home-payment-details">
                   <summary>Jadwal pembayaran &amp; penarikan</summary>
                   {nextPeriod && dueDate ? (
@@ -180,6 +293,62 @@ export default function Home() {
             </article>
           );
         })
+      )}
+
+      {selectedGroup && (
+        <Modal title={selectedGroup.group.name} onClose={() => !busy && setSelectedGroup(null)}>
+          <div className="stack">
+            <div className="home-offer-modal-summary">
+              <span className={`home-offer-icon ${selectedGroup.group.type === 'uang' ? 'money' : 'package'}`}>
+                <Icon name={selectedGroup.group.type === 'uang' ? 'coin' : 'gift'} size={22} />
+              </span>
+              <div>
+                <b>{typeLabel(selectedGroup.group)}</b>
+                <div className="muted small">
+                  {rupiah(selectedGroup.group.nominal)} / {periodUnit(selectedGroup.group)} · {selectedGroup.group.durasi} kali
+                </div>
+              </div>
+            </div>
+            {selectedGroup.group.description && <p className="muted small">{selectedGroup.group.description}</p>}
+            {selectedGroup.group.type === 'paket' && selectedGroup.group.package_detail && (
+              <p className="small"><Icon name="gift" size={16} /> {selectedGroup.group.package_detail}</p>
+            )}
+            {selectedGroup.membership?.status === 'menunggu' ? (
+              <div className="home-offer-status is-pending">
+                Pendaftaran sedang menunggu persetujuan admin. Kamu bisa membayar setelah disetujui.
+                <button type="button" className="btn sm danger" disabled={busy} onClick={cancelRegistration}>
+                  Batalkan pendaftaran
+                </button>
+              </div>
+            ) : selectedGroup.membership ? (
+              <div className={`home-offer-status is-${selectedGroup.membership.status}`}>
+                Status keanggotaan: <b>{selectedGroup.membership.status}</b>.
+                <Link
+                  className="btn block"
+                  to={`/g/${selectedGroup.group.id}`}
+                  state={{ from: '/beranda' }}
+                  onClick={() => setSelectedGroup(null)}
+                >
+                  Lihat status
+                </Link>
+              </div>
+            ) : (
+              <>
+                {selectedGroup.group.type === 'uang' && (
+                  <label className="field">
+                    <span>Jumlah slot yang ingin diikuti</span>
+                    <input type="number" min="1" value={slots} onChange={(event) => setSlots(event.target.value)} />
+                    <div className="hint">Iuran dikalikan dengan jumlah slot yang dipilih.</div>
+                  </label>
+                )}
+                <p className="muted small">Pendaftaran diperiksa admin sebelum kamu bisa mulai membayar.</p>
+                <button type="button" className="btn primary block" disabled={busy} onClick={submitRegistration}>
+                  {busy ? 'Mengirim…' : 'Daftar kelompok'}
+                </button>
+              </>
+            )}
+          </div>
+        </Modal>
       )}
     </>
   );

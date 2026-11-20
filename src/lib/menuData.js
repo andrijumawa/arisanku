@@ -3,13 +3,21 @@ import { q, supabase } from './supabase';
 const prefetchedChatData = new Map();
 
 export async function loadHomeData(uid) {
-  const ms = await q(
-    supabase
-      .from('memberships')
-      .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,pay_period,package_type,start_date)')
-      .eq('user_id', uid)
-      .order('created_at', { ascending: false })
-  );
+  const [ms, groups] = await Promise.all([
+    q(
+      supabase
+        .from('memberships')
+        .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,pay_period,package_type,start_date)')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+    ),
+    q(
+      supabase
+        .from('groups')
+        .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
+        .order('created_at', { ascending: false })
+    ),
+  ]);
   const ids = ms.map((membership) => membership.id);
   const pays = ids.length
     ? await q(supabase.from('payments').select('membership_id,period_no,status').in('membership_id', ids))
@@ -27,7 +35,7 @@ export async function loadHomeData(uid) {
           .order('period_no')
       )
     : [];
-  return { ms, pays, rounds, rouletteDraws };
+  return { ms, groups, pays, rounds, rouletteDraws };
 }
 
 export async function loadBrowseData(uid) {
