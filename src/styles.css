@@ -661,12 +661,12 @@ body.roulette-fullscreen-open .roulette-live {
   color: #f0f5ff;
   cursor: pointer;
   transform: translate(-50%, 0);
-  transition: box-shadow 180ms ease, transform 180ms ease;
+  transition: transform 180ms ease;
 }
 .menu-avatar::after {
   position: absolute;
   z-index: 1;
-  inset: 7px;
+  inset: 0;
   border: 5px solid #f0f5ff;
   border-radius: 50%;
   content: '';
