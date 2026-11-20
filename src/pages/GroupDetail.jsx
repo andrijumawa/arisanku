@@ -32,6 +32,17 @@ export default function GroupDetail() {
         .eq('id', id)
         .single()
     );
+    let availability = [];
+    let availabilityError = null;
+    if (group.type === 'uang') {
+      const result = await supabase.rpc('group_availability');
+      availabilityError = result.error;
+      if (availabilityError) {
+        console.error('Gagal memuat ringkasan slot kelompok:', availabilityError);
+      } else {
+        availability = result.data || [];
+      }
+    }
     const mem = await q(
       supabase.from('memberships').select('id,slot_count,status').eq('group_id', id).eq('user_id', uid).maybeSingle()
     );
@@ -62,7 +73,7 @@ export default function GroupDetail() {
         names = Object.fromEntries(ps.map((p) => [p.id, p.full_name]));
       }
     }
-    return { group, mem, payments, rounds, rouletteDraws, names };
+    return { group, mem, payments, rounds, rouletteDraws, names, availability, availabilityError };
   }, [id, uid]);
 
   const realtimeSubscriptions = useMemo(
@@ -96,7 +107,11 @@ export default function GroupDetail() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { group: g, mem, payments, rounds, rouletteDraws, names } = data;
+  const { group: g, mem, payments, rounds, rouletteDraws, names, availability, availabilityError } = data;
+  const groupAvailability = availability.find((item) => item.group_id === g.id);
+  const remainingSlots = g.max_slots != null && groupAvailability
+    ? Math.max(0, Number(g.max_slots) - Number(groupAvailability.reserved_slots))
+    : null;
   const rouletteRounds = rouletteDraws.flatMap((draw) => {
     const participants = draw.participants || [];
     return participants
@@ -168,19 +183,60 @@ export default function GroupDetail() {
       <Link to={returnTo} className="small">
         <Icon name="back" size={16} /> Kembali
       </Link>
-      <div className="card" style={{ marginTop: 8 }}>
-        <div className="card-head">
-          <div>
-            <h2 style={{ marginBottom: 4 }}>{g.name}</h2>
-            <span className={`badge type ${g.type}`}>{typeLabel(g)}</span>
-            {g.type === 'paket' && <span className="badge off" style={{ marginLeft: 6 }}>{g.pay_period}</span>}
-          </div>
-          {mem && <Badge status={mem.status} />}
+      <details className="card group-detail-overview" open>
+        <summary className="group-detail-overview-toggle">
+          <span className="group-detail-overview-heading">
+            <span className="group-detail-overview-title">{g.name}</span>
+            <span className="group-detail-overview-badges">
+              <span className={`badge type ${g.type}`}>{typeLabel(g)}</span>
+              {g.type === 'paket' && <span className="badge off">{g.pay_period}</span>}
+              {mem && <Badge status={mem.status} />}
+            </span>
+          </span>
+        </summary>
+        <div className="group-detail-overview-content">
+          {g.description && <p className="muted small">{g.description}</p>}
+          {g.type === 'paket' && g.package_detail && <p className="small item-detail"><Icon name="gift" size={16} /> {g.package_detail}</p>}
+          <GroupInfo g={g} showPayout={false} />
+          {g.type === 'uang' && (
+            <div className="group-detail-metrics" aria-label="Ringkasan peserta dan penarikan">
+              <div className="group-detail-metric">
+                <span>Peserta aktif</span>
+                <strong>
+                  {availabilityError || !groupAvailability
+                    ? 'Belum tersedia'
+                    : `${Number(groupAvailability.active_participants) || 0} orang`}
+                </strong>
+              </div>
+              <div className="group-detail-metric">
+                <span>Sisa slot</span>
+                <strong>
+                  {availabilityError || !groupAvailability
+                    ? 'Belum tersedia'
+                    : g.max_slots == null
+                      ? 'Tidak dibatasi'
+                      : `${remainingSlots} dari ${g.max_slots}`}
+                </strong>
+              </div>
+              <div className="group-detail-metric is-highlight">
+                <span>Perkiraan penarikan per putaran</span>
+                <strong>
+                  {g.max_slots == null
+                    ? 'Batas slot belum ditentukan'
+                    : rupiah(Number(g.nominal) * Number(g.max_slots))}
+                </strong>
+                {g.max_slots != null && <small>Jika seluruh {g.max_slots} slot terisi</small>}
+              </div>
+              {availabilityError && (
+                <div className="group-detail-metric-error" role="alert">
+                  Ringkasan peserta dan slot belum dapat dimuat.
+                  <button type="button" className="btn sm" onClick={reload}>Coba lagi</button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        {g.description && <p className="muted small">{g.description}</p>}
-        {g.type === 'paket' && g.package_detail && <p className="small item-detail"><Icon name="gift" size={16} /> {g.package_detail}</p>}
-        <GroupInfo g={g} />
-      </div>
+      </details>
 
       {!mem && <div className="alert warn">Kamu belum terdaftar di kelompok ini. Daftar lewat menu Arisan.</div>}
 

@@ -94,7 +94,6 @@ export default function Home() {
   const reservedSlotsByGroup = Object.fromEntries(
     availability.map((item) => [item.group_id, Number(item.reserved_slots) || 0])
   );
-  const availabilityByGroup = Object.fromEntries(availability.map((item) => [item.group_id, item]));
   const activeMemberships = ms.filter((membership) => membership.status === 'aktif');
   const offerGroups = groups.filter((group) => (
     membershipByGroup[group.id]?.status !== 'aktif'
@@ -226,10 +225,6 @@ export default function Home() {
       ) : (
         activeMemberships.map((m) => {
           const g = m.groups;
-          const groupAvailability = availabilityByGroup[g.id];
-          const remainingSlots = g.type === 'uang' && g.max_slots != null && groupAvailability
-            ? Math.max(0, Number(g.max_slots) - Number(groupAvailability.reserved_slots))
-            : null;
           const membershipPayments = pays.filter((payment) => payment.membership_id === m.id);
           const paymentsByPeriod = bestPaymentByPeriod(membershipPayments);
           const done = Object.values(paymentsByPeriod).filter((payment) => payment.status === 'disetujui').length;
@@ -277,44 +272,6 @@ export default function Home() {
                       {m.slot_count > 1 ? ` · ${m.slot_count} slot` : ''}
                     </div>
                   </div>
-                </div>
-                <div className="home-membership-metrics" aria-label="Ringkasan peserta dan penarikan">
-                  <div className="home-membership-metric">
-                    <span>Peserta aktif</span>
-                    <strong>
-                      {availabilityError || !groupAvailability
-                        ? '—'
-                        : `${Number(groupAvailability.active_participants) || 0} orang`}
-                    </strong>
-                  </div>
-                  {g.type === 'uang' && (
-                    <>
-                      <div className="home-membership-metric">
-                        <span>Sisa slot</span>
-                        <strong>
-                          {availabilityError || !groupAvailability
-                            ? '—'
-                            : g.max_slots == null
-                              ? 'Tidak dibatasi'
-                              : `${remainingSlots} dari ${g.max_slots}`}
-                        </strong>
-                      </div>
-                      <div className="home-membership-metric is-highlight">
-                        <span>Perkiraan penarikan per putaran</span>
-                        <strong>
-                          {g.max_slots == null
-                            ? 'Batas slot belum ditentukan'
-                            : rupiah(Number(g.nominal) * Number(g.max_slots))}
-                        </strong>
-                        {g.max_slots != null && <small>Jika seluruh {g.max_slots} slot terisi</small>}
-                      </div>
-                    </>
-                  )}
-                  {(availabilityError || !groupAvailability) && (
-                    <small className="home-membership-metric-note">
-                      Ringkasan peserta dan slot belum dapat dimuat.
-                    </small>
-                  )}
                 </div>
                 <Progress value={done} max={g.durasi} />
                 <div className="row between small muted home-payment-progress">

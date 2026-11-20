@@ -1,7 +1,7 @@
 import { fmtDate, periodUnit, rupiah, typeLabel } from '../lib/format';
 
 // Ringkasan rincian kelompok (dipakai di daftar arisan, beranda, dan admin)
-export default function GroupInfo({ g }) {
+export default function GroupInfo({ g, showPayout = true }) {
   const total = Number(g.nominal) * g.durasi;
   const pot = Number(g.nominal) * (g.max_slots || g.durasi);
   return (
@@ -22,10 +22,12 @@ export default function GroupInfo({ g }) {
             <span>Cara undian</span>
             <b>{g.draw_mode === 'acak' ? 'Acak' : 'Berurutan'}</b>
           </div>
-          <div>
-            <span>Hadiah per putaran</span>
-            <b>{rupiah(pot)}</b>
-          </div>
+          {showPayout && (
+            <div>
+              <span>Hadiah per putaran</span>
+              <b>{rupiah(pot)}</b>
+            </div>
+          )}
         </>
       ) : (
         <>
