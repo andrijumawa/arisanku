@@ -1351,7 +1351,8 @@ body.roulette-fullscreen-open .roulette-live {
   justify-content: center;
   gap: 7px;
   min-height: 36px;
-  margin-top: 12px;
+  flex: 0 0 auto;
+  margin-left: 8px;
   padding: 6px 11px;
   border: 1px solid rgba(95, 128, 224, 0.24);
   border-radius: 9px;
@@ -1374,6 +1375,12 @@ body.roulette-fullscreen-open .roulette-live {
 .home-payment-details summary:focus-visible {
   outline: 3px solid var(--brand);
   outline-offset: 2px;
+}
+.home-membership-card .card-head {
+  align-items: flex-start;
+}
+.home-membership-card .card-head > div {
+  min-width: 0;
 }
 .group-detail-overview {
   margin-top: 8px;

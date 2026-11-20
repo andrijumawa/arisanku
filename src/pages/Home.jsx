@@ -272,6 +272,10 @@ export default function Home() {
                       {m.slot_count > 1 ? ` · ${m.slot_count} slot` : ''}
                     </div>
                   </div>
+                  <Link to={`/g/${g.id}`} state={{ from: '/beranda' }} className="home-membership-link">
+                    Detail
+                    <Icon name="arrowRight" size={16} />
+                  </Link>
                 </div>
                 <Progress value={done} max={g.durasi} />
                 <div className="row between small muted home-payment-progress">
@@ -282,10 +286,6 @@ export default function Home() {
                     <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
                   )}
                 </div>
-                <Link to={`/g/${g.id}`} state={{ from: '/beranda' }} className="home-membership-link">
-                  Detail
-                  <Icon name="arrowRight" size={16} />
-                </Link>
               </div>
               {(nextPeriod || winningRounds.length > 0) && (
                 <details className="home-payment-details">
