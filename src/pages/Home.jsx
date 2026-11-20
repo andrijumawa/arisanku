@@ -10,7 +10,7 @@ import Icon from '../components/Icon.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 
-function AvailableGroupCard({ group, membership, onSelect }) {
+function AvailableGroupCard({ group, membership, remainingSlots, availabilityError, onSelect }) {
   const isMoney = group.type === 'uang';
   const statusClass = membership?.status === 'menunggu'
     ? ' is-pending'
@@ -39,7 +39,12 @@ function AvailableGroupCard({ group, membership, onSelect }) {
       <span className="home-offer-copy">
         <span className="home-offer-type">{typeLabel(group)}</span>
         <strong>{group.name}</strong>
-        <span className="home-offer-summary">{rupiah(group.nominal)} / {periodUnit(group)} · {group.durasi} kali</span>
+        <span className="home-offer-summary">
+          {rupiah(group.nominal)} / {periodUnit(group)} · {group.durasi} kali
+          {group.type === 'uang' && group.max_slots != null
+            ? ` · ${availabilityError ? 'ketersediaan slot belum dimuat' : `${remainingSlots} slot tersisa`}`
+            : ''}
+        </span>
       </span>
       <span className="home-offer-state">
         {membership?.status === 'menunggu' ? <Badge status="menunggu" /> : <Icon name="arrowRight" size={18} />}
@@ -62,6 +67,7 @@ export default function Home() {
   const realtimeSubscriptions = [
     { table: 'memberships', filter: `user_id=eq.${uid}` },
     { table: 'groups' },
+    { table: 'slots' },
     ...(displayedData?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
     ...(displayedData?.ms || []).map((m) => ({ table: 'rounds', filter: `group_id=eq.${m.group_id}` })),
     ...(displayedData?.ms || []).map((m) => ({ table: 'roulette_draws', filter: `group_id=eq.${m.group_id}` })),
@@ -71,15 +77,36 @@ export default function Home() {
   if (loading && !displayedData) return <Spinner />;
   if (error && !displayedData) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { ms = [], groups = [], groupsError, pays = [], rounds = [], rouletteDraws = [] } = displayedData;
+  const {
+    ms = [],
+    groups = [],
+    groupsError,
+    availability = [],
+    availabilityError,
+    pays = [],
+    rounds = [],
+    rouletteDraws = [],
+  } = displayedData;
   const aktif = ms.filter((m) => m.status === 'aktif').length;
   const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
   const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
   const membershipByGroup = Object.fromEntries(ms.map((membership) => [membership.group_id, membership]));
+  const reservedSlotsByGroup = Object.fromEntries(
+    availability.map((item) => [item.group_id, Number(item.reserved_slots) || 0])
+  );
+  const availabilityByGroup = Object.fromEntries(availability.map((item) => [item.group_id, item]));
   const activeMemberships = ms.filter((membership) => membership.status === 'aktif');
   const offerGroups = groups.filter((group) => (
     membershipByGroup[group.id]?.status !== 'aktif'
-    && (group.is_open || membershipByGroup[group.id])
+    && (
+      membershipByGroup[group.id]
+      || (
+        group.is_open
+        && (group.type !== 'uang' || group.max_slots == null
+          || availabilityError
+          || Number(group.max_slots) - (reservedSlotsByGroup[group.id] || 0) > 0)
+      )
+    )
   ));
 
   async function submitRegistration() {
@@ -127,7 +154,7 @@ export default function Home() {
   return (
     <>
       {error && <ErrorBox error={error} onRetry={reload} />}
-      {groupsError && <ErrorBox error={groupsError} onRetry={reload} />}
+      {(groupsError || availabilityError) && <ErrorBox error={groupsError || availabilityError} onRetry={reload} />}
       <h2>Halo, {profile?.full_name?.split(' ')[0] || 'Peserta'}</h2>
 
       <div className="stats">
@@ -159,7 +186,22 @@ export default function Home() {
                 key={group.id}
                 group={group}
                 membership={membershipByGroup[group.id]}
-                onSelect={(selected, membership) => setSelectedGroup({ group: selected, membership })}
+                availabilityError={availabilityError}
+                remainingSlots={availabilityError || group.max_slots == null
+                  ? null
+                  : Math.max(0, Number(group.max_slots) - (reservedSlotsByGroup[group.id] || 0))}
+                onSelect={(selected, membership) => {
+                  const remaining = availabilityError || selected.max_slots == null
+                    ? null
+                    : Math.max(0, Number(selected.max_slots) - (reservedSlotsByGroup[selected.id] || 0));
+                  setSlots(1);
+                  setSelectedGroup({
+                    group: selected,
+                    membership,
+                    remainingSlots: remaining,
+                    availabilityError,
+                  });
+                }}
               />
             ))}
           </div>
@@ -184,6 +226,10 @@ export default function Home() {
       ) : (
         activeMemberships.map((m) => {
           const g = m.groups;
+          const groupAvailability = availabilityByGroup[g.id];
+          const remainingSlots = g.type === 'uang' && g.max_slots != null && groupAvailability
+            ? Math.max(0, Number(g.max_slots) - Number(groupAvailability.reserved_slots))
+            : null;
           const membershipPayments = pays.filter((payment) => payment.membership_id === m.id);
           const paymentsByPeriod = bestPaymentByPeriod(membershipPayments);
           const done = Object.values(paymentsByPeriod).filter((payment) => payment.status === 'disetujui').length;
@@ -231,6 +277,44 @@ export default function Home() {
                       {m.slot_count > 1 ? ` · ${m.slot_count} slot` : ''}
                     </div>
                   </div>
+                </div>
+                <div className="home-membership-metrics" aria-label="Ringkasan peserta dan penarikan">
+                  <div className="home-membership-metric">
+                    <span>Peserta aktif</span>
+                    <strong>
+                      {availabilityError || !groupAvailability
+                        ? '—'
+                        : `${Number(groupAvailability.active_participants) || 0} orang`}
+                    </strong>
+                  </div>
+                  {g.type === 'uang' && (
+                    <>
+                      <div className="home-membership-metric">
+                        <span>Sisa slot</span>
+                        <strong>
+                          {availabilityError || !groupAvailability
+                            ? '—'
+                            : g.max_slots == null
+                              ? 'Tidak dibatasi'
+                              : `${remainingSlots} dari ${g.max_slots}`}
+                        </strong>
+                      </div>
+                      <div className="home-membership-metric is-highlight">
+                        <span>Perkiraan penarikan per putaran</span>
+                        <strong>
+                          {g.max_slots == null
+                            ? 'Batas slot belum ditentukan'
+                            : rupiah(Number(g.nominal) * Number(g.max_slots))}
+                        </strong>
+                        {g.max_slots != null && <small>Jika seluruh {g.max_slots} slot terisi</small>}
+                      </div>
+                    </>
+                  )}
+                  {(availabilityError || !groupAvailability) && (
+                    <small className="home-membership-metric-note">
+                      Ringkasan peserta dan slot belum dapat dimuat.
+                    </small>
+                  )}
                 </div>
                 <Progress value={done} max={g.durasi} />
                 <div className="row between small muted home-payment-progress">
@@ -339,12 +423,32 @@ export default function Home() {
                 {selectedGroup.group.type === 'uang' && (
                   <label className="field">
                     <span>Jumlah slot yang ingin diikuti</span>
-                    <input type="number" min="1" value={slots} onChange={(event) => setSlots(event.target.value)} />
-                    <div className="hint">Iuran dikalikan dengan jumlah slot yang dipilih.</div>
+                    <input
+                      type="number"
+                      min="1"
+                      max={selectedGroup.remainingSlots ?? undefined}
+                      value={slots}
+                      onChange={(event) => setSlots(event.target.value)}
+                    />
+                    <div className="hint">
+                      {selectedGroup.availabilityError
+                        ? 'Ketersediaan slot belum dapat diperiksa. Coba lagi setelah halaman dimuat ulang.'
+                        : selectedGroup.remainingSlots == null
+                        ? 'Slot kelompok ini tidak dibatasi.'
+                        : `Tersisa ${selectedGroup.remainingSlots} slot. Iuran dikalikan dengan jumlah slot yang dipilih.`}
+                    </div>
                   </label>
                 )}
                 <p className="muted small">Pendaftaran diperiksa admin sebelum kamu bisa mulai membayar.</p>
-                <button type="button" className="btn primary block" disabled={busy} onClick={submitRegistration}>
+                <button
+                  type="button"
+                  className="btn primary block"
+                  disabled={busy || (selectedGroup.remainingSlots != null
+                    && (selectedGroup.remainingSlots < 1 || Number(slots) > selectedGroup.remainingSlots))
+                    || (selectedGroup.availabilityError && selectedGroup.group.type === 'uang'
+                      && selectedGroup.group.max_slots != null)}
+                  onClick={submitRegistration}
+                >
                   {busy ? 'Mengirim…' : 'Daftar kelompok'}
                 </button>
               </>

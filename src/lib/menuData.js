@@ -6,7 +6,7 @@ export async function loadHomeData(uid) {
   const ms = await q(
     supabase
       .from('memberships')
-      .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,pay_period,package_type,start_date)')
+      .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,max_slots,pay_period,package_type,start_date)')
       .eq('user_id', uid)
       .order('created_at', { ascending: false })
   );
@@ -17,6 +17,12 @@ export async function loadHomeData(uid) {
       .order('created_at', { ascending: false })
   ).then((value) => [value, null]).catch((error) => {
     console.error('Gagal memuat kelompok tersedia di Beranda:', error);
+    return [[], error];
+  });
+  const [availability, availabilityError] = await q(
+    supabase.rpc('group_availability')
+  ).then((value) => [value || [], null]).catch((error) => {
+    console.error('Gagal memuat ketersediaan slot kelompok:', error);
     return [[], error];
   });
   const ids = ms.map((membership) => membership.id);
@@ -36,7 +42,7 @@ export async function loadHomeData(uid) {
           .order('period_no')
       )
     : [];
-  return { ms, groups, groupsError, pays, rounds, rouletteDraws };
+  return { ms, groups, groupsError, availability, availabilityError, pays, rounds, rouletteDraws };
 }
 
 export async function loadBrowseData(uid) {
