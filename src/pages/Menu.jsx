@@ -7,6 +7,8 @@ import { signedUrl } from '../components/SignedImage.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 
+const menuImageUrl = (image) => `${import.meta.env.BASE_URL}images/${image}`;
+
 export default function Menu() {
   const { profile, session, isAdmin, signOut, refreshProfile } = useAuth();
   const { unread = 0 } = useOutletContext() || {};
@@ -269,7 +271,7 @@ export default function Menu() {
                 className="menu-tile is-disabled"
                 disabled
               >
-                <img className="menu-tile-character" src={`/images/${item.image}`} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                <img className="menu-tile-character" src={menuImageUrl(item.image)} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   <span className="menu-tile-state-icon"><Icon name="clock" size={15} /></span>
@@ -292,7 +294,7 @@ export default function Menu() {
                 tabIndex={item.to === '/rolet' && item.disabled ? -1 : undefined}
                 onClick={item.to === '/rolet' && item.disabled ? (event) => event.preventDefault() : undefined}
               >
-                <img className="menu-tile-character" src={`/images/${item.image}`} alt="" aria-hidden="true" loading="lazy" decoding="async" />
+                <img className="menu-tile-character" src={menuImageUrl(item.image)} alt="" aria-hidden="true" loading="lazy" decoding="async" />
                 <span className="menu-tile-top">
                   <span className="menu-tile-icon-wrap"><Icon name={item.icon} className="menu-tile-icon" /></span>
                   {item.to === '/rolet' && item.disabled && !item.loading
