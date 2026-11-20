@@ -4457,6 +4457,19 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   inset: 0;
   border-radius: 50%;
 }
+.roulette-wheel-sectors {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.roulette-wheel-sectors path {
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 0.8;
+  stroke-linejoin: round;
+}
 .roulette-wheel-name {
   position: absolute;
   width: 62%;

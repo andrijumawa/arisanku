@@ -180,6 +180,52 @@ as $$
 $$;
 revoke all on function public.roulette_remaining_slots(uuid) from public, anon, authenticated;
 
+create or replace function public.get_roulette_participants(p_group uuid)
+returns table (
+  user_id uuid,
+  full_name text,
+  slot_no integer,
+  slot_count integer,
+  is_registered boolean
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null or not public.is_verified() or not (
+    public.is_admin()
+    or exists (
+      select 1
+      from public.memberships m
+      where m.group_id = p_group
+        and m.user_id = auth.uid()
+        and m.status = 'aktif'
+    )
+  ) then
+    raise exception 'Hanya admin atau peserta aktif terverifikasi yang dapat melihat peserta Rolet';
+  end if;
+
+  if not exists (
+    select 1
+    from public.groups g
+    where g.id = p_group
+      and g.type = 'uang'
+      and g.draw_mode = 'acak'
+  ) then
+    raise exception 'Kelompok tidak tersedia untuk Rolet';
+  end if;
+
+  return query
+  select remaining.user_id, remaining.full_name, remaining.slot_no,
+    remaining.slot_count, remaining.is_registered
+  from public.roulette_remaining_slots(p_group) remaining;
+end;
+$$;
+revoke all on function public.get_roulette_participants(uuid) from public, anon;
+grant execute on function public.get_roulette_participants(uuid) to authenticated;
+
 create or replace function public.register_roulette_attendance(p_group uuid, p_period integer)
 returns boolean language plpgsql security definer set search_path = public as $$
 declare

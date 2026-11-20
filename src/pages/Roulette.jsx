@@ -24,6 +24,23 @@ function getSpinDuration(roundNo, totalRounds) {
 
 const WHEEL_COLORS = ['#ee746e', '#e7b955', '#4fba9a', '#9b78d8', '#d96388', '#7566e8', '#5598d4', '#e58b61'];
 
+function wheelSectorPath(index, count) {
+  const slice = 360 / count;
+  const startAngle = -90 + index * slice;
+  const endAngle = startAngle + slice;
+  const pointAt = (angle) => {
+    const radians = (angle * Math.PI) / 180;
+    return {
+      x: 50 + 50 * Math.cos(radians),
+      y: 50 + 50 * Math.sin(radians),
+    };
+  };
+  const start = pointAt(startAngle);
+  const end = pointAt(endAngle);
+  const largeArc = slice > 180 ? 1 : 0;
+  return `M 50 50 L ${start.x} ${start.y} A 50 50 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
+}
+
 function participantSlotLabel(participant) {
   const name = participant?.full_name || 'Peserta';
   return Number(participant?.slot_count) > 1
@@ -203,18 +220,6 @@ export default function Roulette() {
     && !participantsState.loading
     && savedDraws.length > 0
     && remainingParticipants.length === 1;
-
-  const wheelBackground = useMemo(() => {
-    if (!participantNames.length) return '#fff';
-    const slice = 360 / participantNames.length;
-    const sectors = participantNames.map((_, index) => {
-      const start = index * slice;
-      const end = (index + 1) * slice;
-      const color = WHEEL_COLORS[index % WHEEL_COLORS.length];
-      return `${color} ${start}deg ${end}deg`;
-    });
-    return `conic-gradient(from ${-90 - slice / 2}deg, ${sectors.join(', ')})`;
-  }, [participantNames]);
 
   const spinDuration = getSpinDuration(periodNo, activeParticipants.length || periodNo);
   const spinIntervalMs = Math.max(65, Math.round(110 * (spinDuration / 7000)));
@@ -465,11 +470,23 @@ export default function Roulette() {
                     '--wheel-angle': `${wheelAngle}deg`,
                     '--wheel-transition': spinning && wheelAngle > 0 && wheelTransitionDuration > 0
                       ? `transform ${wheelTransitionDuration}ms cubic-bezier(0.12, 0.78, 0.12, 1)`
-                      : 'none',
-                    background: wheelBackground
+                      : 'none'
                   }}
                   aria-label="Mesin kocokan peserta"
                 >
+                  <svg
+                    className="roulette-wheel-sectors"
+                    viewBox="0 0 100 100"
+                    aria-hidden="true"
+                  >
+                    {participantNames.map((name, index) => (
+                      <path
+                        key={`${name}-${index}`}
+                        d={wheelSectorPath(index, participantNames.length)}
+                        fill={WHEEL_COLORS[index % WHEEL_COLORS.length]}
+                      />
+                    ))}
+                  </svg>
                   <div className="roulette-wheel-labels">
                     {participantNames.map((name, index) => {
                       const angle = participantNames.length ? -90 + (360 / participantNames.length) * index : -90;
