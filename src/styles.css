@@ -896,6 +896,9 @@ body.roulette-fullscreen-open .roulette-live {
   transform: none;
   transition: none;
 }
+.menu-tile-kocok-wide {
+  grid-column: 1 / -1;
+}
 .menu-tile-kocok::after {
   border-color: rgba(255, 255, 255, 0.2);
 }
@@ -1056,6 +1059,7 @@ body.roulette-fullscreen-open .roulette-live {
   font-size: clamp(8px, calc(1.45dvh - 1px), 10.5px);
   font-weight: 500;
   line-height: 1.35;
+  white-space: pre-line;
 }
 .menu-tile.is-disabled,
 .menu-tile.is-disabled:hover,
