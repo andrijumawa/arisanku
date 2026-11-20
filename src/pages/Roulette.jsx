@@ -493,17 +493,11 @@ export default function Roulette() {
                         ? -90 + (360 / participantNames.length) * (index + 0.5)
                         : -90;
                       const radians = (angle * Math.PI) / 180;
-                      const radius = participantNames.length <= 4 ? 31 : 35;
+                      const onLeftSide = Math.cos(radians) < 0;
+                      const radius = onLeftSide ? 46 : 10;
                       const left = 50 + radius * Math.cos(radians);
                       const top = 50 + radius * Math.sin(radians);
-                      const maxLength = participantNames.length >= 13
-                        ? 7
-                        : participantNames.length >= 9
-                          ? 9
-                          : participantNames.length >= 6
-                            ? 11
-                            : 15;
-                      const label = name.length > maxLength ? `${name.slice(0, maxLength - 1)}…` : name;
+                      const labelAngle = angle + (onLeftSide ? 180 : 0) + wheelAngle;
                       return (
                         <span
                           key={`${name}-${index}`}
@@ -511,11 +505,17 @@ export default function Roulette() {
                           style={{
                             left: `${left}%`,
                             top: `${top}%`,
-                            '--wheel-angle': `${wheelAngle}deg`
+                            '--label-angle': `${labelAngle}deg`,
+                            '--label-width': participantNames.length >= 10 ? '36%' : '46%',
+                            '--label-font-size': participantNames.length >= 16
+                              ? 'clamp(5px, 1.65vw, 8px)'
+                              : participantNames.length >= 10
+                                ? 'clamp(6px, 1.9vw, 9px)'
+                                : 'clamp(7px, 2.4vw, 11px)'
                           }}
                           title={name}
                         >
-                          {label}
+                          {name}
                         </span>
                       );
                     })}

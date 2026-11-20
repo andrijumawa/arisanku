@@ -4484,18 +4484,18 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
 }
 .roulette-wheel-name {
   position: absolute;
-  width: 62%;
+  width: var(--label-width, 46%);
   transform:
-    translate(-50%, -50%)
-    rotate(calc(-1 * var(--wheel-angle)));
+    translateY(-50%)
+    rotate(var(--label-angle));
   color: #fff;
-  font-size: clamp(8px, 2.8vw, 13px);
+  font-size: var(--label-font-size, clamp(7px, 2.4vw, 11px));
   font-weight: 800;
   line-height: 1.05;
-  text-align: center;
+  white-space: nowrap;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-  text-wrap: balance;
-  overflow-wrap: anywhere;
+  transform-origin: left center;
+  pointer-events: none;
 }
 .roulette-attendance-empty {
   margin: 0;
