@@ -22,12 +22,10 @@ const sections = [
 export default function AdminHome() {
   const [params, setParams] = useSearchParams();
   const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0, accounts: 0 });
-  const [newPaymentNotifications, setNewPaymentNotifications] = useState(0);
   const requestedTab = params.get('tab');
   const activeSection = sections.find(([key]) => key === requestedTab);
   const { data, error, reload } = useAsync(loadAdminCounts, []);
   const onRealtimeChange = useCallback((tables) => {
-    setNewPaymentNotifications((current) => current + Number(tables.includes('payments')));
     setListRevisions((current) => ({
       registrations: current.registrations + Number(tables.includes('memberships')),
       payments: current.payments + Number(tables.includes('payments')),
@@ -43,7 +41,6 @@ export default function AdminHome() {
   );
 
   const openSection = (nextTab) => {
-    if (nextTab === 'bayar') setNewPaymentNotifications(0);
     setParams((current) => {
       const next = new URLSearchParams(current);
       next.set('tab', nextTab);
@@ -68,7 +65,7 @@ export default function AdminHome() {
       <nav className="admin-cards" aria-label="Kategori admin">
         {sections.map(([key, label, description, icon, image]) => {
           const count = key === 'daftar' ? data?.mem : key === 'bayar' ? data?.pay : key === 'peserta' ? data?.accounts : null;
-          const isNew = (key === 'daftar' && count > 0) || (key === 'bayar' && newPaymentNotifications > 0);
+          const isNew = ['daftar', 'bayar', 'peserta'].includes(key) && count > 0;
           return (
             <button
               key={key}
