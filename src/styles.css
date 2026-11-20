@@ -2546,6 +2546,15 @@ input[type='checkbox'] {
 .home-offer-card.is-pending::before {
   background: linear-gradient(180deg, #e1a735, #f3d37e);
 }
+.home-offer-card.is-active {
+  border-color: rgba(67, 157, 111, 0.48);
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(197, 237, 211, 0.62), transparent 58%),
+    rgba(239, 251, 243, 0.94);
+}
+.home-offer-card.is-active::before {
+  background: linear-gradient(180deg, #278451, #79c997);
+}
 .home-offer-card.is-rejected {
   background: rgba(255, 241, 240, 0.92);
 }

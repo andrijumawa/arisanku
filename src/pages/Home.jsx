@@ -14,6 +14,8 @@ function AvailableGroupCard({ group, membership, remainingSlots, availabilityErr
   const isMoney = group.type === 'uang';
   const statusClass = membership?.status === 'menunggu'
     ? ' is-pending'
+    : membership?.status === 'aktif'
+      ? ' is-active'
     : membership?.status === 'ditolak'
       ? ' is-rejected'
       : membership?.status === 'nonaktif'
@@ -25,6 +27,8 @@ function AvailableGroupCard({ group, membership, remainingSlots, availabilityErr
       ? 'Pendaftaran ditolak'
       : membership?.status === 'nonaktif'
         ? 'Keanggotaan nonaktif'
+        : membership?.status === 'aktif'
+          ? 'Sudah bergabung'
         : 'Lihat & daftar';
 
   return (
@@ -47,7 +51,7 @@ function AvailableGroupCard({ group, membership, remainingSlots, availabilityErr
         </span>
       </span>
       <span className="home-offer-state">
-        {membership?.status === 'menunggu' ? <Badge status="menunggu" /> : <Icon name="arrowRight" size={18} />}
+        {membership ? <Badge status={membership.status} /> : <Icon name="arrowRight" size={18} />}
         <small>{action}</small>
       </span>
     </button>
@@ -96,16 +100,11 @@ export default function Home() {
   );
   const activeMemberships = ms.filter((membership) => membership.status === 'aktif');
   const offerGroups = groups.filter((group) => (
-    membershipByGroup[group.id]?.status !== 'aktif'
-    && (
-      membershipByGroup[group.id]
-      || (
-        group.is_open
-        && (group.type !== 'uang' || group.max_slots == null
-          || availabilityError
-          || Number(group.max_slots) - (reservedSlotsByGroup[group.id] || 0) > 0)
-      )
-    )
+    (group.is_open
+      && (group.type !== 'uang' || group.max_slots == null
+        || availabilityError
+        || Number(group.max_slots) - (reservedSlotsByGroup[group.id] || 0) > 0))
+    || (membershipByGroup[group.id] && membershipByGroup[group.id].status !== 'aktif')
   ));
 
   async function submitRegistration() {
