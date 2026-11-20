@@ -11,9 +11,10 @@ import GroupInfo from '../components/GroupInfo.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 
-function BrowseGroupCard({ group, status, onJoin }) {
+function BrowseGroupCard({ group, membership, onJoin, onCancel, canceling }) {
   const [expanded, setExpanded] = useState(false);
   const detailsId = useId();
+  const status = membership?.status;
   const isMoney = group.type === 'uang';
   const prize = Number(group.nominal) * (group.max_slots || group.durasi);
   const dates = [
@@ -99,7 +100,19 @@ function BrowseGroupCard({ group, status, onJoin }) {
           )}
 
           <footer className="browse-group-actions">
-            {status ? (
+            {status === 'menunggu' ? (
+              <div className="browse-pending" role="status">
+                Pendaftaran sedang diperiksa admin. Kamu bisa membayar setelah disetujui.
+                <button
+                  type="button"
+                  className="btn sm danger"
+                  disabled={canceling}
+                  onClick={() => onCancel(membership)}
+                >
+                  {canceling ? 'Membatalkan…' : 'Batalkan pendaftaran'}
+                </button>
+              </div>
+            ) : status ? (
               <Link to={`/g/${group.id}`} state={{ from: '/arisan' }} className="btn browse-group-button">
                 Lihat detail <Icon name="arrowRight" size={17} />
               </Link>
@@ -108,7 +121,6 @@ function BrowseGroupCard({ group, status, onJoin }) {
                 Daftar kelompok <Icon name="arrowRight" size={17} />
               </button>
             )}
-            {status === 'menunggu' && <span className="browse-group-note">Pendaftaran menunggu persetujuan admin.</span>}
           </footer>
         </div>
       )}
@@ -123,6 +135,7 @@ export default function Browse() {
   const [joining, setJoining] = useState(null);
   const [slots, setSlots] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [cancelingMembershipId, setCancelingMembershipId] = useState(null);
 
   const { data, loading, error, reload } = useAsync(loadBrowseData, [uid]);
   useRealtimeRefresh(
@@ -150,6 +163,20 @@ export default function Browse() {
     setSlots(1);
   }
 
+  async function cancelJoin(membership) {
+    if (!window.confirm('Batalkan pendaftaran ke kelompok ini?')) return;
+    setCancelingMembershipId(membership.id);
+    const { error } = await supabase
+      .from('memberships')
+      .delete()
+      .eq('id', membership.id)
+      .eq('user_id', uid);
+    setCancelingMembershipId(null);
+    if (error) return toast(error.message, 'error');
+    toast('Pendaftaran dibatalkan.');
+    reload();
+  }
+
   return (
     <>
       <h2>Pilih Arisan</h2>
@@ -163,8 +190,10 @@ export default function Browse() {
             <BrowseGroupCard
               key={group.id}
               group={group}
-              status={mine[group.id]}
+              membership={mine[group.id]}
               onJoin={setJoining}
+              onCancel={cancelJoin}
+              canceling={cancelingMembershipId === mine[group.id]?.id}
             />
           ))}
         </div>

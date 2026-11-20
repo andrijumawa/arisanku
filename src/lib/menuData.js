@@ -37,8 +37,8 @@ export async function loadBrowseData(uid) {
       .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
       .order('created_at', { ascending: false })
   );
-  const mine = await q(supabase.from('memberships').select('group_id,status').eq('user_id', uid));
-  return { groups, mine: Object.fromEntries(mine.map((membership) => [membership.group_id, membership.status])) };
+  const mine = await q(supabase.from('memberships').select('id,group_id,status').eq('user_id', uid));
+  return { groups, mine: Object.fromEntries(mine.map((membership) => [membership.group_id, membership])) };
 }
 
 export async function loadRouletteGroups(isAdmin, uid) {

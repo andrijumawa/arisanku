@@ -4614,6 +4614,17 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   gap: 5px;
   margin-top: 10px;
 }
+.browse-pending {
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--brand-l);
+  color: var(--brand-d);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.browse-pending .btn {
+  margin-top: 10px;
+}
 .browse-group-button {
   width: 100%;
   min-height: 42px;
