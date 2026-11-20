@@ -70,7 +70,7 @@ export default function Home() {
   if (loading && !displayedData) return <Spinner />;
   if (error && !displayedData) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { ms, groups, pays, rounds = [], rouletteDraws = [] } = displayedData;
+  const { ms = [], groups = [], groupsError, pays = [], rounds = [], rouletteDraws = [] } = displayedData;
   const aktif = ms.filter((m) => m.status === 'aktif').length;
   const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
   const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
@@ -126,6 +126,7 @@ export default function Home() {
   return (
     <>
       {error && <ErrorBox error={error} onRetry={reload} />}
+      {groupsError && <ErrorBox error={groupsError} onRetry={reload} />}
       <h2>Halo, {profile?.full_name?.split(' ')[0] || 'Peserta'}</h2>
 
       <div className="stats">
