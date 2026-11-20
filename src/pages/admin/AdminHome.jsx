@@ -95,7 +95,6 @@ export default function AdminHome() {
                 <span className="admin-card-trailing">
                   {count > 0 && <i className="admin-card-count">{count}</i>}
                   {isNew && <b className="admin-card-new-label">Baru</b>}
-                  <Icon name="arrowRight" size={18} />
                 </span>
               </span>
               <span className="admin-card-copy">
