@@ -156,11 +156,48 @@ export default function Roulette() {
     () => [...remainingParticipants].sort((a, b) => Number(registeredUserIds.has(b.user_id)) - Number(registeredUserIds.has(a.user_id))),
     [remainingParticipants, registeredUserIds]
   );
+  const wheelParticipants = useMemo(() => {
+    const draftOrder = session?.draft_order;
+    if (!Array.isArray(draftOrder) || !draftOrder.length) {
+      return orderedParticipants;
+    }
+
+    const activeSlots = new Map(orderedParticipants.map((participant) => [
+      `${participant.user_id}:${Number(participant.slot_no)}`,
+      participant,
+    ]));
+    const includedSlots = new Set();
+    const wheelOrder = [];
+    draftOrder.forEach((participant) => {
+      if (participant.slot_no == null) {
+        orderedParticipants
+          .filter((slot) => slot.user_id === participant.user_id)
+          .forEach((slot) => {
+            const key = `${slot.user_id}:${Number(slot.slot_no)}`;
+            if (!includedSlots.has(key)) {
+              includedSlots.add(key);
+              wheelOrder.push(slot);
+            }
+          });
+        return;
+      }
+
+      const key = `${participant.user_id}:${Number(participant.slot_no)}`;
+      const activeSlot = activeSlots.get(key);
+      if (activeSlot && !includedSlots.has(key)) {
+        includedSlots.add(key);
+        wheelOrder.push(participant);
+      }
+    });
+    orderedParticipants.forEach((participant) => {
+      const key = `${participant.user_id}:${Number(participant.slot_no)}`;
+      if (!includedSlots.has(key)) wheelOrder.push(participant);
+    });
+    return wheelOrder;
+  }, [orderedParticipants, session?.draft_order]);
   const participantNames = useMemo(
-    () => (session?.draft_order?.length
-      ? session.draft_order.map(participantSlotLabel)
-      : orderedParticipants.map(participantSlotLabel)),
-    [session?.draft_order, orderedParticipants]
+    () => wheelParticipants.map(participantSlotLabel),
+    [wheelParticipants]
   );
   const rouletteComplete = !drawsState.loading
     && !participantsState.loading
