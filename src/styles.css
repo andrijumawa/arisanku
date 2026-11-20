@@ -689,7 +689,7 @@ body.roulette-fullscreen-open .roulette-live {
   height: 100%;
   clip-path: circle(calc(50% - 1px) at center);
   object-fit: cover;
-  object-position: center center;
+  object-position: center 65%;
 }
 .menu-avatar-camera {
   position: absolute;
