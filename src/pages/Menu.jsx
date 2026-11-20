@@ -222,9 +222,14 @@ export default function Menu() {
       <div className="menu-heading">
         <span className="menu-heading-kicker">AKSES CEPAT</span>
         <h1>Menu</h1>
-        <span className="menu-heading-mark" aria-hidden="true">
-          <img src={menuImageUrl('menu-arisan.png')} alt="" />
-        </span>
+        <img
+          className="menu-heading-character"
+          src={menuImageUrl('menu-arisan.png')}
+          alt=""
+          aria-hidden="true"
+          loading="eager"
+          decoding="async"
+        />
       </div>
       {accountPending && (
         <div className="account-verification-notice" role="status">
@@ -269,7 +274,7 @@ export default function Menu() {
               <button
                 key={item.to}
                 type="button"
-                className="menu-tile is-disabled"
+                className={`menu-tile is-disabled${item.to === '/beranda' && !isAdmin ? ' menu-tile-home-participant' : ''}`}
                 disabled
               >
                 {item.image && <img className="menu-tile-character" src={menuImageUrl(item.image)} alt="" aria-hidden="true" loading="eager" decoding="async" />}
@@ -289,7 +294,7 @@ export default function Menu() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/rolet' ? ` menu-tile-kocok${!isAdmin ? ' menu-tile-kocok-wide' : ''}${item.loading ? ' is-loading' : item.disabled ? ' is-disabled' : ''}` : ''}`}
+                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/beranda' && !isAdmin ? ' menu-tile-home-participant' : ''}${item.to === '/rolet' ? ` menu-tile-kocok${!isAdmin ? ' menu-tile-kocok-wide' : ''}${item.loading ? ' is-loading' : item.disabled ? ' is-disabled' : ''}` : ''}`}
                 aria-disabled={item.to === '/rolet' && item.disabled ? true : undefined}
                 aria-busy={item.to === '/rolet' && item.loading ? true : undefined}
                 tabIndex={item.to === '/rolet' && item.disabled ? -1 : undefined}

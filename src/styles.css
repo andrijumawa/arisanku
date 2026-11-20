@@ -770,26 +770,15 @@ body.roulette-fullscreen-open .roulette-live {
   letter-spacing: -0.055em;
   line-height: 1;
 }
-.menu-heading-mark {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: var(--menu-heading-mark-size);
-  height: var(--menu-heading-mark-size);
-  flex: 0 0 var(--menu-heading-mark-size);
-  place-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  border-radius: 17px;
-  overflow: hidden;
-  background: linear-gradient(145deg, #8ca8f3, #6b8ce5);
-  box-shadow: 0 8px 16px rgba(84, 115, 199, 0.2), inset 0 1px rgba(255, 255, 255, 0.45);
-  color: #fff;
-}
-.menu-heading-mark img {
-  width: 130%;
-  height: 130%;
-  object-fit: cover;
-  object-position: center 18%;
+.menu-heading-character {
+  position: absolute;
+  right: 2%;
+  bottom: -16%;
+  width: clamp(92px, 24%, 180px);
+  height: 128%;
+  object-fit: contain;
+  object-position: right bottom;
+  pointer-events: none;
 }
 .menu-heading p:last-child {
   margin: 0;
@@ -904,7 +893,8 @@ body.roulette-fullscreen-open .roulette-live {
   transform: translateY(-3px);
   box-shadow: 0 14px 24px rgba(68, 93, 154, 0.16), inset 0 1px rgba(255, 255, 255, 0.9);
 }
-.menu-tile-admin {
+.menu-tile-admin,
+.menu-tile-home-participant {
   background: linear-gradient(145deg, #f8f2bf, #eee49a);
   color: #554b20;
 }
@@ -954,18 +944,22 @@ body.roulette-fullscreen-open .roulette-live {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
-.menu-tile-admin::after {
+.menu-tile-admin::after,
+.menu-tile-home-participant::after {
   border-color: rgba(130, 113, 35, 0.2);
 }
-.menu-tile-admin .menu-tile-icon-wrap {
+.menu-tile-admin .menu-tile-icon-wrap,
+.menu-tile-home-participant .menu-tile-icon-wrap {
   background: linear-gradient(145deg, #d9c85d, #bca83a);
   box-shadow: 0 5px 11px rgba(130, 113, 35, 0.18), inset 0 1px rgba(255, 255, 255, 0.32);
 }
-.menu-tile-admin .menu-tile-arrow {
+.menu-tile-admin .menu-tile-arrow,
+.menu-tile-home-participant .menu-tile-arrow {
   background: rgba(130, 113, 35, 0.1);
   color: #857526;
 }
-.menu-tile-admin:hover {
+.menu-tile-admin:hover,
+.menu-tile-home-participant:hover {
   color: #554b20;
   box-shadow: 0 14px 24px rgba(130, 113, 35, 0.16), inset 0 1px rgba(255, 255, 255, 0.9);
 }
