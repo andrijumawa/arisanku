@@ -18,7 +18,16 @@ export async function loadHomeData(uid) {
   const rounds = groupIds.length
     ? await q(supabase.from('rounds').select('id,group_id,round_no,winner_user_id,pickup_date,status').in('group_id', groupIds).order('round_no'))
     : [];
-  return { ms, pays, rounds };
+  const rouletteDraws = groupIds.length
+    ? await q(
+        supabase
+          .from('roulette_draws')
+          .select('id,group_id,period_no,participants')
+          .in('group_id', groupIds)
+          .order('period_no')
+      )
+    : [];
+  return { ms, pays, rounds, rouletteDraws };
 }
 
 export async function loadBrowseData(uid) {

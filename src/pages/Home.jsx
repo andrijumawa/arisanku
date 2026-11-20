@@ -15,13 +15,14 @@ export default function Home() {
     { table: 'memberships', filter: `user_id=eq.${uid}` },
     ...(displayedData?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
     ...(displayedData?.ms || []).map((m) => ({ table: 'rounds', filter: `group_id=eq.${m.group_id}` })),
+    ...(displayedData?.ms || []).map((m) => ({ table: 'roulette_draws', filter: `group_id=eq.${m.group_id}` })),
   ];
   useRealtimeRefresh(reload, `home-${uid}`, realtimeSubscriptions);
 
   if (loading && !displayedData) return <Spinner />;
   if (error && !displayedData) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { ms, pays, rounds = [] } = displayedData;
+  const { ms, pays, rounds = [], rouletteDraws = [] } = displayedData;
   const aktif = ms.filter((m) => m.status === 'aktif').length;
   const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
   const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
@@ -68,9 +69,35 @@ export default function Home() {
           const nextPeriod = Array.from({ length: g.durasi }, (_, index) => index + 1)
             .find((period) => paymentsByPeriod[period]?.status !== 'disetujui');
           const dueDate = nextPeriod ? paymentDueDate(g.start_date, g.pay_period, nextPeriod) : null;
-          const winningRounds = rounds
+          const groupRounds = rounds
             .filter((round) => round.group_id === g.id && round.winner_user_id === uid)
             .sort((a, b) => a.round_no - b.round_no);
+          const rouletteRounds = rouletteDraws
+            .filter((draw) => draw.group_id === g.id)
+            .flatMap((draw) => {
+              const participants = draw.participants || [];
+              return participants
+                .slice(0, participants.length === 2 ? 2 : 1)
+                .map((participant, index) => {
+                  const roundNo = draw.period_no + index;
+                  const existingRound = rounds.find(
+                    (round) => round.group_id === g.id && round.round_no === roundNo
+                      && round.winner_user_id === participant.user_id
+                  );
+                  return existingRound || {
+                    id: `roulette-${draw.id}-${participant.user_id}`,
+                    round_no: roundNo,
+                    winner_user_id: participant.user_id,
+                    pickup_date: null,
+                    status: 'dijadwalkan',
+                  };
+                })
+                .filter((round) => round.winner_user_id === uid);
+            });
+          const winningRounds = [
+            ...rouletteRounds,
+            ...groupRounds.filter((round) => !rouletteRounds.some((rouletteRound) => rouletteRound.round_no === round.round_no)),
+          ].sort((a, b) => a.round_no - b.round_no);
           const nextPayment = paymentsByPeriod[nextPeriod];
           return (
             <article key={m.id} className="card home-membership-card">
