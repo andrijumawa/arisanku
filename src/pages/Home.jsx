@@ -165,7 +165,7 @@ export default function Home() {
                           <tr key={round.id} className={round.status === 'diserahkan' ? 'withdrawal-inactive' : ''}>
                             <th scope="row">Penarikan putaran ke-{round.round_no}</th>
                             <td>
-                              {fmtDate(round.pickup_date)}
+                              {round.pickup_date ? fmtDate(round.pickup_date) : 'Belum ditentukan'}
                               {round.status === 'diserahkan' && <span className="withdrawal-state">Sudah diterima</span>}
                             </td>
                           </tr>

@@ -28,14 +28,18 @@ export default function AdminGroup() {
     const rounds = await q(
       supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')
     );
+    const rouletteDraws = await q(
+      supabase.from('roulette_draws').select('id,period_no,participants').eq('group_id', id).order('period_no')
+    );
     const pays = await q(supabase.from('payments').select('membership_id,period_no,status').eq('group_id', id));
-    return { group, members, rounds, pays };
+    return { group, members, rounds, rouletteDraws, pays };
   }, [id]);
   const realtimeSubscriptions = useMemo(
     () => [
       { table: 'groups', filter: `id=eq.${id}` },
       { table: 'memberships', filter: `group_id=eq.${id}` },
       { table: 'rounds', filter: `group_id=eq.${id}` },
+      { table: 'roulette_draws', filter: `group_id=eq.${id}` },
       { table: 'payments', filter: `group_id=eq.${id}` },
       ...[...new Set((data?.members || []).map((m) => m.user_id).filter(Boolean))].map((userId) => ({
         table: 'profiles',
@@ -55,8 +59,30 @@ export default function AdminGroup() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { group: g, members, rounds, pays } = data;
+  const { group: g, members, rounds, rouletteDraws, pays } = data;
   const isUang = g.type === 'uang';
+  const rouletteRounds = rouletteDraws.flatMap((draw) => {
+    const participants = draw.participants || [];
+    return participants
+      .slice(0, participants.length === 2 ? 2 : 1)
+      .map((participant, index) => {
+        const roundNo = draw.period_no + index;
+        const existingRound = rounds.find(
+          (round) => round.round_no === roundNo && round.winner_user_id === participant.user_id
+        );
+        return existingRound || {
+          id: null,
+          round_no: roundNo,
+          winner_user_id: participant.user_id,
+          pickup_date: null,
+          status: 'dijadwalkan',
+        };
+      });
+  });
+  const displayedRounds = [
+    ...rouletteRounds,
+    ...rounds.filter((round) => !rouletteRounds.some((rouletteRound) => rouletteRound.round_no === round.round_no)),
+  ].sort((a, b) => a.round_no - b.round_no);
   const approvedOf = (mid) => pays.filter((p) => p.membership_id === mid && p.status === 'disetujui').length;
   const today = new Date();
   const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -82,7 +108,7 @@ export default function AdminGroup() {
     const periodNo = Array.from({ length: g.durasi }, (_, index) => index + 1)
       .find((period) => memberPayments[period]?.status !== 'disetujui');
     const winningRounds = isUang
-      ? rounds.filter((round) => round.winner_user_id === member.user_id).sort((a, b) => a.round_no - b.round_no)
+      ? displayedRounds.filter((round) => round.winner_user_id === member.user_id).sort((a, b) => a.round_no - b.round_no)
       : [];
     return {
       periodNo,
@@ -113,7 +139,18 @@ export default function AdminGroup() {
     run(m.id, () => supabase.from('memberships').update({ status }).eq('id', m.id), 'Status diperbarui.');
 
   const setRound = (r, patch, msg) =>
-    run(r.id, () => supabase.from('rounds').update(patch).eq('id', r.id), msg);
+    run(r.id || `round-${r.round_no}`, () => (
+      r.id
+        ? supabase.from('rounds').update(patch).eq('id', r.id)
+        : supabase.from('rounds').insert({
+            group_id: id,
+            round_no: r.round_no,
+            winner_user_id: r.winner_user_id,
+            pickup_date: r.pickup_date,
+            status: r.status,
+            ...patch,
+          })
+    ), msg);
 
   const toggleOpen = () =>
     run('open', () => supabase.from('groups').update({ is_open: !g.is_open }).eq('id', id), g.is_open ? 'Pendaftaran ditutup.' : 'Pendaftaran dibuka.');
@@ -162,7 +199,7 @@ export default function AdminGroup() {
 
           <div className="section-title">Hasil undian putaran</div>
 
-          {rounds.length === 0 ? (
+          {displayedRounds.length === 0 ? (
             <div className="card">
               <div className="muted small" style={{ marginBottom: 8 }}>Belum ada hasil putaran. Pemilihan pemenang dilakukan melalui menu Kocokan.</div>
               <Link to="/rolet" className="btn gold block">
@@ -171,8 +208,8 @@ export default function AdminGroup() {
             </div>
           ) : (
             <div className="card">
-              {rounds.map((r) => (
-                <div key={r.id} className="period-row" style={{ alignItems: 'flex-start' }}>
+              {displayedRounds.map((r) => (
+                <div key={r.id || `round-${r.round_no}`} className="period-row" style={{ alignItems: 'flex-start' }}>
                   <div className="period-no">{r.round_no}</div>
                   <div style={{ flex: 1 }}>
                     <b>{nameOf[r.winner_user_id] || 'Peserta'}</b>
@@ -187,7 +224,7 @@ export default function AdminGroup() {
                     </div>
                   </div>
                   {r.status !== 'diserahkan' && (
-                    <button className="btn sm" disabled={busyId === r.id} onClick={() => setRound(r, { status: 'diserahkan' }, 'Ditandai diserahkan.')}>
+                    <button className="btn sm" disabled={busyId === (r.id || `round-${r.round_no}`)} onClick={() => setRound(r, { status: 'diserahkan' }, 'Ditandai diserahkan.')}>
                       Diserahkan
                     </button>
                   )}
@@ -259,7 +296,7 @@ export default function AdminGroup() {
                     <tr key={round.id} className={round.status === 'diserahkan' ? 'withdrawal-inactive' : ''}>
                       <th scope="row">Penarikan putaran ke-{round.round_no}</th>
                       <td>
-                        {fmtDate(round.pickup_date)}
+                        {round.pickup_date ? fmtDate(round.pickup_date) : 'Belum ditentukan'}
                         {round.status === 'diserahkan' && <span className="withdrawal-state">Sudah diterima</span>}
                       </td>
                     </tr>

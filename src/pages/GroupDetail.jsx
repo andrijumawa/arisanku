@@ -217,7 +217,9 @@ export default function GroupDetail() {
                 <div style={{ flex: 1 }}>
                   <b>{names[r.winner_user_id] || 'Peserta'}</b>
                   {r.winner_user_id === uid && <span className="badge gold" style={{ marginLeft: 6 }}>Kamu</span>}
-                  <div className="muted small">Pengambilan: {fmtDate(r.pickup_date)}</div>
+                  <div className="muted small">
+                    Pengambilan: {r.pickup_date ? fmtDate(r.pickup_date) : 'Belum ditentukan'}
+                  </div>
                 </div>
                 <Badge status={r.status} />
               </div>
