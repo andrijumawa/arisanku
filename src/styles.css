@@ -15,8 +15,8 @@
   --green-l: #e4f5ea;
   --amber: #a8700f;
   --amber-l: #fdf0d3;
-  --menu-card-surface: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(240, 245, 255, 0.84));
-  --menu-tile-surface: linear-gradient(145deg, #fff, #f0f5ff);
+  --menu-card-surface: linear-gradient(145deg, rgba(255, 255, 255, 0.74), rgba(240, 245, 255, 0.62));
+  --menu-tile-surface: var(--menu-card-surface);
   --menu-card-border: rgba(255, 255, 255, 0.84);
   --menu-card-shadow: 0 9px 20px rgba(68, 93, 154, 0.1), inset 0 1px rgba(255, 255, 255, 0.8);
   --hdr: 54px;
