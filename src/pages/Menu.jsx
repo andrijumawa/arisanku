@@ -72,7 +72,7 @@ export default function Menu() {
     ? `${adminNotifications.registrations} pendaftaran · ${adminNotifications.payments} pembayaran · ${adminNotifications.participants} peserta menunggu`
     : 'Kelola akun dan kelompok';
   const items = [
-    { to: '/beranda', icon: 'home', image: 'menu-home.png', label: 'Beranda', description: 'Ringkasan aktivitas\narisan', disabled: accountPending || accountRejected },
+    { to: '/beranda', icon: 'home', image: 'menu-home.png', label: 'Arisan', description: 'Ringkasan aktivitas\narisan', disabled: accountPending || accountRejected },
     { to: '/chat', icon: 'message', image: 'menu-chat.png', label: 'Chat', description: 'Obrolan bersama\npeserta', count: unread, disabled: accountPending || accountRejected },
     {
       to: '/rolet',
@@ -294,7 +294,7 @@ export default function Menu() {
               <Link
                 key={item.to}
                 to={item.to}
-                className={`menu-tile${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/beranda' && !isAdmin ? ' menu-tile-home-participant' : ''}${item.to === '/rolet' ? ` menu-tile-kocok${!isAdmin ? ' menu-tile-kocok-wide' : ''}${item.loading ? ' is-loading' : item.disabled ? ' is-disabled' : ''}` : ''}`}
+                className={`menu-tile${item.to === '/beranda' || item.to === '/chat' || item.to === '/akun' ? ' menu-tile-character-large' : ''}${item.to === '/admin' ? ' menu-tile-admin' : ''}${item.to === '/beranda' && !isAdmin ? ' menu-tile-home-participant' : ''}${item.to === '/rolet' ? ` menu-tile-kocok${!isAdmin ? ' menu-tile-kocok-wide' : ''}${item.loading ? ' is-loading' : item.disabled ? ' is-disabled' : ''}` : ''}`}
                 aria-disabled={item.to === '/rolet' && item.disabled ? true : undefined}
                 aria-busy={item.to === '/rolet' && item.loading ? true : undefined}
                 tabIndex={item.to === '/rolet' && item.disabled ? -1 : undefined}
