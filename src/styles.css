@@ -1071,6 +1071,14 @@ body.roulette-fullscreen-open .roulette-live {
   cursor: not-allowed;
   transform: none;
 }
+.menu-tile.menu-tile-kocok.is-disabled,
+.menu-tile.menu-tile-kocok.is-disabled:hover,
+.menu-tile.menu-tile-kocok.is-disabled:active {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(105deg, #6744bd, #805bd4);
+  color: #fff;
+  box-shadow: 0 9px 20px rgba(103, 68, 189, 0.22), inset 0 1px rgba(255, 255, 255, 0.24);
+}
 .menu-tile.is-disabled::after {
   border-color: rgba(92, 111, 145, 0.1);
 }
