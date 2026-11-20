@@ -854,7 +854,7 @@ body.roulette-fullscreen-open .roulette-live {
   text-align: left;
   text-decoration: none;
   box-shadow: var(--menu-card-shadow);
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  transition: transform 140ms ease, border-color 140ms ease;
 }
 .menu-tile::after {
   position: absolute;
@@ -1791,7 +1791,7 @@ input[type='checkbox'] {
   cursor: pointer;
   text-align: left;
   box-shadow: var(--menu-card-shadow);
-  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+  transition: transform 140ms ease, border-color 140ms ease;
 }
 .admin-card::after {
   position: absolute;
@@ -2438,7 +2438,7 @@ input[type='checkbox'] {
   border-radius: 20px;
   padding: 16px;
   box-shadow: 0 18px 48px rgba(20, 34, 63, 0.24);
-  animation: modal-in 0.18s ease-out;
+  animation: modal-in 0.14s ease-out;
 }
 .sheet-head {
   display: flex;
@@ -2485,7 +2485,7 @@ input[type='checkbox'] {
   .overlay {
     align-items: end;
     padding: max(12px, env(safe-area-inset-top)) 0 0 0;
-    animation: overlay-in 0.2s ease-out;
+    animation: overlay-in 0.12s ease-out;
   }
   body.keyboard-open .overlay {
     top: var(--visible-viewport-offset-top, 0px);
@@ -2501,7 +2501,7 @@ input[type='checkbox'] {
     border-radius: 22px 22px 0 0;
     border-bottom-width: 0;
     will-change: transform;
-    animation: sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: sheet-up 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   }
   body.keyboard-open .sheet {
     max-height: calc(var(--visible-viewport-height, 100dvh) - max(12px, env(safe-area-inset-top)));
@@ -4249,7 +4249,7 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   border-radius: 20px;
   background: var(--menu-card-surface);
   box-shadow: var(--menu-card-shadow);
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: transform 140ms ease;
 }
 .browse-group::before {
   position: absolute;

@@ -223,7 +223,15 @@ export default function Layout() {
 
   return (
     <div className={`app${loc.pathname === '/' ? ' is-menu' : ''}`}>
-      <img className="app-background-image" src={`${import.meta.env.BASE_URL}images/initial-loading.jpeg`} alt="" aria-hidden="true" />
+      <img
+        className="app-background-image"
+        src={`${import.meta.env.BASE_URL}images/app-background.jpg`}
+        alt=""
+        aria-hidden="true"
+        loading="eager"
+        decoding="async"
+        fetchPriority="low"
+      />
       <header className="hdr">
         <img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="ArisanKu" />
         <div className="header-account">

@@ -74,7 +74,15 @@ export default function AuthShell() {
         '--auth-viewport-top': `${visibleViewport.offsetTop}px`,
       } : undefined}
     >
-      <img className="auth-background-image" src={`${import.meta.env.BASE_URL}images/initial-loading.jpeg`} alt="" aria-hidden="true" />
+      <img
+        className="auth-background-image"
+        src={`${import.meta.env.BASE_URL}images/app-background.jpg`}
+        alt=""
+        aria-hidden="true"
+        loading="eager"
+        decoding="async"
+        fetchPriority="low"
+      />
       <section className={`auth-shell${isLogin ? ' is-login' : ''}${isTransitioning ? ' is-transitioning' : ''}`} aria-label="Autentikasi Arisan">
         <Login />
         <Register />
