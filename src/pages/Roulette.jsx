@@ -24,6 +24,13 @@ function getSpinDuration(roundNo, totalRounds) {
 
 const WHEEL_COLORS = ['#ee746e', '#e7b955', '#4fba9a', '#9b78d8', '#d96388', '#7566e8', '#5598d4', '#e58b61'];
 
+function participantSlotLabel(participant) {
+  const name = participant?.full_name || 'Peserta';
+  return Number(participant?.slot_count) > 1
+    ? `${name} · Slot ${participant.slot_no}`
+    : name;
+}
+
 export default function Roulette() {
   const { isAdmin, session: authSession } = useAuth();
   const toast = useToast();
@@ -110,9 +117,19 @@ export default function Roulette() {
     () => new Set((attendanceState.data || []).map((attendance) => attendance.user_id)),
     [attendanceState.data]
   );
-  const previousWinnerIds = useMemo(
-    () => new Set(savedDraws.map((draw) => draw.participants?.[0]?.user_id).filter(Boolean)),
+  const previousWinners = useMemo(
+    () => savedDraws.map((draw) => draw.participants?.[0]).filter((participant) => participant?.user_id),
     [savedDraws]
+  );
+  const previousWinnerIds = useMemo(
+    () => new Set(previousWinners.filter((winner) => winner.slot_no == null).map((winner) => winner.user_id)),
+    [previousWinners]
+  );
+  const previousWinnerSlots = useMemo(
+    () => new Set(previousWinners
+      .filter((winner) => winner.slot_no != null)
+      .map((winner) => `${winner.user_id}:${Number(winner.slot_no)}`)),
+    [previousWinners]
   );
   const liveState = useAsync(loadRouletteSession, [groupId, periodNo]);
   const session = liveState.data;
@@ -131,15 +148,18 @@ export default function Roulette() {
   );
 
   const activeParticipants = participantsState.loading ? [] : participantsState.data || [];
-  const remainingParticipants = activeParticipants.filter((participant) => !previousWinnerIds.has(participant.user_id));
+  const remainingParticipants = activeParticipants.filter((participant) => (
+    !previousWinnerIds.has(participant.user_id)
+    && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
+  ));
   const orderedParticipants = useMemo(
     () => [...remainingParticipants].sort((a, b) => Number(registeredUserIds.has(b.user_id)) - Number(registeredUserIds.has(a.user_id))),
     [remainingParticipants, registeredUserIds]
   );
   const participantNames = useMemo(
     () => (session?.draft_order?.length
-      ? session.draft_order.map((participant) => participant.full_name)
-      : orderedParticipants.map((participant) => participant.full_name)),
+      ? session.draft_order.map(participantSlotLabel)
+      : orderedParticipants.map(participantSlotLabel)),
     [session?.draft_order, orderedParticipants]
   );
   const rouletteComplete = !drawsState.loading
@@ -481,7 +501,7 @@ export default function Roulette() {
 
             {rouletteComplete && (
               <p className="muted small">
-                Urutan kocokan selesai. {remainingParticipants[0]?.full_name || 'Peserta terakhir'} otomatis mendapat nomor terakhir
+                Urutan kocokan selesai. {participantSlotLabel(remainingParticipants[0])} otomatis mendapat nomor terakhir
                 {' '}({activeParticipants.length}).
               </p>
             )}
@@ -505,9 +525,9 @@ export default function Roulette() {
 
             {!spinning && session?.status === 'active' && session.draft_order?.[0] && (
               <p className="roulette-round-winner">
-                Pemenang putaran {periodNo}: <strong>{session.draft_order[0].full_name}</strong>
+                Pemenang putaran {periodNo}: <strong>{participantSlotLabel(session.draft_order[0])}</strong>
                 {session.draft_order.length === 2 && (
-                  <> · Peserta terakhir: <strong>{session.draft_order[1].full_name}</strong></>
+                  <> · Peserta terakhir: <strong>{participantSlotLabel(session.draft_order[1])}</strong></>
                 )}
               </p>
             )}
@@ -526,7 +546,7 @@ export default function Roulette() {
                             <ol>
                               <li key={`${participant.user_id}-${index}`}>
                                 <span className="roulette-rank">{draw.period_no + index}</span>
-                                <span>{participant.full_name}</span>
+                                <span>{participantSlotLabel(participant)}</span>
                               </li>
                             </ol>
                           </article>

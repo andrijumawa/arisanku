@@ -120,13 +120,21 @@ export async function loadRouletteParticipants(groupId) {
   const memberships = await q(
     supabase
       .from('memberships')
-      .select('user_id,profiles(full_name)')
+      .select('user_id,slot_count,profiles(full_name)')
       .eq('group_id', groupId)
       .eq('status', 'aktif')
   );
   return memberships
     .filter((membership) => membership.profiles?.full_name)
-    .map((membership) => ({ user_id: membership.user_id, full_name: membership.profiles.full_name }));
+    .flatMap((membership) => {
+      const slotCount = Math.max(1, Number(membership.slot_count) || 1);
+      return Array.from({ length: slotCount }, (_, index) => ({
+        user_id: membership.user_id,
+        full_name: membership.profiles.full_name,
+        slot_no: index + 1,
+        slot_count: slotCount,
+      }));
+    });
 }
 
 export async function loadChatData(uid) {

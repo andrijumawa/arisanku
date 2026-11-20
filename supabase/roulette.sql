@@ -132,6 +132,54 @@ grant select, insert on public.roulette_chat_messages to authenticated;
 grant usage, select on sequence public.roulette_chat_messages_id_seq to authenticated;
 grant select on public.roulette_attendance to authenticated;
 
+create or replace function public.roulette_remaining_slots(p_group uuid)
+returns table (
+  user_id uuid,
+  full_name text,
+  slot_no integer,
+  slot_count integer,
+  is_registered boolean
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select
+    m.user_id,
+    p.full_name,
+    slot.slot_no,
+    m.slot_count,
+    exists (
+      select 1
+      from public.roulette_attendance a
+      where a.group_id = p_group
+        and a.period_no = coalesce(
+          (select max(d.period_no) + 1 from public.roulette_draws d where d.group_id = p_group),
+          1
+        )
+        and a.user_id = m.user_id
+    )
+  from public.memberships m
+  join public.profiles p on p.id = m.user_id
+  cross join lateral generate_series(1, m.slot_count) as slot(slot_no)
+  where m.group_id = p_group
+    and m.status = 'aktif'
+    and not exists (
+      select 1
+      from public.roulette_draws d
+      cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
+      where d.group_id = p_group
+        and winner.ord = 1
+        and winner.value->>'user_id' = m.user_id::text
+        and (
+          winner.value->>'slot_no' is null
+          or (winner.value->>'slot_no')::integer = slot.slot_no
+        )
+    );
+$$;
+revoke all on function public.roulette_remaining_slots(uuid) from public, anon, authenticated;
+
 create or replace function public.register_roulette_attendance(p_group uuid, p_period integer)
 returns boolean language plpgsql security definer set search_path = public as $$
 declare
@@ -154,13 +202,10 @@ begin
   ) then
     raise exception 'Kelompok tidak tersedia untuk Kocokan';
   end if;
-  if exists (
+  if not exists (
     select 1
-    from public.roulette_draws d
-    cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
-    where d.group_id = p_group
-      and winner.ord = 1
-      and winner.value->>'user_id' = auth.uid()::text
+    from public.roulette_remaining_slots(p_group) remaining
+    where remaining.user_id = auth.uid()
   ) then
     raise exception 'Anda sudah mendapat giliran Kocokan';
   end if;
@@ -249,7 +294,6 @@ declare
   new_id uuid;
   shuffled_participants jsonb;
   active_ids uuid[];
-  winner_ids uuid[];
 begin
   if not public.is_admin() then
     raise exception 'Hanya admin yang dapat menjalankan rolet';
@@ -261,11 +305,6 @@ begin
     raise exception 'Kelompok atau periode Rolet tidak valid';
   end if;
 
-  select coalesce(array_agg(DISTINCT (winner.value->>'user_id')::uuid), '{}'::uuid[]) into winner_ids
-  from public.roulette_draws d
-  cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
-  where d.group_id = p_group and winner.ord = 1;
-
   if p_period <> (
     select coalesce(max(period_no), 0) + 1
     from public.roulette_draws
@@ -274,29 +313,26 @@ begin
     raise exception 'Putaran Rolet harus dijalankan secara berurutan';
   end if;
 
-  select array_agg(m.user_id order by m.user_id) into active_ids
-  from public.memberships m
-  where m.group_id = p_group
-    and m.status = 'aktif'
-    and not (m.user_id = any(coalesce(winner_ids, '{}'::uuid[])));
+  select array_agg(remaining.user_id order by remaining.user_id, remaining.slot_no)
+  into active_ids
+  from public.roulette_remaining_slots(p_group) remaining;
   if coalesce(cardinality(active_ids), 0) < 2 then
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
 
-  select jsonb_agg(jsonb_build_object('user_id', id, 'full_name', full_name) order by is_registered desc, order_key)
+  select jsonb_agg(
+    jsonb_build_object(
+      'user_id', user_id,
+      'full_name', full_name,
+      'slot_no', slot_no,
+      'slot_count', slot_count
+    )
+    order by is_registered desc, order_key
+  )
   into shuffled_participants
   from (
-    select p.id, p.full_name,
-      exists (
-        select 1
-        from public.roulette_attendance a
-        where a.group_id = p_group
-          and a.period_no = p_period
-          and a.user_id = p.id
-      ) as is_registered,
-      gen_random_uuid() as order_key
-    from public.profiles p
-    where p.id = any(active_ids)
+    select remaining.*, gen_random_uuid() as order_key
+    from public.roulette_remaining_slots(p_group) remaining
   ) participants;
 
   insert into public.roulette_sessions (
@@ -316,7 +352,6 @@ returns jsonb language plpgsql security definer set search_path = public as $$
 declare
   s public.roulette_sessions;
   active_ids uuid[];
-  winner_ids uuid[];
   shuffled_participants jsonb;
 begin
   if not public.is_admin() then
@@ -327,34 +362,26 @@ begin
   if not found or s.status <> 'active' then
     raise exception 'Sesi Rolet belum selesai berputar atau sudah ditutup';
   end if;
-  select coalesce(array_agg(DISTINCT (winner.value->>'user_id')::uuid), '{}'::uuid[]) into winner_ids
-  from public.roulette_draws d
-  cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
-  where d.group_id = s.group_id and winner.ord = 1;
-
-  select array_agg(m.user_id order by m.user_id) into active_ids
-  from public.memberships m
-  where m.group_id = s.group_id
-    and m.status = 'aktif'
-    and not (m.user_id = any(coalesce(winner_ids, '{}'::uuid[])));
+  select array_agg(remaining.user_id order by remaining.user_id, remaining.slot_no)
+  into active_ids
+  from public.roulette_remaining_slots(s.group_id) remaining;
   if coalesce(cardinality(active_ids), 0) < 2 then
     raise exception 'Minimal dua peserta aktif diperlukan untuk Rolet';
   end if;
 
-  select jsonb_agg(jsonb_build_object('user_id', id, 'full_name', full_name) order by is_registered desc, order_key)
+  select jsonb_agg(
+    jsonb_build_object(
+      'user_id', user_id,
+      'full_name', full_name,
+      'slot_no', slot_no,
+      'slot_count', slot_count
+    )
+    order by is_registered desc, order_key
+  )
   into shuffled_participants
   from (
-    select p.id, p.full_name,
-      exists (
-        select 1
-        from public.roulette_attendance a
-        where a.group_id = s.group_id
-          and a.period_no = s.period_no
-          and a.user_id = p.id
-      ) as is_registered,
-      gen_random_uuid() as order_key
-    from public.profiles p
-    where p.id = any(active_ids)
+    select remaining.*, gen_random_uuid() as order_key
+    from public.roulette_remaining_slots(s.group_id) remaining
   ) participants;
 
   update public.roulette_sessions
@@ -388,8 +415,9 @@ begin
     return null;
   end if;
   select count(*)::integer into total_rounds
-  from public.memberships
-  where group_id = s.group_id and status = 'aktif';
+  from public.memberships m
+  cross join lateral generate_series(1, m.slot_count) as slot(slot_no)
+  where m.group_id = s.group_id and m.status = 'aktif';
   elapsed_ms := extract(epoch from (now() - s.spin_started_at)) * 1000;
   if s.period_no <= 3 or coalesce(total_rounds, s.period_no) <= 3 then
     required_ms := 7000;
