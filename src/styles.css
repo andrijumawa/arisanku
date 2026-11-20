@@ -1934,8 +1934,7 @@ input[type='checkbox'] {
   color: var(--admin-accent);
 }
 .admin-card-new {
-  border-color: rgba(242, 11, 112, 0.65);
-  box-shadow: 0 10px 24px rgba(242, 11, 112, 0.18);
+  border-color: rgba(255, 255, 255, 0.84);
 }
 .admin-card-new-label {
   display: inline-flex;
