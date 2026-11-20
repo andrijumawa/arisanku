@@ -242,20 +242,15 @@ code {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-  isolation: isolate;
-  overflow-x: clip;
-}
-.app::before {
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  background-image: var(--app-background-image);
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(rgba(201, 214, 255, 0.42), rgba(201, 214, 255, 0.42)),
+    var(--app-background-image);
   background-position: center;
   background-size: cover;
-  content: '';
-  opacity: 0.38;
-  pointer-events: none;
+  background-attachment: fixed;
+  isolation: isolate;
+  overflow-x: clip;
 }
 .main,
 .main-chat {
