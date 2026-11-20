@@ -658,14 +658,21 @@ body.roulette-fullscreen-open .roulette-live {
   border: 7px solid var(--bg);
   border-radius: 50%;
   background: linear-gradient(135deg, var(--brand-d), var(--brand));
-  box-shadow: inset 0 0 0 5px #f0f5ff;
   color: #f0f5ff;
   cursor: pointer;
   transform: translate(-50%, 0);
   transition: box-shadow 180ms ease, transform 180ms ease;
 }
+.menu-avatar::after {
+  position: absolute;
+  z-index: 1;
+  inset: 7px;
+  border: 5px solid #f0f5ff;
+  border-radius: 50%;
+  content: '';
+  pointer-events: none;
+}
 .menu-avatar:hover {
-  box-shadow: inset 0 0 0 5px #f0f5ff;
   transform: translate(-50%, -2px);
 }
 .menu-avatar:focus-visible,
@@ -681,6 +688,7 @@ body.roulette-fullscreen-open .roulette-live {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
 }
 .menu-avatar-camera {
   position: absolute;
@@ -705,6 +713,7 @@ body.roulette-fullscreen-open .roulette-live {
 }
 .menu-avatar-loading {
   position: absolute;
+  z-index: 2;
   right: 0;
   bottom: 0;
   left: 0;
