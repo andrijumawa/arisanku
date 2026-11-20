@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
-import { addDaysToDate, bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, typeLabel } from '../../lib/format';
+import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, typeLabel } from '../../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../../components/Ui.jsx';
 import GroupInfo from '../../components/GroupInfo.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -81,25 +81,14 @@ export default function AdminGroup() {
     const memberPayments = bestPaymentByPeriod(paymentsByMember.get(member.id));
     const periodNo = Array.from({ length: g.durasi }, (_, index) => index + 1)
       .find((period) => memberPayments[period]?.status !== 'disetujui');
-    if (!periodNo) return null;
-    const payment = memberPayments[periodNo];
-    const dueDate = paymentDueDate(g.start_date, g.pay_period, periodNo);
-    const winningRound = isUang
-      ? rounds.find((round) => round.round_no === periodNo && round.winner_user_id === member.user_id)
-      : null;
-    const withdrawalDate = winningRound?.pickup_date || (dueDate ? addDaysToDate(dueDate, 7) : null);
-    const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const withdrawalInactive = Boolean(winningRound && (
-      winningRound.status === 'selesai'
-      || winningRound.status === 'diserahkan'
-      || (withdrawalDate && withdrawalDate <= todayString)
-    ));
+    const winningRounds = isUang
+      ? rounds.filter((round) => round.winner_user_id === member.user_id).sort((a, b) => a.round_no - b.round_no)
+      : [];
     return {
       periodNo,
-      payment,
-      dueDate,
-      withdrawalDate,
-      withdrawalInactive,
+      payment: periodNo ? memberPayments[periodNo] : null,
+      dueDate: periodNo ? paymentDueDate(g.start_date, g.pay_period, periodNo) : null,
+      winningRounds,
     };
   };
   const overdueByMember = new Map(members.map((member) => [member.id, overduePeriodsOf(member)]));
@@ -241,24 +230,21 @@ export default function AdminGroup() {
 
           {paymentScheduleByMember.get(m.id) && (
             <details className="admin-payment-schedule">
-              <summary>Jadwal pembayaran</summary>
+              <summary>Jadwal pembayaran &amp; penarikan</summary>
               <table>
                 <tbody>
-                  <tr>
-                    <th scope="row">{periodName(g)}</th>
-                    <td>Ke-{paymentScheduleByMember.get(m.id).periodNo}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Jatuh tempo</th>
-                    <td>{fmtDate(paymentScheduleByMember.get(m.id).dueDate)}</td>
-                  </tr>
-                  <tr className={paymentScheduleByMember.get(m.id).withdrawalInactive ? 'withdrawal-inactive' : ''}>
-                    <th scope="row">Tanggal penarikan</th>
-                    <td>
-                      {fmtDate(paymentScheduleByMember.get(m.id).withdrawalDate)}
-                      {paymentScheduleByMember.get(m.id).withdrawalInactive && <span className="withdrawal-state">Sudah diterima</span>}
-                    </td>
-                  </tr>
+                  {paymentScheduleByMember.get(m.id).periodNo && (
+                    <>
+                      <tr>
+                        <th scope="row">{periodName(g)}</th>
+                        <td>Ke-{paymentScheduleByMember.get(m.id).periodNo}</td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Jatuh tempo</th>
+                        <td>{fmtDate(paymentScheduleByMember.get(m.id).dueDate)}</td>
+                      </tr>
+                    </>
+                  )}
                   {paymentScheduleByMember.get(m.id).payment && (
                     <tr>
                       <th scope="row">Status</th>
@@ -269,8 +255,20 @@ export default function AdminGroup() {
                       </td>
                     </tr>
                   )}
+                  {paymentScheduleByMember.get(m.id).winningRounds.map((round) => (
+                    <tr key={round.id} className={round.status === 'diserahkan' ? 'withdrawal-inactive' : ''}>
+                      <th scope="row">Penarikan putaran ke-{round.round_no}</th>
+                      <td>
+                        {fmtDate(round.pickup_date)}
+                        {round.status === 'diserahkan' && <span className="withdrawal-state">Sudah diterima</span>}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
+              {!paymentScheduleByMember.get(m.id).periodNo && paymentScheduleByMember.get(m.id).winningRounds.length === 0 && (
+                <p className="muted small">Belum ada jadwal pembayaran atau hasil rolet.</p>
+              )}
             </details>
           )}
 

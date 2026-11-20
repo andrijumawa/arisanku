@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
 import { loadHomeData } from '../lib/menuData';
-import { addDaysToDate, bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
+import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, periodUnit, rupiah, typeLabel } from '../lib/format';
 import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx';
 
 export default function Home() {
@@ -68,17 +68,9 @@ export default function Home() {
           const nextPeriod = Array.from({ length: g.durasi }, (_, index) => index + 1)
             .find((period) => paymentsByPeriod[period]?.status !== 'disetujui');
           const dueDate = nextPeriod ? paymentDueDate(g.start_date, g.pay_period, nextPeriod) : null;
-          const winningRound = nextPeriod
-            ? rounds.find((round) => round.group_id === g.id && round.round_no === nextPeriod && round.winner_user_id === uid)
-            : null;
-          const withdrawalDate = winningRound?.pickup_date || (dueDate ? addDaysToDate(dueDate, 7) : null);
-          const today = new Date();
-          const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-          const withdrawalInactive = Boolean(winningRound && (
-            winningRound.status === 'selesai'
-            || winningRound.status === 'diserahkan'
-            || withdrawalDate <= todayString
-          ));
+          const winningRounds = rounds
+            .filter((round) => round.group_id === g.id && round.winner_user_id === uid)
+            .sort((a, b) => a.round_no - b.round_no);
           const nextPayment = paymentsByPeriod[nextPeriod];
           return (
             <article key={m.id} className="card home-membership-card">
@@ -108,10 +100,10 @@ export default function Home() {
                 )}
                 {m.status === 'menunggu' && <div className="muted small">Menunggu persetujuan admin…</div>}
               </Link>
-              {m.status === 'aktif' && nextPeriod && (
+              {m.status === 'aktif' && (nextPeriod || winningRounds.length > 0) && (
                 <details className="home-payment-details">
-                  <summary>Jadwal pembayaran</summary>
-                  {dueDate ? (
+                  <summary>Jadwal pembayaran &amp; penarikan</summary>
+                  {nextPeriod && dueDate ? (
                     <table>
                       <tbody>
                         <tr>
@@ -121,13 +113,6 @@ export default function Home() {
                         <tr>
                           <th scope="row">Jatuh tempo</th>
                           <td>{fmtDate(dueDate)}</td>
-                        </tr>
-                        <tr className={withdrawalInactive ? 'withdrawal-inactive' : ''}>
-                          <th scope="row">Tanggal penarikan</th>
-                          <td>
-                            {fmtDate(withdrawalDate)}
-                            {withdrawalInactive && <span className="withdrawal-state">Sudah diterima</span>}
-                          </td>
                         </tr>
                         {nextPayment && (
                           <tr>
@@ -143,8 +128,25 @@ export default function Home() {
                         )}
                       </tbody>
                     </table>
-                  ) : (
+                  ) : nextPeriod ? (
                     <p className="muted small">Tanggal jatuh tempo belum ditentukan.</p>
+                  ) : null}
+                  {winningRounds.length > 0 ? (
+                    <table>
+                      <tbody>
+                        {winningRounds.map((round) => (
+                          <tr key={round.id} className={round.status === 'diserahkan' ? 'withdrawal-inactive' : ''}>
+                            <th scope="row">Penarikan putaran ke-{round.round_no}</th>
+                            <td>
+                              {fmtDate(round.pickup_date)}
+                              {round.status === 'diserahkan' && <span className="withdrawal-state">Sudah diterima</span>}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="muted small">Belum ada hasil rolet untuk penarikan.</p>
                   )}
                 </details>
               )}
