@@ -170,6 +170,87 @@ end $$;
 revoke all on function public.register_roulette_attendance(uuid, integer) from public;
 grant execute on function public.register_roulette_attendance(uuid, integer) to authenticated;
 
+create or replace function public.admin_register_roulette_attendance(
+  p_group uuid,
+  p_period integer,
+  p_user uuid
+)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  participant_name text;
+  group_name text;
+  inserted_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin yang dapat menambahkan peserta ke daftar hadir';
+  end if;
+  if not exists (
+    select 1
+    from public.groups g
+    where g.id = p_group
+      and g.type = 'uang'
+      and g.draw_mode = 'acak'
+  ) then
+    raise exception 'Kelompok tidak tersedia untuk Rolet';
+  end if;
+  if not exists (
+    select 1
+    from public.memberships m
+    where m.group_id = p_group
+      and m.user_id = p_user
+      and m.status = 'aktif'
+  ) then
+    raise exception 'Peserta bukan anggota aktif kelompok ini';
+  end if;
+  if not exists (
+    select 1
+    from public.roulette_remaining_slots(p_group) remaining
+    where remaining.user_id = p_user
+  ) then
+    raise exception 'Peserta tidak memiliki slot Rolet yang tersisa';
+  end if;
+  if p_period is null or p_period <> (
+    select coalesce(max(d.period_no), 0) + 1
+    from public.roulette_draws d
+    where d.group_id = p_group
+  ) then
+    raise exception 'Periode pendaftaran hadir tidak valid';
+  end if;
+  if exists (
+    select 1
+    from public.roulette_sessions s
+    where s.group_id = p_group
+      and s.period_no = p_period
+      and s.status in ('active', 'spinning', 'saved')
+  ) then
+    raise exception 'Pendaftaran hadir ditutup karena kocokan sudah dimulai';
+  end if;
+
+  insert into public.roulette_attendance (group_id, period_no, user_id)
+  values (p_group, p_period, p_user)
+  on conflict do nothing;
+  get diagnostics inserted_count = row_count;
+  if inserted_count = 0 then
+    return false;
+  end if;
+
+  select p.full_name into participant_name
+  from public.profiles p where p.id = p_user;
+  select g.name into group_name
+  from public.groups g where g.id = p_group;
+
+  insert into public.roulette_chat_messages (group_id, user_id, body, is_system)
+  values (
+    p_group,
+    auth.uid(),
+    format('%s ditambahkan admin ke daftar hadir kelompok %s.', participant_name, group_name),
+    true
+  );
+  return true;
+end $$;
+revoke all on function public.admin_register_roulette_attendance(uuid, integer, uuid) from public, anon;
+grant execute on function public.admin_register_roulette_attendance(uuid, integer, uuid) to authenticated;
+
 create or replace function public.start_roulette_session(p_group uuid, p_period integer)
 returns uuid language plpgsql security definer set search_path = public as $$
 declare

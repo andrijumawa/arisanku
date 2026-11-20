@@ -44,7 +44,7 @@ function wheelSectorPath(index, count) {
 function participantSlotLabel(participant) {
   const name = participant?.full_name || 'Peserta';
   return Number(participant?.slot_count) > 1
-    ? `${name} · Slot ${participant.slot_no}`
+    ? `${name} ${participant.slot_no}`
     : name;
 }
 
@@ -53,6 +53,7 @@ export default function Roulette() {
   const toast = useToast();
   const [groupId, setGroupId] = useState('');
   const [busy, setBusy] = useState(false);
+  const [adminAttendanceBusyUser, setAdminAttendanceBusyUser] = useState('');
   const [spinIndex, setSpinIndex] = useState(0);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [wheelTransitionDuration, setWheelTransitionDuration] = useState(0);
@@ -165,6 +166,19 @@ export default function Roulette() {
   );
 
   const activeParticipants = participantsState.loading ? [] : participantsState.data || [];
+  const adminRoster = useMemo(() => {
+    const participantsByUser = new Map();
+    activeParticipants.forEach((participant) => {
+      const entry = participantsByUser.get(participant.user_id) || {
+        user_id: participant.user_id,
+        full_name: participant.full_name,
+        slots: [],
+      };
+      entry.slots.push(participant);
+      participantsByUser.set(participant.user_id, entry);
+    });
+    return [...participantsByUser.values()].sort((a, b) => a.full_name.localeCompare(b.full_name, 'id'));
+  }, [activeParticipants]);
   const remainingParticipants = activeParticipants.filter((participant) => (
     !previousWinnerIds.has(participant.user_id)
     && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
@@ -328,6 +342,27 @@ export default function Roulette() {
       toast(error.message || 'Gagal mendaftarkan kehadiran.', 'error');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function registerParticipantAttendance(userId) {
+    if (!isAdmin || !groupId || !userId || adminAttendanceBusyUser) return;
+    setAdminAttendanceBusyUser(userId);
+    try {
+      const registered = await q(supabase.rpc('admin_register_roulette_attendance', {
+        p_group: groupId,
+        p_period: periodNo,
+        p_user: userId,
+      }));
+      await Promise.all([attendanceState.reload(), participantsState.reload()]);
+      toast(
+        registered ? 'Peserta ditambahkan ke daftar hadir kocokan.' : 'Peserta sudah terdaftar hadir.',
+        registered ? 'success' : 'info'
+      );
+    } catch (error) {
+      toast(error.message || 'Gagal menambahkan peserta ke daftar hadir.', 'error');
+    } finally {
+      setAdminAttendanceBusyUser('');
     }
   }
 
@@ -549,7 +584,59 @@ export default function Roulette() {
                         : 'Hasil sementara · siap disimpan'}
                 </span>
               )}
-              {fallbackFullscreen && <RouletteChat groupId={groupId} />}
+              {fallbackFullscreen && (
+                <div className={`roulette-fullscreen-panels${isAdmin ? ' is-admin' : ''}`}>
+                  <RouletteChat groupId={groupId} />
+                  {isAdmin && (
+                    <section className="roulette-participant-roster" aria-label="Daftar peserta rolet">
+                      <div className="roulette-participant-roster-heading">
+                        <strong>Peserta</strong>
+                        <span>{registeredUserIds.size} hadir · {adminRoster.length} peserta</span>
+                      </div>
+                      <div className="roulette-participant-roster-list">
+                        {adminRoster.length ? adminRoster.map((participant) => {
+                          const isRegistered = registeredUserIds.has(participant.user_id);
+                          const isBusy = adminAttendanceBusyUser === participant.user_id;
+                          return (
+                            <div
+                              className={`roulette-roster-person${isRegistered ? ' is-present' : ''}`}
+                              key={participant.user_id}
+                            >
+                              <span className="roulette-roster-person-copy">
+                                <strong>{participant.full_name}</strong>
+                                {participant.slots.length > 1 && (
+                                  <small>{participant.slots.length} slot</small>
+                                )}
+                              </span>
+                              {isRegistered ? (
+                                <span className="roulette-roster-status">Hadir</span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="roulette-roster-add"
+                                  onClick={() => registerParticipantAttendance(participant.user_id)}
+                                  disabled={
+                                    Boolean(adminAttendanceBusyUser)
+                                    || countdown !== null
+                                    || spinning
+                                    || saved
+                                    || rouletteComplete
+                                    || session?.status === 'active'
+                                  }
+                                >
+                                  {isBusy ? '...' : 'Tambah'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        }) : (
+                          <p className="roulette-participant-roster-empty">Belum ada peserta yang dapat ikut kocokan.</p>
+                        )}
+                      </div>
+                    </section>
+                  )}
+                </div>
+              )}
             </div>
 
             {!participantNames.length && !rouletteComplete && (
