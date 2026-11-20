@@ -1342,18 +1342,38 @@ body.roulette-fullscreen-open .roulette-live {
   padding: 0;
   overflow: hidden;
 }
+.home-membership-content {
+  padding: 14px;
+}
 .home-membership-link {
-  display: block;
-  padding: 14px 14px 10px;
-  color: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  margin-top: 12px;
+  padding: 6px 11px;
+  border: 1px solid rgba(95, 128, 224, 0.24);
+  border-radius: 9px;
+  background: rgba(232, 239, 255, 0.72);
+  color: var(--brand-d);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 .home-membership-link:hover {
-  color: inherit;
+  border-color: rgba(95, 128, 224, 0.42);
+  background: rgba(220, 231, 255, 0.92);
+  color: var(--brand-d);
+}
+.home-membership-link:active {
+  transform: translateY(1px);
 }
 .home-membership-link:focus-visible,
 .home-payment-details summary:focus-visible {
   outline: 3px solid var(--brand);
-  outline-offset: -3px;
+  outline-offset: 2px;
 }
 .group-detail-overview {
   margin-top: 8px;

@@ -263,7 +263,7 @@ export default function Home() {
           const nextPayment = paymentsByPeriod[nextPeriod];
           return (
             <article key={m.id} className="card home-membership-card">
-              <Link to={`/g/${g.id}`} state={{ from: '/beranda' }} className="home-membership-link">
+              <div className="home-membership-content">
                 <div className="card-head">
                   <div>
                     <h3>{g.name}</h3>
@@ -282,7 +282,11 @@ export default function Home() {
                     <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
                   )}
                 </div>
-              </Link>
+                <Link to={`/g/${g.id}`} state={{ from: '/beranda' }} className="home-membership-link">
+                  Detail
+                  <Icon name="arrowRight" size={16} />
+                </Link>
+              </div>
               {(nextPeriod || winningRounds.length > 0) && (
                 <details className="home-payment-details">
                   <summary>Jadwal pembayaran &amp; penarikan</summary>
