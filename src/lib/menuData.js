@@ -101,6 +101,14 @@ export async function loadRouletteAttendance(groupId, periodNo) {
   );
 }
 
+export async function loadRoulettePeriodActivation(groupId, periodNo) {
+  if (!groupId || !periodNo) return false;
+  return q(supabase.rpc('roulette_period_is_activated', {
+    p_group: groupId,
+    p_period: periodNo,
+  }));
+}
+
 export async function loadRouletteSession(groupId, periodNo) {
   if (!groupId || !periodNo) return null;
   const { data, error } = await supabase

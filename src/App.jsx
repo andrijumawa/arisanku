@@ -11,6 +11,7 @@ import {
   loadRouletteDraws,
   loadRouletteGroups,
   loadRouletteParticipants,
+  loadRoulettePeriodActivation,
   loadRouletteSession,
 } from './lib/menuData';
 import { configured, supabase } from './lib/supabase';
@@ -99,6 +100,7 @@ function preloadMenuData(uid, isAdmin) {
       const periodNo = draws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) + 1;
       await Promise.all([
         warm(loadRouletteAttendance, [groupId, periodNo], 'daftar hadir kocokan'),
+        warm(loadRoulettePeriodActivation, [groupId, periodNo], 'status aktivasi kocokan'),
         warm(loadRouletteSession, [groupId, periodNo], 'sesi kocokan'),
         warm(loadRouletteParticipants, [groupId], 'peserta kocokan'),
       ]);

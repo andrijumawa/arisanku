@@ -63,6 +63,14 @@ create table if not exists public.roulette_attendance (
   primary key (group_id, period_no, user_id)
 );
 
+create table if not exists public.roulette_period_controls (
+  group_id     uuid not null references public.groups(id) on delete cascade,
+  period_no    integer not null check (period_no >= 1),
+  activated_by uuid not null references public.profiles(id),
+  activated_at timestamptz not null default now(),
+  primary key (group_id, period_no)
+);
+
 alter table public.roulette_draws add column if not exists period_no int not null default 1;
 alter table public.roulette_draws drop constraint if exists roulette_draws_attempt_no_check;
 alter table public.roulette_draws alter column attempt_no type integer using attempt_no::integer;
@@ -76,6 +84,7 @@ alter table public.roulette_sessions enable row level security;
 alter table public.roulette_draws enable row level security;
 alter table public.roulette_chat_messages enable row level security;
 alter table public.roulette_attendance enable row level security;
+alter table public.roulette_period_controls enable row level security;
 
 create or replace function public.can_access_roulette_chat(p_group uuid)
 returns boolean language sql stable security definer set search_path = public as $$
@@ -91,6 +100,64 @@ returns boolean language sql stable security definer set search_path = public as
 $$;
 revoke all on function public.can_access_roulette_chat(uuid) from public;
 grant execute on function public.can_access_roulette_chat(uuid) to authenticated;
+
+drop policy if exists "rolet periode: anggota kelompok lihat" on public.roulette_period_controls;
+create policy "rolet periode: anggota kelompok lihat" on public.roulette_period_controls
+  for select to authenticated using (public.can_access_roulette_chat(group_id));
+
+revoke all on public.roulette_period_controls from public, anon, authenticated;
+grant select on public.roulette_period_controls to authenticated;
+
+create or replace function public.roulette_period_is_activated(p_group uuid, p_period integer)
+returns boolean language plpgsql stable security definer set search_path = public as $$
+begin
+  if auth.uid() is null or not public.can_access_roulette_chat(p_group) then
+    raise exception 'Hanya anggota kelompok yang dapat melihat status periode Rolet';
+  end if;
+  if p_period is null or p_period < 1 or not exists (
+    select 1 from public.groups g
+    where g.id = p_group and g.type = 'uang' and g.draw_mode = 'acak'
+  ) then
+    raise exception 'Kelompok atau periode Rolet tidak valid';
+  end if;
+
+  return exists (
+    select 1 from public.roulette_period_controls c
+    where c.group_id = p_group and c.period_no = p_period
+  );
+end $$;
+revoke all on function public.roulette_period_is_activated(uuid, integer) from public, anon;
+grant execute on function public.roulette_period_is_activated(uuid, integer) to authenticated;
+
+create or replace function public.activate_roulette_period(p_group uuid, p_period integer)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  inserted_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin yang dapat mengaktifkan periode Rolet';
+  end if;
+  if p_period is null or p_period < 1 or not exists (
+    select 1 from public.groups g
+    where g.id = p_group and g.type = 'uang' and g.draw_mode = 'acak'
+  ) then
+    raise exception 'Kelompok atau periode Rolet tidak valid';
+  end if;
+  if p_period <> (
+    select coalesce(max(d.period_no), 0) + 1
+    from public.roulette_draws d
+    where d.group_id = p_group
+  ) then
+    raise exception 'Periode Rolet harus dijalankan secara berurutan';
+  end if;
+  insert into public.roulette_period_controls (group_id, period_no, activated_by)
+  values (p_group, p_period, auth.uid())
+  on conflict do nothing;
+  get diagnostics inserted_count = row_count;
+  return inserted_count > 0;
+end $$;
+revoke all on function public.activate_roulette_period(uuid, integer) from public, anon;
+grant execute on function public.activate_roulette_period(uuid, integer) to authenticated;
 
 create or replace function public.roulette_chat_admin_ids(p_group uuid)
 returns uuid[] language sql stable security definer set search_path = public as $$
@@ -263,6 +330,9 @@ begin
   ) then
     raise exception 'Periode pendaftaran hadir tidak valid';
   end if;
+  if not public.roulette_period_is_activated(p_group, p_period) then
+    raise exception 'Pendaftaran hadir belum dibuka admin';
+  end if;
 
   if exists (
     select 1 from public.roulette_sessions s
@@ -344,6 +414,9 @@ begin
   ) then
     raise exception 'Periode pendaftaran hadir tidak valid';
   end if;
+  if not public.roulette_period_is_activated(p_group, p_period) then
+    raise exception 'Pendaftaran hadir belum dibuka admin';
+  end if;
   if exists (
     select 1
     from public.roulette_sessions s
@@ -399,6 +472,15 @@ begin
     ) then
     alter publication supabase_realtime add table public.roulette_attendance;
   end if;
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+    and not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = 'roulette_period_controls'
+    ) then
+    alter publication supabase_realtime add table public.roulette_period_controls;
+  end if;
 end $$;
 
 drop policy if exists "rolet: admin lihat sesi" on public.roulette_sessions;
@@ -438,6 +520,9 @@ begin
     where group_id = p_group
   ) then
     raise exception 'Putaran Rolet harus dijalankan secara berurutan';
+  end if;
+  if not public.roulette_period_is_activated(p_group, p_period) then
+    raise exception 'Periode Rolet belum diaktifkan admin';
   end if;
 
   select array_agg(remaining.user_id order by remaining.user_id, remaining.slot_no)
@@ -491,6 +576,10 @@ begin
   if not found or s.status <> 'active' then
     raise exception 'Sesi Rolet belum selesai berputar atau sudah ditutup';
   end if;
+  if not public.roulette_period_is_activated(s.group_id, s.period_no) then
+    raise exception 'Periode Rolet belum diaktifkan admin';
+  end if;
+
   select array_agg(remaining.user_id order by remaining.user_id, remaining.slot_no)
   into active_ids
   from public.roulette_remaining_slots(s.group_id) remaining
@@ -580,6 +669,9 @@ begin
   select * into s from public.roulette_sessions where id = p_session for update;
   if not found or s.status <> 'active' then
     raise exception 'Sesi Rolet belum selesai berputar atau sudah ditutup';
+  end if;
+  if not public.roulette_period_is_activated(s.group_id, s.period_no) then
+    raise exception 'Periode Rolet belum diaktifkan admin';
   end if;
   if s.attempt_count < 1 or jsonb_array_length(s.draft_order) < 2 then
     raise exception 'Belum ada hasil yang bisa disimpan';

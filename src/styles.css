@@ -2547,16 +2547,25 @@ input[type='checkbox'] {
   background: linear-gradient(180deg, #e1a735, #f3d37e);
 }
 .home-offer-card.is-active {
-  border-color: rgba(95, 128, 224, 0.48);
-  background:
-    radial-gradient(ellipse at 100% 0, rgba(210, 224, 255, 0.72), transparent 58%),
-    rgba(239, 244, 255, 0.94);
+  border-color: #7494ec;
+  background: #7494ec;
 }
 .home-offer-card.is-active::before {
-  background: linear-gradient(180deg, #5f80e0, #9bb2f4);
+  background: #5f80e0;
 }
 .home-offer-card.is-active .home-offer-state {
-  color: #5f80e0;
+  color: #15264f;
+}
+.home-offer-card.is-active .home-offer-state small,
+.home-offer-card.is-active .home-offer-type,
+.home-offer-card.is-active .home-offer-summary,
+.home-offer-card.is-active .home-offer-copy strong {
+  color: #15264f;
+}
+.home-offer-card.is-active .home-offer-state .badge {
+  border: 1px solid rgba(21, 38, 79, 0.14);
+  background: rgba(255, 255, 255, 0.88);
+  color: #15264f;
 }
 .home-offer-card.is-rejected {
   background: rgba(255, 241, 240, 0.92);
@@ -4183,13 +4192,30 @@ input[type='checkbox'] {
   font-weight: 700;
   cursor: pointer;
   touch-action: manipulation;
+  transition: background-color 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+.roulette-attendance-toggle:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+.roulette-attendance-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
 }
 .roulette-attendance-toggle:disabled {
   cursor: default;
 }
+.roulette-activation-toggle:not(.is-registered) {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #fff;
+}
+.roulette-activation-toggle:not(.is-registered) .roulette-attendance-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
 .roulette-attendance-toggle.is-registered {
-  background: #278451;
-  border-color: #1d6e41;
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 .roulette-attendance-toggle.is-registered .roulette-attendance-count {
@@ -4741,6 +4767,25 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
     0 18px 42px rgba(58, 82, 145, 0.28),
     inset 0 0 0 3px rgba(95, 128, 224, 0.32),
     inset 0 0 30px rgba(95, 128, 224, 0.14);
+}
+.roulette-wheel-machine.is-inactive .roulette-wheel {
+  background: repeating-conic-gradient(#d8dee8 0deg 18deg, #e8ecf1 18deg 36deg);
+  box-shadow:
+    0 0 0 8px #f4f6f8,
+    0 0 0 15px rgba(113, 127, 150, 0.55),
+    0 20px 34px rgba(31, 39, 78, 0.18);
+}
+.roulette-wheel-machine.is-inactive .roulette-wheel-center {
+  background: #687386;
+}
+.roulette-wheel-machine.is-inactive .roulette-wheel-center strong {
+  color: #fff;
+}
+.roulette-wheel-machine.is-inactive .roulette-wheel-center span {
+  color: #e2e7ee;
+}
+.roulette-wheel-machine.is-inactive .roulette-pointer {
+  border-top-color: #9aa5b4;
 }
 .roulette-live-meta {
   display: flex;
