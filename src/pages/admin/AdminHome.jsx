@@ -13,10 +13,10 @@ import Modal from '../../components/Modal.jsx';
 
 const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
 const sections = [
-  ['daftar', 'Pendaftaran', 'Tinjau permintaan bergabung', 'inbox'],
-  ['bayar', 'Pembayaran', 'Periksa bukti transfer', 'coin'],
-  ['kelompok', 'Kelompok', 'Atur kelompok arisan', 'folder'],
-  ['peserta', 'Peserta', 'Kelola akun dan verifikasi', 'users'],
+  ['daftar', 'Pendaftaran', 'Tinjau permintaan bergabung', 'inbox', 'admin-registration.png'],
+  ['bayar', 'Pembayaran', 'Periksa bukti transfer', 'coin', 'admin-payment.png'],
+  ['kelompok', 'Kelompok', 'Atur kelompok arisan', 'folder', 'admin-group.png'],
+  ['peserta', 'Peserta', 'Kelola akun dan verifikasi', 'users', 'admin-people.png'],
 ];
 
 export default function AdminHome() {
@@ -70,7 +70,7 @@ export default function AdminHome() {
       </header>
       {error && <ErrorBox error={error} onRetry={reload} />}
       <nav className="admin-cards" aria-label="Kategori admin">
-        {sections.map(([key, label, description, icon]) => {
+        {sections.map(([key, label, description, icon, image]) => {
           const count = key === 'daftar' ? data?.mem : key === 'bayar' ? data?.pay : key === 'peserta' ? data?.accounts : null;
           const isNew = (key === 'daftar' && newNotifications.daftar > 0) || (key === 'bayar' && newNotifications.bayar > 0);
           return (
@@ -82,6 +82,14 @@ export default function AdminHome() {
               aria-haspopup="dialog"
               aria-label={count > 0 ? `${label}, ${count} menunggu. ${description}` : `${label}. ${description}`}
             >
+              <img
+                className="admin-card-art"
+                src={`${import.meta.env.BASE_URL}images/${image}`}
+                alt=""
+                aria-hidden="true"
+                loading="lazy"
+                decoding="async"
+              />
               <span className="admin-card-top">
                 <span className="admin-card-icon"><Icon name={icon} size={21} /></span>
                 <span className="admin-card-trailing">

@@ -1817,6 +1817,16 @@ input[type='checkbox'] {
   box-shadow: var(--menu-card-shadow);
   transition: transform 140ms ease, border-color 140ms ease;
 }
+.admin-card-art {
+  position: absolute;
+  z-index: 0;
+  inset: 0 auto 0 0;
+  width: 60%;
+  height: 100%;
+  object-fit: cover;
+  object-position: left center;
+  pointer-events: none;
+}
 .admin-card::after {
   position: absolute;
   z-index: -1;
@@ -1882,9 +1892,13 @@ input[type='checkbox'] {
   justify-content: space-between;
 }
 .admin-card-top {
+  position: relative;
+  z-index: 1;
   gap: 8px;
+  justify-content: flex-end;
 }
 .admin-card-icon {
+  order: 2;
   display: grid;
   width: 44px;
   height: 44px;
@@ -1896,6 +1910,10 @@ input[type='checkbox'] {
   color: var(--admin-accent);
 }
 .admin-card-trailing {
+  position: absolute;
+  top: 0;
+  left: 0;
+  order: 1;
   gap: 7px;
   color: var(--admin-accent);
 }
@@ -1939,9 +1957,13 @@ input[type='checkbox'] {
   font-variant-numeric: tabular-nums;
 }
 .admin-card-copy {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: 4px;
   min-width: 0;
+  justify-items: end;
+  text-align: right;
 }
 .admin-card-copy strong {
   color: var(--ink);
@@ -2211,27 +2233,43 @@ input[type='checkbox'] {
   }
   .admin-card {
     display: grid;
-    grid-template-areas: 'icon copy trailing';
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'art copy icon trailing';
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr) auto auto;
     align-items: center;
     justify-content: initial;
     gap: 8px;
     padding: 8px 12px;
+  }
+  .admin-card-art {
+    position: relative;
+    inset: auto;
+    grid-area: art;
+    width: 100%;
+    height: 100%;
+    min-height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+    object-position: left center;
   }
   .admin-card-top {
     display: contents;
   }
   .admin-card-icon {
     grid-area: icon;
+    order: initial;
     width: 34px;
     height: 34px;
   }
   .admin-card-trailing {
     grid-area: trailing;
+    position: static;
+    order: initial;
   }
   .admin-card-copy {
     grid-area: copy;
     gap: 2px;
+    justify-items: end;
+    text-align: right;
   }
   .admin-card-copy strong {
     font-size: 13px;
