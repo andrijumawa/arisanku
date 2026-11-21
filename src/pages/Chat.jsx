@@ -18,7 +18,9 @@ export default function Chat() {
   const toast = useToast();
   const confirm = useConfirm();
   const [allowed, setAllowed] = useState(initialData?.allowed ?? null);
-  const [msgs, setMsgs] = useState(initialData?.messages || []);
+  const [msgs, setMsgs] = useState(() => (initialData?.messages || []).filter(
+    (message) => new Date(message.created_at).getTime() >= Date.now() - 24 * 60 * 60 * 1000
+  ));
   const [names, setNames] = useState(initialData?.names || {});
   const [adminIds, setAdminIds] = useState(initialData?.adminIds || []);
   const [text, setText] = useState('');
@@ -33,6 +35,15 @@ export default function Chat() {
   const syncingHistory = useRef(false);
   namesRef.current = names;
   msgsRef.current = msgs;
+
+  useEffect(() => {
+    const expireOldMessages = () => {
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      setMsgs((messages) => messages.filter((message) => new Date(message.created_at).getTime() >= cutoff));
+    };
+    const timer = window.setInterval(expireOldMessages, 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const ensureNames = useCallback(async (ids) => {
     const missing = [...new Set(ids)].filter((i) => i && !namesRef.current[i]);
@@ -69,6 +80,7 @@ export default function Chat() {
           const { data, error } = await supabase
             .from('chat_messages')
             .select('id,user_id,body,image_path,created_at')
+            .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
             .gt('id', lastId)
             .order('id')
             .limit(150);
@@ -89,6 +101,7 @@ export default function Chat() {
         const { data, error } = await supabase
           .from('chat_messages')
           .select('id,user_id,body,image_path,created_at')
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
           .order('created_at', { ascending: false })
           .limit(150);
         if (!alive) return;
@@ -157,7 +170,7 @@ export default function Chat() {
           'postgres_changes',
           { event: 'INSERT', schema: 'public', table: 'chat_messages' },
           (p) => {
-            if (!allowedRef.current) return;
+            if (!allowedRef.current || new Date(p.new.created_at).getTime() < Date.now() - 24 * 60 * 60 * 1000) return;
             setMsgs((m) => (m.some((x) => x.id === p.new.id) ? m : [...m, p.new].slice(-150)));
             ensureNames([p.new.user_id]);
           }

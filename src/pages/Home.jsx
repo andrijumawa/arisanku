@@ -360,7 +360,7 @@ export default function Home() {
                     </div>
                   </div>
                   <Link to={`/g/${g.id}`} state={{ from: '/beranda' }} className="home-membership-link">
-                    Detail
+                    Pembayaran
                     <Icon name="arrowRight" size={16} />
                   </Link>
                 </div>

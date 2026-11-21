@@ -1356,19 +1356,19 @@ body.roulette-fullscreen-open .roulette-live {
   flex: 0 0 auto;
   margin-left: 8px;
   padding: 6px 11px;
-  border: 1px solid rgba(95, 128, 224, 0.24);
+  border: 1px solid var(--brand);
   border-radius: 9px;
-  background: rgba(232, 239, 255, 0.72);
-  color: var(--brand-d);
+  background: var(--brand);
+  color: #fff;
   font-size: 12px;
   font-weight: 700;
   text-decoration: none;
   transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 .home-membership-link:hover {
-  border-color: rgba(95, 128, 224, 0.42);
-  background: rgba(220, 231, 255, 0.92);
-  color: var(--brand-d);
+  border-color: var(--brand-d);
+  background: var(--brand-d);
+  color: #fff;
 }
 .home-membership-link:active {
   transform: translateY(1px);

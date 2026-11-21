@@ -37,6 +37,8 @@ Untuk project yang sudah berjalan, jalankan `supabase/scaling_optimizations.sql`
 
 Jalankan `supabase/roulette_payment_eligibility.sql` setelah `roulette.sql` pada project baru. Untuk project yang sudah berjalan, jalankan file itu setelah `scaling_optimizations.sql` dan sebelum deploy versi aplikasi ini. Migration ini memastikan peserta hanya dapat mendaftar hadir dan masuk ke roda setelah pembayaran periode yang sedang dikocok disetujui admin, mulai periode pertama.
 
+Jalankan `supabase/chat_retention.sql` satu kali di SQL Editor Supabase untuk project baru maupun yang sudah berjalan. Job terjadwal menghapus pesan Chat utama dan chat Rolet yang berusia lebih dari 24 jam setiap jam; tampilan chat juga menyembunyikan pesan yang melewati batas tersebut saat tetap terbuka. Penghapusan ini menghapus baris pesan, tetapi tidak menghapus objek foto yatim di bucket `chat-images`; penghapusan objek Storage memerlukan Storage API dan belum termasuk dalam job ini.
+
 Subscription hanya aktif untuk layar yang sedang dibuka dan dijeda saat aplikasi masuk ke latar. Event beruntun digabung sebelum data dimuat ulang; daftar admin dan anggota kelompok dimuat per halaman, daftar chat dibatasi ke 150 pesan terakhir, dan unggahan gambar dikompres di perangkat sebelum dikirim. Ini mengurangi query dan transfer yang tidak diperlukan, tetapi pemakaian egress aktual tetap bergantung pada jumlah pengguna, perubahan data, dan gambar yang dibuka.
 
 ## 2. Jalankan di komputer

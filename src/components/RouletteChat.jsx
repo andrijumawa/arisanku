@@ -91,6 +91,7 @@ export default function RouletteChat({ groupId }) {
         .from('roulette_chat_messages')
         .select('id,group_id,user_id,body,is_system,created_at')
         .eq('group_id', groupId)
+        .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
         .order('created_at', { ascending: false })
         .limit(50);
       if (!active) return;
@@ -128,6 +129,15 @@ export default function RouletteChat({ groupId }) {
       void supabase.removeChannel(channel);
     };
   }, [groupId, toast, uid]);
+
+  useEffect(() => {
+    const expireOldMessages = () => {
+      const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+      setMessages((current) => current.filter((message) => new Date(message.created_at).getTime() >= cutoff));
+    };
+    const timer = window.setInterval(expireOldMessages, 60 * 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
