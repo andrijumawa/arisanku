@@ -297,7 +297,7 @@ export default function Chat() {
         )}
         {msgs.map((m, i) => {
           const mine = m.user_id === uid;
-          const adminMessage = isAdmin || adminIds.includes(m.user_id);
+          const adminMessage = adminIds.includes(m.user_id);
           const newDay = i === 0 || !sameDay(msgs[i - 1].created_at, m.created_at);
           return (
             <div key={m.id} style={{ display: 'contents' }}>

@@ -4108,20 +4108,20 @@ input[type='checkbox'] {
   border-top-right-radius: 4px;
 }
 .bubble.admin {
-  border-color: rgba(95, 128, 224, 0.24);
-  background: #edf2ff;
+  border-color: rgba(180, 51, 43, 0.24);
+  background: var(--red-l);
 }
 .bubble.admin .who {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #4262bd;
+  color: var(--red);
 }
 .chat-admin-badge {
   padding: 2px 6px;
   border-radius: 7px;
-  background: #dfe7ff;
-  color: #3f5eac;
+  background: #f5d9d6;
+  color: var(--red);
   font-size: 9px;
   font-weight: 700;
   line-height: 1.5;
@@ -4751,20 +4751,20 @@ input[type='checkbox'] {
   background: #e7edff;
 }
 .roulette-chat-message.is-admin {
- border: 1px solid rgba(95, 128, 224, 0.24);
- background: #edf2ff;
+ border: 1px solid rgba(180, 51, 43, 0.24);
+ background: var(--red-l);
 }
 .roulette-chat-message.is-admin strong {
   display: flex;
   align-items: center;
   gap: 6px;
- color: #4262bd;
+ color: var(--red);
 }
 .roulette-chat-admin-badge {
  padding: 2px 6px;
  border-radius: 7px;
- background: #dfe7ff;
- color: #3f5eac;
+ background: #f5d9d6;
+ color: var(--red);
   font-size: 9px;
   font-weight: 700;
   line-height: 1.5;
