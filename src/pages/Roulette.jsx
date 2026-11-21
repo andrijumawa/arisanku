@@ -585,9 +585,13 @@ export default function Roulette() {
   }
 
   function toggleFullscreen() {
-    if (!periodActivated && !fallbackFullscreen) return;
+    if (!periodActivated) return;
     setFallbackFullscreen((current) => !current);
   }
+
+  useEffect(() => {
+    if (!periodActivated) setFallbackFullscreen(false);
+  }, [periodActivated]);
 
   const spinning = session?.status === 'spinning';
   const saved = session?.status === 'saved';
@@ -679,9 +683,9 @@ export default function Roulette() {
                   Menunggu admin mengaktifkan daftar hadir
                 </span>
               )}
-              {groupId && (isAdmin || (!isAdmin && fallbackFullscreen)) && (
+              {groupId && ((isAdmin && !fallbackFullscreen) || (!isAdmin && fallbackFullscreen)) && (
                 <div className="roulette-attendance-controls">
-                  {isAdmin ? (
+                  {isAdmin && !fallbackFullscreen ? (
                     <button
                       type="button"
                       className={`roulette-attendance-toggle roulette-activation-toggle${periodActivated ? ' is-registered' : ''}`}
@@ -728,9 +732,9 @@ export default function Roulette() {
                   type="button"
                   className="roulette-fullscreen-toggle"
                   onClick={toggleFullscreen}
-                  disabled={!periodActivated && !fallbackFullscreen}
-                  aria-label={fallbackFullscreen ? 'Kecilkan tampilan kocokan' : !periodActivated ? 'Perbesar rolet belum tersedia sampai periode diaktifkan' : 'Tampilkan kocokan layar penuh'}
-                  title={fallbackFullscreen ? 'Kecilkan rolet' : !periodActivated ? 'Aktifkan periode untuk memperbesar rolet' : 'Layar penuh'}
+                  disabled={!periodActivated}
+                  aria-label={!periodActivated ? 'Perbesar rolet belum tersedia sampai periode diaktifkan' : fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
+                  title={!periodActivated ? 'Aktifkan periode untuk memperbesar rolet' : fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
                 >
                   <Icon name={fallbackFullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
                 </button>
