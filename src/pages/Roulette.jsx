@@ -180,6 +180,17 @@ export default function Roulette() {
 
   useEffect(() => {
     if (!countdownEndsAt) return undefined;
+    const timer = window.setTimeout(() => {
+      if (countdownEndsAtRef.current === countdownEndsAt) {
+        countdownEndsAtRef.current = null;
+        setCountdownEndsAt(null);
+      }
+    }, Math.max(0, countdownEndsAt - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [countdownEndsAt]);
+
+  useEffect(() => {
+    if (!countdownEndsAt) return undefined;
     const timer = window.setInterval(() => setCountdownNow(Date.now()), 100);
     return () => window.clearInterval(timer);
   }, [countdownEndsAt]);
@@ -315,6 +326,15 @@ export default function Roulette() {
       return rosterOrder.get(a.user_id) - rosterOrder.get(b.user_id);
     });
   }, [activeParticipants, attendanceState.data]);
+  const selectedWinnerUserId = session?.status === 'active'
+    ? session.draft_order?.[0]?.user_id
+    : null;
+  const displayedAdminRoster = useMemo(() => {
+    if (!selectedWinnerUserId) return adminRoster;
+    return [...adminRoster].sort((a, b) => (
+      Number(b.user_id === selectedWinnerUserId) - Number(a.user_id === selectedWinnerUserId)
+    ));
+  }, [adminRoster, selectedWinnerUserId]);
   const remainingParticipants = activeParticipants.filter((participant) => (
     !previousWinnerIds.has(participant.user_id)
     && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
@@ -576,7 +596,9 @@ export default function Roulette() {
   const spinning = session?.status === 'spinning';
   const saved = session?.status === 'saved';
   const cancelled = session?.status === 'cancelled';
-  const countdown = countdownEndsAt ? Math.max(0, Math.ceil((countdownEndsAt - countdownNow) / 1000)) : null;
+  const countdown = countdownEndsAt && countdownEndsAt > countdownNow
+    ? Math.ceil((countdownEndsAt - countdownNow) / 1000)
+    : null;
   const canStart = isAdmin && !rouletteComplete && !spinning
     && periodActivated
     && (!session || saved || cancelled)
@@ -738,13 +760,15 @@ export default function Roulette() {
                       <span>{registeredUserIds.size} hadir dari {activeParticipants.length} slot</span>
                     </div>
                     <div className="roulette-participant-roster-list">
-                      {adminRoster.length ? adminRoster.map((participant, index) => {
+                      {displayedAdminRoster.length ? displayedAdminRoster.map((participant, index) => {
                         const isRegistered = registeredUserIds.has(participant.user_id);
+                        const isSelectedWinner = participant.user_id === selectedWinnerUserId;
                         const isBusy = adminAttendanceBusyUser === participant.user_id;
                         return (
                           <div
-                            className={`roulette-roster-person${isRegistered ? ' is-present' : ''}`}
+                            className={`roulette-roster-person${isRegistered ? ' is-present' : ''}${isSelectedWinner ? ' is-selected' : ''}`}
                             key={participant.user_id}
+                            aria-current={isSelectedWinner ? 'true' : undefined}
                           >
                             <span className="roulette-roster-number" aria-hidden="true">{index + 1}</span>
                             <span className="roulette-roster-person-copy">
@@ -753,7 +777,9 @@ export default function Roulette() {
                                 <small>{participant.slots.length} slot</small>
                               )}
                             </span>
-                            {isRegistered ? (
+                            {isSelectedWinner ? (
+                              <span className="roulette-roster-status is-selected">Terpilih</span>
+                            ) : isRegistered ? (
                               <span className="roulette-roster-status">Hadir</span>
                             ) : isAdmin ? (
                               <button

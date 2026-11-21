@@ -4628,6 +4628,11 @@ input[type='checkbox'] {
   background: rgba(95, 128, 224, 0.12);
   color: #4262bd;
 }
+.roulette-roster-person.is-selected {
+  border: 1px solid rgba(31, 126, 87, 0.35);
+  background: var(--green-l);
+  color: #176b49;
+}
 .roulette-roster-number {
   display: grid;
   width: 22px;
@@ -4666,6 +4671,9 @@ input[type='checkbox'] {
 .roulette-roster-status.is-pending {
   color: var(--muted);
   font-weight: 600;
+}
+.roulette-roster-status.is-selected {
+  color: #176b49;
 }
 .roulette-roster-add {
   min-height: 28px;
