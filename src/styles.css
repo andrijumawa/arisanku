@@ -5072,23 +5072,6 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
 .roulette-admin-controls p {
   margin: 0;
 }
-.roulette-admin-controls.is-fullscreen {
-  z-index: 2;
-  width: min(760px, 100%);
-  flex: 0 0 auto;
-  margin: 0;
-  padding: 8px 0 max(4px, env(safe-area-inset-bottom));
-  border-top-color: rgba(95, 128, 224, 0.18);
-}
-.roulette-admin-controls.is-fullscreen .row {
-  gap: 6px;
-}
-.roulette-admin-controls.is-fullscreen .btn {
-  min-height: 38px;
-  flex: 1 1 auto;
-  padding: 7px 10px;
-  font-size: 12px;
-}
 .roulette-result ol {
   display: grid;
   gap: 4px;

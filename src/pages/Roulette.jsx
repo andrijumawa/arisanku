@@ -605,27 +605,6 @@ export default function Roulette() {
     && !busy;
   const hasRegistered = registeredUserIds.has(authSession.user.id);
   const isEligibleForPeriod = eligibleUserIds.has(authSession.user.id);
-  const adminControls = isAdmin && !rouletteComplete && session && !saved && !cancelled && (
-    <div className={`roulette-admin-controls${fallbackFullscreen ? ' is-fullscreen' : ''}`}>
-      {spinning ? (
-        <p className="muted small">Kocokan sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
-      ) : (
-        <div className="row wrap">
-          {session.status === 'active' && (
-            <button className="btn primary" onClick={rerunRoulette} disabled={busy}>
-              Putar ulang
-            </button>
-          )}
-          <button className="btn primary" onClick={saveResult} disabled={busy}>
-            Simpan pemenang putaran {periodNo}
-          </button>
-          <button className="btn danger" onClick={cancelResult} disabled={busy}>
-            Batalkan hasil
-          </button>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <section className="roulette-page">
@@ -831,7 +810,6 @@ export default function Roulette() {
                   </section>
                 </div>
               )}
-              {fallbackFullscreen && adminControls}
             </div>
 
             {!participantNames.length && !rouletteComplete && periodActivated && (
@@ -852,7 +830,27 @@ export default function Roulette() {
               </p>
             )}
 
-            {!fallbackFullscreen && adminControls}
+            {isAdmin && !rouletteComplete && session && !saved && !cancelled && (
+              <div className="roulette-admin-controls">
+                {spinning ? (
+                  <p className="muted small">Kocokan sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
+                ) : (
+                  <div className="row wrap">
+                    {session?.status === 'active' && (
+                      <button className="btn primary" onClick={rerunRoulette} disabled={busy}>
+                        Putar ulang
+                      </button>
+                    )}
+                    <button className="btn primary" onClick={saveResult} disabled={busy}>
+                      Simpan pemenang putaran {periodNo}
+                    </button>
+                    <button className="btn danger" onClick={cancelResult} disabled={busy}>
+                      Batalkan hasil
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {!spinning && session?.status === 'active' && session.draft_order?.[0] && (
               <p className="roulette-round-winner">
