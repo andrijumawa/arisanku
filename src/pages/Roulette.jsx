@@ -462,14 +462,14 @@ export default function Roulette() {
     });
     return wheelOrder;
   }, [orderedParticipants, session?.draft_order]);
-  const participantNames = useMemo(
-    () => wheelParticipants.map(participantSlotLabel),
-    [wheelParticipants]
-  );
   const rouletteComplete = !drawsState.loading
     && !participantsState.loading
     && savedDraws.length > 0
     && (remainingParticipants.length === 0 || autoFinalSlot !== null);
+  const participantNames = useMemo(
+    () => rouletteComplete ? [] : wheelParticipants.map(participantSlotLabel),
+    [rouletteComplete, wheelParticipants]
+  );
 
   const totalRankingSlots = activeParticipants.length + savedDraws.reduce(
     (total, draw) => total + (draw.participants || []).length,
