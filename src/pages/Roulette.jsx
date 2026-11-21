@@ -15,6 +15,7 @@ import Icon from '../components/Icon.jsx';
 import RouletteChat from '../components/RouletteChat.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { CustomSelect } from '../components/CustomSelect.jsx';
+import { useConfirm } from '../components/Confirm.jsx';
 
 function getSpinDuration(roundNo, totalRounds) {
   if (roundNo <= 3) return 7000;
@@ -52,6 +53,7 @@ function participantSlotLabel(participant) {
 export default function Roulette() {
   const { isAdmin, session: authSession } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
   const [groupId, setGroupId] = useState('');
   const [busy, setBusy] = useState(false);
   const [adminAttendanceBusyUser, setAdminAttendanceBusyUser] = useState('');
@@ -428,7 +430,12 @@ export default function Roulette() {
 
   async function cancelResult() {
     if (!session?.id) return;
-    if (!window.confirm('Batalkan hasil kocokan ini? Hasil belum disimpan, jadi putaran ini bisa dimulai ulang.')) return;
+    const accepted = await confirm({
+      title: 'Batalkan hasil kocokan?',
+      message: 'Hasil belum disimpan, jadi putaran ini dapat dimulai ulang.',
+      confirmLabel: 'Batalkan hasil',
+    });
+    if (!accepted) return;
     setBusy(true);
     try {
       await q(supabase.rpc('cancel_roulette_session', { p_session: session.id }));

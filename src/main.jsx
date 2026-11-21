@@ -4,15 +4,18 @@ import { HashRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './lib/auth.jsx';
 import { ToastProvider } from './components/Toast.jsx';
+import { ConfirmProvider } from './components/Confirm.jsx';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HashRouter>
       <ToastProvider>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
+        <ConfirmProvider>
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ConfirmProvider>
       </ToastProvider>
     </HashRouter>
   </React.StrictMode>

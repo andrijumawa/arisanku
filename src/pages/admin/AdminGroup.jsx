@@ -7,11 +7,13 @@ import { Badge, Empty, ErrorBox, Progress, Spinner } from '../../components/Ui.j
 import GroupInfo from '../../components/GroupInfo.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
+import { useConfirm } from '../../components/Confirm.jsx';
 
 export default function AdminGroup() {
   const { id } = useParams();
   const nav = useNavigate();
   const toast = useToast();
+  const confirm = useConfirm();
   const [busyId, setBusyId] = useState(null);
 
   const { data, loading, error, reload } = useAsync(async () => {
@@ -156,7 +158,12 @@ export default function AdminGroup() {
     run('open', () => supabase.from('groups').update({ is_open: !g.is_open }).eq('id', id), g.is_open ? 'Pendaftaran ditutup.' : 'Pendaftaran dibuka.');
 
   async function removeGroup() {
-    if (!window.confirm(`Hapus kelompok "${g.name}" beserta semua pendaftaran & pembayarannya? Tindakan ini tidak bisa dibatalkan.`)) return;
+    const accepted = await confirm({
+      title: 'Hapus kelompok?',
+      message: `Kelompok "${g.name}" beserta semua pendaftaran dan pembayarannya akan dihapus permanen.`,
+      confirmLabel: 'Hapus kelompok',
+    });
+    if (!accepted) return;
     const { error } = await supabase.from('groups').delete().eq('id', id);
     if (error) return toast(error.message, 'error');
     toast('Kelompok dihapus.');

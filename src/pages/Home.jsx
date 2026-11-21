@@ -9,6 +9,7 @@ import { Badge, Empty, ErrorBox, Progress, Spinner } from '../components/Ui.jsx'
 import Icon from '../components/Icon.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useConfirm } from '../components/Confirm.jsx';
 
 function AvailableGroupCard({ group, membership, remainingSlots, availabilityError, onSelect }) {
   const isMoney = group.type === 'uang';
@@ -62,6 +63,7 @@ export default function Home() {
   const { profile, session } = useAuth();
   const uid = session.user.id;
   const toast = useToast();
+  const confirm = useConfirm();
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [slots, setSlots] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -130,7 +132,13 @@ export default function Home() {
 
   async function cancelRegistration() {
     const membership = selectedGroup?.membership;
-    if (!membership || !window.confirm('Batalkan pendaftaran ke kelompok ini?')) return;
+    if (!membership) return;
+    const accepted = await confirm({
+      title: 'Batalkan pendaftaran?',
+      message: 'Pendaftaran Anda akan dibatalkan dan dapat diajukan kembali.',
+      confirmLabel: 'Batalkan',
+    });
+    if (!accepted) return;
     setBusy(true);
     try {
       const { error: cancelError } = await supabase

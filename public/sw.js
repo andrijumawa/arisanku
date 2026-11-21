@@ -1,6 +1,6 @@
-// Service worker version: image-precache-2026-11-20
+// Service worker version: image-precache-2026-11-21
 // Service worker: Web Push + agar aplikasi bisa di-install (PWA)
-const IMAGE_CACHE = 'arisanku-image-cache-v1';
+const IMAGE_CACHE = 'arisanku-image-cache-v2';
 const IMAGE_PATHS = [
   'images/app-background.jpg',
   'images/initial-loading.jpeg',
@@ -17,6 +17,7 @@ const IMAGE_PATHS = [
   'icons/arisanku-mark.png',
   'icons/icon-192.png',
   'icons/icon-512.png',
+  'arisanku-wordmark.webp',
 ];
 
 self.addEventListener('install', (event) => {
@@ -64,12 +65,15 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith((async () => {
     const cache = await caches.open(IMAGE_CACHE);
-    const cached = await cache.match(request);
-    if (cached) return cached;
-
-    const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
-    return response;
+    try {
+      const response = await fetch(request);
+      if (response.ok) await cache.put(request, response.clone());
+      return response;
+    } catch {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      return new Response('', { status: 503, statusText: 'Offline' });
+    }
   })());
 });
 

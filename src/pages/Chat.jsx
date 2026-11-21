@@ -8,6 +8,7 @@ import { takePrefetchedChatData } from '../lib/menuData';
 import SignedImage from '../components/SignedImage.jsx';
 import { useToast } from '../components/Toast.jsx';
 import Icon from '../components/Icon.jsx';
+import { useConfirm } from '../components/Confirm.jsx';
 
 export default function Chat() {
   const { session, isAdmin } = useAuth();
@@ -15,6 +16,7 @@ export default function Chat() {
   const [initialData] = useState(() => takePrefetchedChatData(uid));
   const initialDataRef = useRef(initialData);
   const toast = useToast();
+  const confirm = useConfirm();
   const [allowed, setAllowed] = useState(initialData?.allowed ?? null);
   const [msgs, setMsgs] = useState(initialData?.messages || []);
   const [names, setNames] = useState(initialData?.names || {});
@@ -243,7 +245,12 @@ export default function Chat() {
   }
 
   async function remove(m) {
-    if (!window.confirm('Hapus pesan ini untuk semua peserta?')) return;
+    const accepted = await confirm({
+      title: 'Hapus pesan?',
+      message: 'Pesan ini akan dihapus untuk semua peserta.',
+      confirmLabel: 'Hapus',
+    });
+    if (!accepted) return;
     const { error } = await supabase.from('chat_messages').delete().eq('id', m.id);
     if (error) return toast(error.message, 'error');
     setMsgs((l) => l.filter((x) => x.id !== m.id));

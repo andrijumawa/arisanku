@@ -10,6 +10,7 @@ import Icon from '../components/Icon.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useConfirm } from '../components/Confirm.jsx';
 
 function BrowseGroupCard({ group, membership, onJoin, onCancel, canceling }) {
   const [expanded, setExpanded] = useState(false);
@@ -132,6 +133,7 @@ export default function Browse() {
   const { session } = useAuth();
   const uid = session.user.id;
   const toast = useToast();
+  const confirm = useConfirm();
   const [joining, setJoining] = useState(null);
   const [slots, setSlots] = useState(1);
   const [busy, setBusy] = useState(false);
@@ -164,7 +166,12 @@ export default function Browse() {
   }
 
   async function cancelJoin(membership) {
-    if (!window.confirm('Batalkan pendaftaran ke kelompok ini?')) return;
+    const accepted = await confirm({
+      title: 'Batalkan pendaftaran?',
+      message: 'Pendaftaran Anda akan dibatalkan.',
+      confirmLabel: 'Batalkan',
+    });
+    if (!accepted) return;
     setCancelingMembershipId(membership.id);
     const { error } = await supabase
       .from('memberships')

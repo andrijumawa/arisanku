@@ -235,7 +235,7 @@ export default function Layout() {
       <header className="hdr">
         <div className="header-brand" role="img" aria-label="ArisanKu">
           <img className="brand-logo" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="" aria-hidden="true" />
-          <img className="brand-wordmark" src={`${import.meta.env.BASE_URL}arisanku-wordmark.png`} alt="" aria-hidden="true" />
+          <img className="brand-wordmark" src={`${import.meta.env.BASE_URL}arisanku-wordmark.webp`} alt="" aria-hidden="true" />
         </div>
         <div className="header-account">
           {isAdmin && <span className="badge gold">Admin</span>}

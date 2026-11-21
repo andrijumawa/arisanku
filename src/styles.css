@@ -4,11 +4,11 @@
   --muted: #806b76;
   --card: #ffffff;
   --line: #f0d9e3;
-  --brand: #c6004f;
-  --brand-d: #9f003f;
-  --brand-l: #ffe4ef;
-  --gold: #f20b70;
-  --gold-l: #ffe4ef;
+  --brand: #7494ec;
+  --brand-d: #5f80e0;
+  --brand-l: #e8efff;
+  --gold: #7494ec;
+  --gold-l: #e8efff;
   --red: #b4332b;
   --red-l: #fbe9e7;
   --green: #1d8a4d;
@@ -1566,6 +1566,19 @@ body.roulette-fullscreen-open .roulette-live {
   align-items: center;
   justify-content: center;
   gap: 6px;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+.btn:hover:not(:disabled) {
+  border-color: rgba(95, 128, 224, 0.42);
+  box-shadow: 0 5px 12px rgba(49, 74, 145, 0.1);
+  transform: translateY(-1px);
+}
+.btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+.btn:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 2px;
 }
 .btn:disabled {
   opacity: 0.55;
@@ -2297,14 +2310,14 @@ input[type='checkbox'] {
   white-space: nowrap;
 }
 .admin-person-actions .btn.primary {
-  border-color: #1d8a4d;
-  background: #1d8a4d;
+  border-color: var(--admin-accent);
+  background: var(--admin-accent);
   color: #fff;
 }
 .admin-person-actions .btn.primary:hover,
 .admin-person-actions .btn.primary:active {
-  border-color: #166f3e;
-  background: #166f3e;
+  border-color: var(--admin-accent-pressed);
+  background: var(--admin-accent-pressed);
   color: #fff;
 }
 .admin-person-actions .btn.danger {
@@ -2837,7 +2850,7 @@ input[type='checkbox'] {
   box-sizing: border-box;
   min-width: 0;
   z-index: 150;
-  background: rgba(10, 30, 26, 0.5);
+  background: rgba(31, 45, 78, 0.54);
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   place-items: center;
@@ -2948,8 +2961,101 @@ input[type='checkbox'] {
 }
 @media (prefers-reduced-motion: reduce) {
   .overlay,
-  .sheet {
+  .sheet,
+  .confirm-backdrop,
+  .confirm-dialog {
     animation-duration: 0.01ms;
+  }
+}
+
+.confirm-backdrop {
+  position: fixed;
+  z-index: 220;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  background: rgba(31, 45, 78, 0.58);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: overlay-in 140ms ease-out;
+}
+.confirm-dialog {
+  width: min(420px, 100%);
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(95, 128, 224, 0.22);
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at 100% 0, rgba(95, 128, 224, 0.12), transparent 55%),
+    rgba(255, 255, 255, 0.98);
+  color: var(--ink);
+  box-shadow: 0 20px 48px rgba(31, 45, 78, 0.24);
+  animation: modal-in 180ms ease-out;
+}
+.confirm-dialog-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(95, 128, 224, 0.18);
+  border-radius: 12px;
+  background: #edf2ff;
+  color: #4d6fcf;
+}
+.confirm-dialog-copy {
+  min-width: 0;
+}
+.confirm-dialog-copy h2 {
+  margin: 2px 0 5px;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+.confirm-dialog-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.confirm-dialog-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 5px;
+}
+.confirm-dialog-actions .btn {
+  min-height: 44px;
+}
+.confirm-cancel {
+  background: #f5f7fc;
+}
+.confirm-accept.danger {
+  border-color: #bd5b70;
+  background: #bd5b70;
+  color: #fff;
+}
+.confirm-accept.danger:hover,
+.confirm-accept.danger:active {
+  border-color: #a64c61;
+  background: #a64c61;
+}
+@media (max-width: 520px) {
+  .confirm-backdrop {
+    align-items: end;
+    padding-inline: 12px;
+  }
+  .confirm-dialog {
+    width: 100%;
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 16px;
+    border-radius: 18px 18px 12px 12px;
+  }
+  .confirm-dialog-icon {
+    width: 40px;
+    height: 40px;
   }
 }
 
@@ -3128,10 +3234,10 @@ input[type='checkbox'] {
   width: min(850px, 100%);
   height: 550px;
   overflow: hidden;
-  border: 1px solid rgba(128, 40, 77, 0.1);
-  border-radius: 28px;
+  border: 1px solid rgba(95, 128, 224, 0.18);
+  border-radius: 24px;
   background: #fff;
-  box-shadow: 0 0 30px rgba(111, 16, 57, 0.16);
+  box-shadow: 0 18px 42px rgba(49, 74, 145, 0.16);
 }
 .auth-shell::before {
   position: absolute;
@@ -3141,7 +3247,7 @@ input[type='checkbox'] {
   width: 300%;
   height: 100%;
   border-radius: 150px;
-  background: #c6004f;
+  background: #7494ec;
   content: '';
   pointer-events: none;
   transition: left 1.8s ease-in-out;
@@ -3470,7 +3576,7 @@ input[type='checkbox'] {
   transform: translateY(-1px);
 }
 .auth-switch:focus-visible {
-  outline: 3px solid #ff3b8c;
+  outline: 3px solid #7494ec;
   outline-offset: 3px;
 }
 @media (max-width: 650px) {
@@ -3949,20 +4055,20 @@ input[type='checkbox'] {
   border-top-right-radius: 4px;
 }
 .bubble.admin {
-  border-color: #efb4b4;
-  background: #ffe5e5;
+  border-color: rgba(95, 128, 224, 0.24);
+  background: #edf2ff;
 }
 .bubble.admin .who {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #b4232d;
+  color: #4262bd;
 }
 .chat-admin-badge {
-  padding: 1px 5px;
-  border-radius: 5px;
-  background: #f5bfc2;
-  color: #8f1720;
+  padding: 2px 6px;
+  border-radius: 7px;
+  background: #dfe7ff;
+  color: #3f5eac;
   font-size: 9px;
   font-weight: 700;
   line-height: 1.5;
@@ -4072,14 +4178,14 @@ input[type='checkbox'] {
 }
 .admin-content .admin-person-actions.actions .btn.primary {
   flex: 1 1 auto;
-  border: 1px solid #166f3e;
-  background: #1d8a4d;
+  border: 1px solid var(--admin-accent);
+  background: var(--admin-accent);
   color: #fff;
 }
 .admin-content .admin-person-actions.actions .btn.primary:hover,
 .admin-content .admin-person-actions.actions .btn.primary:active {
-  border-color: #105832;
-  background: #166f3e;
+  border-color: var(--admin-accent-pressed);
+  background: var(--admin-accent-pressed);
   color: #fff;
 }
 .admin-content .admin-person-actions.actions .btn.danger {
@@ -4096,14 +4202,14 @@ input[type='checkbox'] {
 }
 .admin-content .admin-review-actions .btn.primary {
  flex: 1 1 auto;
- border: 1px solid #166f3e;
- background: #1d8a4d;
+ border: 1px solid var(--admin-accent);
+ background: var(--admin-accent);
  color: #fff;
 }
 .admin-content .admin-review-actions .btn.primary:hover,
 .admin-content .admin-review-actions .btn.primary:active {
- border-color: #105832;
- background: #166f3e;
+ border-color: var(--admin-accent-pressed);
+ background: var(--admin-accent-pressed);
  color: #fff;
 }
 .admin-content .admin-review-actions .btn.danger {
@@ -4586,20 +4692,20 @@ input[type='checkbox'] {
   background: #e7edff;
 }
 .roulette-chat-message.is-admin {
-  border: 1px solid #efb4b4;
-  background: #ffe5e5;
+ border: 1px solid rgba(95, 128, 224, 0.24);
+ background: #edf2ff;
 }
 .roulette-chat-message.is-admin strong {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #b4232d;
+ color: #4262bd;
 }
 .roulette-chat-admin-badge {
-  padding: 1px 5px;
-  border-radius: 5px;
-  background: #f5bfc2;
-  color: #8f1720;
+ padding: 2px 6px;
+ border-radius: 7px;
+ background: #dfe7ff;
+ color: #3f5eac;
   font-size: 9px;
   font-weight: 700;
   line-height: 1.5;
@@ -4833,7 +4939,7 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   height: 24px;
   border: 5px solid #fff;
   border-radius: 50%;
-  background: #ff7f70;
+  background: #7494ec;
   content: '';
   transform: translateX(-50%);
 }
@@ -4843,7 +4949,7 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   left: 50%;
   width: 0;
   height: 0;
-  border-top: 18px solid #ff7f70;
+  border-top: 18px solid #7494ec;
   border-right: 10px solid transparent;
   border-left: 10px solid transparent;
   transform: translateX(-50%);

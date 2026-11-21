@@ -9,6 +9,7 @@ import { Badge, ErrorBox, Spinner } from '../components/Ui.jsx';
 import GroupInfo from '../components/GroupInfo.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
+import { useConfirm } from '../components/Confirm.jsx';
 import Icon from '../components/Icon.jsx';
 
 export default function GroupDetail() {
@@ -18,6 +19,7 @@ export default function GroupDetail() {
   const uid = session.user.id;
   const nav = useNavigate();
   const toast = useToast();
+  const confirm = useConfirm();
   const returnTo = ['/beranda', '/arisan'].includes(location.state?.from) ? location.state.from : '/beranda';
   const [uploading, setUploading] = useState(null); // nomor periode
   const [file, setFile] = useState(null);
@@ -170,7 +172,12 @@ export default function GroupDetail() {
   }
 
   async function cancelJoin() {
-    if (!window.confirm('Batalkan pendaftaran ke kelompok ini?')) return;
+    const accepted = await confirm({
+      title: 'Batalkan pendaftaran?',
+      message: 'Pendaftaran Anda akan dibatalkan.',
+      confirmLabel: 'Batalkan',
+    });
+    if (!accepted) return;
     const { error } = await supabase.from('memberships').delete().eq('id', mem.id);
     if (error) return toast(error.message, 'error');
     toast('Pendaftaran dibatalkan.');

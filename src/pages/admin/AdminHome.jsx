@@ -10,6 +10,7 @@ import SignedImage from '../../components/SignedImage.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
 import Modal from '../../components/Modal.jsx';
+import { useConfirm } from '../../components/Confirm.jsx';
 
 const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
 const sections = [
@@ -115,6 +116,7 @@ export default function AdminHome() {
 /* ---------------- Pendaftaran ---------------- */
 function Registrations({ revision }) {
   const toast = useToast();
+  const confirm = useConfirm();
   const [busyId, setBusyId] = useState(null);
   const { data, loading, error, reload } = useAsync(
     () =>
@@ -142,7 +144,12 @@ function Registrations({ revision }) {
   }
 
   async function reject(m) {
-    if (!window.confirm(`Tolak pendaftaran ${m.profiles?.full_name}?`)) return;
+    const accepted = await confirm({
+      title: 'Tolak pendaftaran?',
+      message: `Pendaftaran ${m.profiles?.full_name || 'peserta ini'} akan ditolak.`,
+      confirmLabel: 'Tolak',
+    });
+    if (!accepted) return;
     setBusyId(m.id);
     const { error } = await supabase.from('memberships').update({ status: 'ditolak' }).eq('id', m.id);
     setBusyId(null);
@@ -292,6 +299,7 @@ function Groups() {
 function People({ revision }) {
   const { session } = useAuth();
   const toast = useToast();
+  const confirm = useConfirm();
   const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState(null);
   const { data, loading, error, reload } = useAsync(
@@ -312,7 +320,12 @@ function People({ revision }) {
 
   async function toggleRole(p) {
     const next = p.role === 'admin' ? 'peserta' : 'admin';
-    if (!window.confirm(`${next === 'admin' ? 'Jadikan' : 'Cabut hak admin'} ${p.full_name}?`)) return;
+    const accepted = await confirm({
+      title: next === 'admin' ? 'Jadikan admin?' : 'Cabut hak admin?',
+      message: `${next === 'admin' ? 'Jadikan' : 'Cabut hak admin untuk'} ${p.full_name || 'peserta ini'}?`,
+      confirmLabel: next === 'admin' ? 'Jadikan admin' : 'Cabut hak',
+    });
+    if (!accepted) return;
     setBusyId(p.id);
     try {
       const { error } = await supabase.from('profiles').update({ role: next }).eq('id', p.id);
@@ -323,7 +336,14 @@ function People({ revision }) {
   }
 
   async function reviewAccount(p, accountStatus) {
-    if (accountStatus === 'ditolak' && !window.confirm(`Tolak verifikasi akun ${p.full_name}?`)) return;
+    if (accountStatus === 'ditolak') {
+      const accepted = await confirm({
+        title: 'Tolak verifikasi akun?',
+        message: `Verifikasi akun ${p.full_name || 'peserta ini'} akan ditolak.`,
+        confirmLabel: 'Tolak',
+      });
+      if (!accepted) return;
+    }
     setBusyId(p.id);
     try {
       const { error } = await supabase

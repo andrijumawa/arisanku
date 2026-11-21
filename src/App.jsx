@@ -67,32 +67,26 @@ function loadInitialRoute(pathname, hasSession, isAdmin) {
                   : /^\/admin\/kelompok\/[^/]+$/.test(pathname)
                     ? loadAdminGroup
                     : loadMenu;
-  const menuRouteLoaders = [
-    loadLayout,
-    loadMenu,
-    loadHome,
-    loadBrowse,
-    loadChat,
-    loadAccount,
-    loadRoulette,
-    ...(isAdmin ? [loadAdminHome] : []),
-  ];
-  return Promise.all([...new Set([...menuRouteLoaders, pageLoader])].map((loader) => loader()));
+  return Promise.all([...new Set([loadLayout, pageLoader])].map((loader) => loader()));
 }
 
-function preloadMenuData(uid, isAdmin) {
+function preloadMenuData(uid, isAdmin, pathname) {
   const warm = (loader, deps, description) => prefetchAsync(loader, deps).catch((error) => {
     console.error(`Gagal menyiapkan data ${description}:`, error);
     return undefined;
   });
-  const tasks = [
-    warm(loadHomeData, [uid], 'Beranda'),
-    warm(loadBrowseData, [uid], 'Arisan'),
-    warm(loadChatData, [uid], 'Chat'),
-  ];
-  if (isAdmin) tasks.push(warm(loadAdminCounts, [], 'Admin'));
-  tasks.push(
-    warm(loadRouletteGroups, [isAdmin, uid], 'Kocokan').then(async (groups) => {
+
+  if (pathname === '/beranda') return Promise.all([warm(loadHomeData, [uid], 'Beranda')]);
+  if (pathname === '/arisan') return Promise.all([warm(loadBrowseData, [uid], 'Arisan')]);
+  if (pathname === '/chat') return Promise.all([warm(loadChatData, [uid], 'Chat')]);
+  if (pathname === '/akun') return Promise.resolve();
+  if (pathname === '/admin') {
+    return isAdmin
+      ? Promise.all([warm(loadAdminCounts, [], 'Admin')])
+      : Promise.resolve();
+  }
+  if (pathname === '/rolet' || pathname === '/hasil-rolet') {
+    return warm(loadRouletteGroups, [isAdmin, uid], 'Kocokan').then(async (groups) => {
       const groupId = groups?.[0]?.id;
       if (!groupId) return;
       const draws = await warm(loadRouletteDraws, [groupId], 'hasil kocokan');
@@ -104,9 +98,9 @@ function preloadMenuData(uid, isAdmin) {
         warm(loadRouletteSession, [groupId, periodNo], 'sesi kocokan'),
         warm(loadRouletteParticipants, [groupId], 'peserta kocokan'),
       ]);
-    })
-  );
-  return Promise.all(tasks);
+    });
+  }
+  return Promise.resolve();
 }
 
 function StartupSplash({ imageUrl, error, onRetry }) {
@@ -260,9 +254,9 @@ export default function App() {
 
   useEffect(() => {
     if (!configured || !ready || !session || !showSplash) return undefined;
-    void preloadMenuData(session.user.id, isAdmin);
+    void preloadMenuData(session.user.id, isAdmin, pathname);
     return undefined;
-  }, [isAdmin, ready, session, showSplash]);
+  }, [isAdmin, pathname, ready, session, showSplash]);
 
   useEffect(() => {
     if (!configured || !showSplash) return undefined;
