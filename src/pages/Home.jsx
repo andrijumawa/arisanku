@@ -253,9 +253,9 @@ export default function Home() {
           <b>{menungguDaftar}</b>
           <span>Menunggu persetujuan</span>
         </div>
-        <div className="stat">
+        <div className="stat is-pending">
           <b>{menungguBayar}</b>
-          <span>Bayar diverifikasi</span>
+          <span>Menunggu verifikasi</span>
         </div>
       </div>
 
