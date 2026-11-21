@@ -337,11 +337,55 @@ export default function Roulette() {
     ? session.draft_order?.[0]?.user_id
     : null;
   const displayedAdminRoster = useMemo(() => {
-    if (!selectedWinnerUserId) return adminRoster;
-    return [...adminRoster].sort((a, b) => (
-      Number(b.user_id === selectedWinnerUserId) - Number(a.user_id === selectedWinnerUserId)
-    ));
-  }, [adminRoster, selectedWinnerUserId]);
+    const savedWinners = savedDraws
+      .flatMap((draw) => (draw.participants || []).map((participant, index) => ({
+        ...participant,
+        positionNo: Number(draw.position_no || draw.period_no) + index,
+      })))
+      .filter((participant) => participant.user_id)
+      .sort((a, b) => a.positionNo - b.positionNo);
+    const winnerKeys = new Set(savedWinners.map((winner) => (
+      winner.slot_no == null ? `${winner.user_id}:*` : `${winner.user_id}:${Number(winner.slot_no)}`
+    )));
+    const currentWinner = selectedWinnerUserId
+      ? session.draft_order[0]
+      : null;
+    const currentWinnerKey = currentWinner
+      ? currentWinner.slot_no == null
+        ? `${currentWinner.user_id}:*`
+        : `${currentWinner.user_id}:${Number(currentWinner.slot_no)}`
+      : null;
+    const remainingRows = adminRoster.flatMap((participant) => {
+      const slots = participant.slots.filter((slot) => (
+        !winnerKeys.has(`${slot.user_id}:*`)
+        && !winnerKeys.has(`${slot.user_id}:${Number(slot.slot_no)}`)
+        && !(currentWinner?.user_id === slot.user_id && (
+          currentWinner.slot_no == null || Number(currentWinner.slot_no) === Number(slot.slot_no)
+        ))
+      ));
+      return slots.length ? [{ ...participant, slots, key: `remaining:${participant.user_id}` }] : [];
+    });
+
+    return [
+      ...savedWinners.map((winner) => ({
+        user_id: winner.user_id,
+        full_name: winner.full_name,
+        slots: [winner],
+        positionNo: winner.positionNo,
+        winner: true,
+        key: `winner:${winner.positionNo}:${winner.user_id}:${winner.slot_no ?? 'all'}`,
+      })),
+      ...(currentWinner && !winnerKeys.has(currentWinnerKey) ? [{
+        user_id: currentWinner.user_id,
+        full_name: currentWinner.full_name,
+        slots: [currentWinner],
+        positionNo: nextPositionNo,
+        currentWinner: true,
+        key: `current:${currentWinner.user_id}:${currentWinner.slot_no ?? 'all'}`,
+      }] : []),
+      ...remainingRows,
+    ];
+  }, [adminRoster, savedDraws, selectedWinnerUserId, session?.draft_order, nextPositionNo]);
   const remainingParticipants = activeParticipants.filter((participant) => (
     !previousWinnerIds.has(participant.user_id)
     && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
@@ -817,22 +861,24 @@ export default function Roulette() {
                     <div className="roulette-participant-roster-list">
                       {displayedAdminRoster.length ? displayedAdminRoster.map((participant, index) => {
                         const isRegistered = registeredUserIds.has(participant.user_id);
-                        const isSelectedWinner = participant.user_id === selectedWinnerUserId;
+                        const isCurrentWinner = participant.currentWinner;
                         const isBusy = adminAttendanceBusyUser === participant.user_id;
                         return (
                           <div
-                            className={`roulette-roster-person${isRegistered ? ' is-present' : ''}${isSelectedWinner ? ' is-selected' : ''}`}
-                            key={participant.user_id}
-                            aria-current={isSelectedWinner ? 'true' : undefined}
+                            className={`roulette-roster-person${isRegistered ? ' is-present' : ''}${participant.winner || isCurrentWinner ? ' is-selected' : ''}`}
+                            key={participant.key || participant.user_id}
+                            aria-current={isCurrentWinner ? 'true' : undefined}
                           >
-                            <span className="roulette-roster-number" aria-hidden="true">{index + 1}</span>
+                            <span className="roulette-roster-number" aria-hidden="true">{participant.positionNo || index + 1}</span>
                             <span className="roulette-roster-person-copy">
                               <strong>{participant.full_name}</strong>
-                              {participant.slots.length > 1 && (
+                              {!participant.winner && !isCurrentWinner && participant.slots.length > 1 && (
                                 <small>{participant.slots.length} slot</small>
                               )}
                             </span>
-                            {isSelectedWinner ? (
+                            {participant.winner ? (
+                              <span className="roulette-roster-status is-selected">Posisi {participant.positionNo}</span>
+                            ) : isCurrentWinner ? (
                               <span className="roulette-roster-status is-selected">Terpilih</span>
                             ) : isRegistered ? (
                               <span className="roulette-roster-status">Hadir</span>
