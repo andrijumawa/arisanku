@@ -2798,6 +2798,18 @@ input[type='checkbox'] {
   height: 64px;
   object-fit: cover;
 }
+.admin-payment-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+.admin-payment-proof {
+  display: block;
+  border: 0;
+  padding: 0;
+}
 .img-ph {
   background: #eef2fa;
   color: var(--muted);

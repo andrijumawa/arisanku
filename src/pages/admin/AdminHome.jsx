@@ -263,10 +263,12 @@ function Payments({ revision }) {
               </div>
               <b>{rupiah(p.amount)}</b>
             </div>
-            <div className="small" style={{ margin: '10px 0' }}>
-              {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
+            <div className="admin-payment-summary">
+              <div className="small">
+                {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
+              </div>
+              <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb sm admin-payment-proof" />
             </div>
-            <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb" />
             <div className="actions admin-review-actions">
               <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => review(p, 'disetujui')}>
                 Setujui
