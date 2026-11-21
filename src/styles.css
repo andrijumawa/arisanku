@@ -321,11 +321,26 @@ code {
     transform: rotate(315deg);
   }
 }
+.header-brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 5px;
+}
 .brand-logo {
   display: block;
-  width: 76px;
-  height: 48px;
+  width: 48px;
+  height: 44px;
+  flex: 0 0 auto;
   object-fit: contain;
+}
+.brand-wordmark {
+  display: block;
+  width: clamp(88px, 12vw, 132px);
+  height: 38px;
+  flex: 0 1 auto;
+  object-fit: contain;
+  filter: brightness(0) invert(1);
 }
 .header-account {
   display: flex;
@@ -335,7 +350,7 @@ code {
   margin-left: auto;
 }
 .header-account-name {
-  max-width: min(45vw, 220px);
+  max-width: min(28vw, 220px);
   overflow: hidden;
   color: #fff;
   font-size: 14px;
@@ -353,6 +368,23 @@ code {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
+}
+@media (max-width: 380px) {
+  .brand-logo {
+    width: 40px;
+  }
+  .brand-wordmark {
+    width: 76px;
+  }
+  .header-brand {
+    gap: 3px;
+  }
+  .header-account {
+    gap: 6px;
+  }
+  .header-account-name {
+    max-width: 20vw;
+  }
 }
 .main {
   position: relative;
@@ -4661,28 +4693,18 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   transform: translate(-50%, -50%);
   border: 3px solid #fff3e7;
   border-radius: 50%;
   background: #171936;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
-.roulette-wheel-center strong {
-  color: #ffd76b;
-  font-size: clamp(6px, 2vw, 9px);
-  font-weight: 800;
-  line-height: 1;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-}
-.roulette-wheel-center span {
-  color: #d0d2e2;
-  font-size: clamp(4px, 1.2vw, 6px);
-  letter-spacing: 0.08em;
-  line-height: 1;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+.roulette-wheel-center img {
+  display: block;
+  width: 82%;
+  height: 82%;
+  border-radius: 50%;
+  object-fit: contain;
 }
 .roulette-center-start {
   position: absolute;
@@ -4777,12 +4799,6 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
 }
 .roulette-wheel-machine.is-inactive .roulette-wheel-center {
   background: #687386;
-}
-.roulette-wheel-machine.is-inactive .roulette-wheel-center strong {
-  color: #fff;
-}
-.roulette-wheel-machine.is-inactive .roulette-wheel-center span {
-  color: #e2e7ee;
 }
 .roulette-wheel-machine.is-inactive .roulette-pointer {
   border-top-color: #9aa5b4;
