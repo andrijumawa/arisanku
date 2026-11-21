@@ -76,18 +76,18 @@ function participantSlotLabel(participant) {
 const RouletteWheelGraphic = memo(function RouletteWheelGraphic({
   participantNames,
   wheelAngle,
+  wheelTargetAngle,
   spinning,
   wheelTransitionDuration,
 }) {
   return (
     <div
-      className="roulette-wheel"
+      className={`roulette-wheel${spinning ? ' is-spinning' : ''}`}
       role="img"
       style={{
         '--wheel-angle': `${wheelAngle}deg`,
-        '--wheel-transition': spinning && wheelAngle > 0 && wheelTransitionDuration > 0
-          ? `transform ${wheelTransitionDuration}ms cubic-bezier(0.08, 0.82, 0.16, 1)`
-          : 'none'
+        '--wheel-target-angle': `${wheelTargetAngle}deg`,
+        '--wheel-duration': `${wheelTransitionDuration}ms`
       }}
       aria-label="Mesin kocokan peserta"
     >
@@ -147,8 +147,6 @@ export default function Roulette() {
   const [groupId, setGroupId] = useState('');
   const [busy, setBusy] = useState(false);
   const [adminAttendanceBusyUser, setAdminAttendanceBusyUser] = useState('');
-  const [wheelAngle, setWheelAngle] = useState(0);
-  const [wheelTransitionDuration, setWheelTransitionDuration] = useState(0);
   const [fallbackFullscreen, setFallbackFullscreen] = useState(false);
   const [countdownEndsAt, setCountdownEndsAt] = useState(null);
   const [countdownNow, setCountdownNow] = useState(Date.now());
@@ -376,36 +374,21 @@ export default function Roulette() {
     && remainingParticipants.length === 1;
 
   const spinDuration = getSpinDuration(periodNo, activeParticipants.length || periodNo);
-
-  useEffect(() => {
-    if (session?.status !== 'spinning' || !participantNames.length) return undefined;
+  const wheelTargetAngle = session?.draft_order?.[0]
+    ? getWheelTargetAngle(
+      wheelParticipants,
+      session.draft_order[0],
+      session.attempt_count,
+      session.id
+    )
+    : 0;
+  const wheelTransitionDuration = useMemo(() => {
+    if (session?.status !== 'spinning') return 0;
     const elapsed = session.spin_started_at
       ? Math.max(0, Date.now() - new Date(session.spin_started_at).getTime())
       : 0;
-    const remaining = Math.max(0, spinDuration - elapsed);
-    const targetAngle = getWheelTargetAngle(
-      wheelParticipants,
-      session.draft_order?.[0],
-      session.attempt_count,
-      session.id
-    );
-    setWheelAngle(0);
-    setWheelTransitionDuration(remaining);
-    if (remaining === 0) {
-      setWheelAngle(targetAngle);
-    } else {
-      const frame = requestAnimationFrame(() => setWheelAngle(targetAngle));
-      return () => cancelAnimationFrame(frame);
-    }
-    return undefined;
-  }, [
-    wheelParticipants,
-    session?.attempt_count,
-    session?.id,
-    session?.spin_started_at,
-    session?.status,
-    spinDuration
-  ]);
+    return Math.max(0, spinDuration - elapsed);
+  }, [session?.spin_started_at, session?.status, spinDuration]);
 
   useEffect(() => {
     if (!isAdmin || session?.status !== 'spinning') return undefined;
@@ -717,7 +700,8 @@ export default function Roulette() {
                 <div className="roulette-pointer" aria-hidden="true"><span /></div>
                 <RouletteWheelGraphic
                   participantNames={participantNames}
-                  wheelAngle={wheelAngle}
+                  wheelAngle={wheelTargetAngle}
+                  wheelTargetAngle={wheelTargetAngle}
                   spinning={spinning}
                   wheelTransitionDuration={wheelTransitionDuration}
                 />

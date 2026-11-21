@@ -4868,7 +4868,18 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
     0 0 0 15px rgba(78, 71, 136, 0.8),
     0 20px 34px rgba(31, 39, 78, 0.3);
   transform: rotate(var(--wheel-angle));
-  transition: var(--wheel-transition, none);
+}
+.roulette-wheel.is-spinning {
+  animation: roulette-wheel-spin var(--wheel-duration) cubic-bezier(0.08, 0.82, 0.16, 1) both;
+  will-change: transform;
+}
+@keyframes roulette-wheel-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(var(--wheel-target-angle));
+  }
 }
 .roulette-wheel-labels {
   position: absolute;
@@ -5013,6 +5024,8 @@ body.keyboard-open .roulette-wheel-machine.is-fullscreen .roulette-wheel-wrap {
 }
 .roulette-wheel-machine.is-spinning .roulette-wheel {
   box-shadow:
+    0 0 0 8px #f4f0ff,
+    0 0 0 15px rgba(78, 71, 136, 0.8),
     0 18px 42px rgba(58, 82, 145, 0.28),
     inset 0 0 0 3px rgba(95, 128, 224, 0.32),
     inset 0 0 30px rgba(95, 128, 224, 0.14);
