@@ -110,7 +110,7 @@ const RouletteWheelGraphic = memo(function RouletteWheelGraphic({
           const radius = onLeftSide ? 46 : 10;
           const left = 50 + radius * Math.cos(radians);
           const top = 50 + radius * Math.sin(radians);
-          const labelAngle = angle + (onLeftSide ? 180 : 0) + wheelAngle;
+          const labelAngle = angle + (onLeftSide ? 180 : 0);
           return (
             <span
               key={`${name}-${index}`}
