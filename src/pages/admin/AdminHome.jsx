@@ -6,7 +6,7 @@ import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
 import { loadAdminCounts } from '../../lib/menuData';
 import { fmtDate, rupiah, typeLabel } from '../../lib/format';
 import { Empty, ErrorBox, Spinner } from '../../components/Ui.jsx';
-import SignedImage from '../../components/SignedImage.jsx';
+import SignedImage, { signedUrls } from '../../components/SignedImage.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
 import Modal from '../../components/Modal.jsx';
@@ -329,6 +329,7 @@ function People({ revision }) {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [page, setPage] = useState(0);
   const [busyId, setBusyId] = useState(null);
+  const [avatarBatch, setAvatarBatch] = useState({ urls: new Map(), failed: false });
   const { data: result, loading, error, reload } = useAsync(async () => {
     const rows = await q(supabase.rpc('admin_people_page', {
       p_search: debouncedSearch,
@@ -340,6 +341,31 @@ function People({ revision }) {
       total: Number(rows[0]?.total_count) || 0,
     };
   }, [revision, debouncedSearch, page]);
+
+  useEffect(() => {
+    let active = true;
+    const paths = [...new Set((result?.items || []).map((person) => person.avatar_path).filter(Boolean))];
+    setAvatarBatch({ urls: new Map(), failed: false });
+    if (!paths.length) return () => { active = false; };
+
+    signedUrls('profile-avatars', paths)
+      .then(({ urls, errors }) => {
+        if (!active) return;
+        if (errors.length) {
+          errors.forEach(({ path, message }) => {
+            console.error(`Gagal membuat URL foto profil (${path}): ${message}`);
+          });
+        }
+        setAvatarBatch({ urls, failed: false });
+      })
+      .catch((avatarError) => {
+        if (!active) return;
+        console.error('Gagal memuat URL foto profil peserta admin:', avatarError);
+        setAvatarBatch({ urls: new Map(), failed: true });
+      });
+
+    return () => { active = false; };
+  }, [result?.items]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -414,7 +440,11 @@ function People({ revision }) {
         <div key={p.id} className="card admin-person-card">
           <div className="admin-person-row">
             {p.avatar_path
-              ? <SignedImage bucket="profile-avatars" path={p.avatar_path} alt={`Foto ${p.full_name}`} className="avatar admin-person-photo" />
+              ? avatarBatch.urls.has(p.avatar_path)
+                ? <SignedImage bucket="profile-avatars" path={p.avatar_path} alt={`Foto ${p.full_name}`} className="avatar admin-person-photo" signedUrlOverride={avatarBatch.urls.get(p.avatar_path)} />
+                : avatarBatch.failed
+                  ? <SignedImage bucket="profile-avatars" path={p.avatar_path} alt={`Foto ${p.full_name}`} className="avatar admin-person-photo" />
+                  : <div className="avatar">{initial(p.full_name)}</div>
               : <div className="avatar">{initial(p.full_name)}</div>}
             <div className="admin-person-info">
               <div className="admin-person-name-line">

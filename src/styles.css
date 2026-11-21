@@ -4490,22 +4490,18 @@ input[type='checkbox'] {
   font-size: clamp(16px, 3vmin, 22px);
 }
 .roulette-fullscreen-panels {
-  display: flex;
+  display: grid;
   width: min(760px, 100%);
   min-height: 0;
   flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 8px;
   text-align: left;
 }
-.roulette-fullscreen-panels.is-admin {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
 .roulette-fullscreen-chat {
   display: none;
-  width: 100%;
+  min-width: 0;
   min-height: 0;
-  flex: 1 1 auto;
   grid-template-rows: auto minmax(0, 1fr) auto;
   overflow: hidden;
   border: 1px solid rgba(95, 128, 224, 0.18);
@@ -4515,9 +4511,6 @@ input[type='checkbox'] {
 }
 .roulette-fullscreen-panels .roulette-fullscreen-chat {
   display: grid;
-}
-.roulette-fullscreen-panels.is-admin .roulette-fullscreen-chat {
-  min-width: 0;
 }
 .roulette-participant-roster {
   display: grid;
@@ -4569,9 +4562,23 @@ input[type='checkbox'] {
   background: rgba(95, 128, 224, 0.12);
   color: #4262bd;
 }
+.roulette-roster-number {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  border-radius: 7px;
+  background: rgba(95, 128, 224, 0.1);
+  color: #526ba9;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
 .roulette-roster-person-copy {
   display: grid;
   min-width: 0;
+  flex: 1 1 auto;
   gap: 2px;
 }
 .roulette-roster-person-copy strong {
@@ -4589,6 +4596,10 @@ input[type='checkbox'] {
   color: #4262bd;
   font-size: 10px;
   font-weight: 750;
+}
+.roulette-roster-status.is-pending {
+  color: var(--muted);
+  font-weight: 600;
 }
 .roulette-roster-add {
   min-height: 28px;

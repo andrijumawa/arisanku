@@ -732,57 +732,58 @@ export default function Roulette() {
                 </span>
               )}
               {fallbackFullscreen && (
-                <div className={`roulette-fullscreen-panels${isAdmin ? ' is-admin' : ''}`}>
+                <div className="roulette-fullscreen-panels">
                   <RouletteChat groupId={groupId} />
-                  {isAdmin && (
-                    <section className="roulette-participant-roster" aria-label="Daftar peserta rolet">
-                      <div className="roulette-participant-roster-heading">
-                        <strong>Peserta</strong>
-                        <span>{registeredUserIds.size} hadir · {adminRoster.length} peserta lunas</span>
-                      </div>
-                      <div className="roulette-participant-roster-list">
-                        {adminRoster.length ? adminRoster.map((participant) => {
-                          const isRegistered = registeredUserIds.has(participant.user_id);
-                          const isBusy = adminAttendanceBusyUser === participant.user_id;
-                          return (
-                            <div
-                              className={`roulette-roster-person${isRegistered ? ' is-present' : ''}`}
-                              key={participant.user_id}
-                            >
-                              <span className="roulette-roster-person-copy">
-                                <strong>{participant.full_name}</strong>
-                                {participant.slots.length > 1 && (
-                                  <small>{participant.slots.length} slot</small>
-                                )}
-                              </span>
-                              {isRegistered ? (
-                                <span className="roulette-roster-status">Hadir</span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="roulette-roster-add"
-                                  onClick={() => registerParticipantAttendance(participant.user_id)}
-                                  disabled={
-                                    Boolean(adminAttendanceBusyUser)
-                                    || !periodActivated
-                                    || countdown !== null
-                                    || spinning
-                                    || saved
-                                    || rouletteComplete
-                                    || session?.status === 'active'
-                                  }
-                                >
-                                  {isBusy ? '...' : 'Tambah'}
-                                </button>
+                  <section className="roulette-participant-roster" aria-label="Daftar peserta rolet">
+                    <div className="roulette-participant-roster-heading">
+                      <strong>Peserta</strong>
+                      <span>{registeredUserIds.size} hadir dari {activeParticipants.length} slot</span>
+                    </div>
+                    <div className="roulette-participant-roster-list">
+                      {adminRoster.length ? adminRoster.map((participant, index) => {
+                        const isRegistered = registeredUserIds.has(participant.user_id);
+                        const isBusy = adminAttendanceBusyUser === participant.user_id;
+                        return (
+                          <div
+                            className={`roulette-roster-person${isRegistered ? ' is-present' : ''}`}
+                            key={participant.user_id}
+                          >
+                            <span className="roulette-roster-number" aria-hidden="true">{index + 1}</span>
+                            <span className="roulette-roster-person-copy">
+                              <strong>{participant.full_name}</strong>
+                              {participant.slots.length > 1 && (
+                                <small>{participant.slots.length} slot</small>
                               )}
-                            </div>
-                          );
-                        }) : (
-                          <p className="roulette-participant-roster-empty">Belum ada peserta yang dapat ikut kocokan.</p>
-                        )}
-                      </div>
-                    </section>
-                  )}
+                            </span>
+                            {isRegistered ? (
+                              <span className="roulette-roster-status">Hadir</span>
+                            ) : isAdmin ? (
+                              <button
+                                type="button"
+                                className="roulette-roster-add"
+                                onClick={() => registerParticipantAttendance(participant.user_id)}
+                                disabled={
+                                  Boolean(adminAttendanceBusyUser)
+                                  || !periodActivated
+                                  || countdown !== null
+                                  || spinning
+                                  || saved
+                                  || rouletteComplete
+                                  || session?.status === 'active'
+                                }
+                              >
+                                {isBusy ? '...' : 'Tambah'}
+                              </button>
+                            ) : (
+                              <span className="roulette-roster-status is-pending">Belum hadir</span>
+                            )}
+                          </div>
+                        );
+                      }) : (
+                        <p className="roulette-participant-roster-empty">Belum ada peserta yang dapat ikut kocokan.</p>
+                      )}
+                    </div>
+                  </section>
                 </div>
               )}
             </div>
