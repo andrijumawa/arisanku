@@ -7,6 +7,18 @@ import { ToastProvider } from './components/Toast.jsx';
 import { ConfirmProvider } from './components/Confirm.jsx';
 import './styles.css';
 
+const disableBrowserTextActions = (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest('input, textarea, [contenteditable="true"]')) return;
+  event.preventDefault();
+};
+
+document.addEventListener('contextmenu', disableBrowserTextActions);
+document.addEventListener('selectstart', (event) => {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target?.closest('input, textarea, [contenteditable="true"]')) event.preventDefault();
+});
+
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <HashRouter>
