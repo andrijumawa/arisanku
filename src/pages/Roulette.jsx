@@ -306,6 +306,10 @@ export default function Roulette() {
     () => new Set([...attendanceUserIds].filter((userId) => eligibleUserIds.has(userId))),
     [attendanceUserIds, eligibleUserIds]
   );
+  const remainingParticipants = activeParticipants.filter((participant) => (
+    !previousWinnerIds.has(participant.user_id)
+    && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
+  ));
   const adminRoster = useMemo(() => {
     const participantsByUser = new Map();
     activeParticipants.forEach((participant) => {
@@ -336,6 +340,12 @@ export default function Roulette() {
   const selectedWinnerUserId = session?.status === 'active'
     ? session.draft_order?.[0]?.user_id
     : null;
+  const autoFinalSlot = savedDraws.length > 0
+    && remainingParticipants.length === 1
+    && session?.status !== 'spinning'
+    && !selectedWinnerUserId
+    ? remainingParticipants[0]
+    : null;
   const displayedAdminRoster = useMemo(() => {
     const savedWinners = savedDraws
       .flatMap((draw) => (draw.participants || []).map((participant, index) => ({
@@ -359,6 +369,9 @@ export default function Roulette() {
       const slots = participant.slots.filter((slot) => (
         !winnerKeys.has(`${slot.user_id}:*`)
         && !winnerKeys.has(`${slot.user_id}:${Number(slot.slot_no)}`)
+        && !(autoFinalSlot
+          && autoFinalSlot.user_id === slot.user_id
+          && Number(autoFinalSlot.slot_no) === Number(slot.slot_no))
         && !(currentWinner?.user_id === slot.user_id && (
           currentWinner.slot_no == null || Number(currentWinner.slot_no) === Number(slot.slot_no)
         ))
@@ -383,13 +396,27 @@ export default function Roulette() {
         currentWinner: true,
         key: `current:${currentWinner.user_id}:${currentWinner.slot_no ?? 'all'}`,
       }] : []),
+      ...(autoFinalSlot ? [{
+        user_id: autoFinalSlot.user_id,
+        full_name: autoFinalSlot.full_name,
+        slots: [autoFinalSlot],
+        positionNo: nextPositionNo,
+        winner: true,
+        automatic: true,
+        key: `automatic:${autoFinalSlot.user_id}:${autoFinalSlot.slot_no}`,
+      }] : []),
       ...remainingRows,
     ];
-  }, [adminRoster, savedDraws, selectedWinnerUserId, session?.draft_order, nextPositionNo]);
-  const remainingParticipants = activeParticipants.filter((participant) => (
-    !previousWinnerIds.has(participant.user_id)
-    && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
-  ));
+  }, [
+    adminRoster,
+    savedDraws,
+    selectedWinnerUserId,
+    session?.draft_order,
+    session?.status,
+    autoFinalSlot,
+    remainingParticipants,
+    nextPositionNo,
+  ]);
   const orderedParticipants = useMemo(
     () => periodActivated
       ? remainingParticipants.filter((participant) => registeredUserIds.has(participant.user_id))
@@ -442,7 +469,7 @@ export default function Roulette() {
   const rouletteComplete = !drawsState.loading
     && !participantsState.loading
     && savedDraws.length > 0
-    && remainingParticipants.length === 0;
+    && (remainingParticipants.length === 0 || autoFinalSlot !== null);
 
   const totalRankingSlots = activeParticipants.length + savedDraws.reduce(
     (total, draw) => total + (draw.participants || []).length,

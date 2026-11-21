@@ -441,6 +441,7 @@ returns uuid language plpgsql security definer set search_path = public as $$
 declare
   s public.roulette_sessions;
   selected_participant jsonb;
+  last_participant jsonb;
   draw_id uuid;
   next_position integer;
   remaining_count integer;
@@ -481,6 +482,32 @@ begin
 
   select count(*) into remaining_count
   from public.roulette_remaining_slots(s.group_id);
+
+  if remaining_count = 1 then
+    select jsonb_build_object(
+      'user_id', remaining.user_id,
+      'full_name', remaining.full_name,
+      'slot_no', remaining.slot_no,
+      'slot_count', remaining.slot_count
+    )
+    into last_participant
+    from public.roulette_remaining_slots(s.group_id) remaining
+    limit 1;
+
+    insert into public.roulette_draws (
+      group_id, period_no, session_id, attempt_no, position_no, participants, created_by
+    )
+    values (
+      s.group_id,
+      s.period_no,
+      s.id,
+      s.attempt_count,
+      next_position + 1,
+      jsonb_build_array(last_participant),
+      auth.uid()
+    );
+    remaining_count := 0;
+  end if;
 
   update public.roulette_sessions
   set status = case when remaining_count = 0 then 'saved' else 'active' end,
