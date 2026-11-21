@@ -162,7 +162,7 @@ export default function Register() {
       <p className="auth-form-footer">
         Sudah punya akun? <Link to="/masuk">Masuk</Link>
       </p>
-      <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="ArisanKu" />
+      <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="ArisanKu" />
     </form>
   );
 }

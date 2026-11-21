@@ -619,7 +619,7 @@ export default function Roulette() {
                     })}
                   </div>
                   <div className="roulette-wheel-center" aria-hidden="true">
-                    <img src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="" />
+                    <img src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="" />
                   </div>
                 </div>
                 {canStart && (

@@ -92,7 +92,7 @@ export default function Login() {
       <p className="auth-form-footer">
         Belum punya akun? <Link to="/daftar">Daftar</Link>
       </p>
-      <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}arisanku-logo.png`} alt="ArisanKu" />
+      <img className="auth-form-brand" src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="ArisanKu" />
       <AuthSocialIcons mode="login" />
     </form>
   );
