@@ -100,9 +100,10 @@ export async function loadRouletteAttendance(groupId, periodNo) {
   return q(
     supabase
       .from('roulette_attendance')
-      .select('user_id')
+      .select('user_id,created_at')
       .eq('group_id', groupId)
       .eq('period_no', periodNo)
+      .order('created_at', { ascending: true })
   );
 }
 

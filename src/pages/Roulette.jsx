@@ -44,6 +44,28 @@ function wheelSectorPath(index, count) {
   return `M 50 50 L ${start.x} ${start.y} A 50 50 0 ${largeArc} 1 ${end.x} ${end.y} Z`;
 }
 
+function getWheelTargetAngle(participants, winner, attemptCount, spinKey) {
+  const count = participants.length;
+  if (!count) return 0;
+
+  const winnerIndex = participants.findIndex((participant) => (
+    participant.user_id === winner?.user_id
+    && (winner?.slot_no == null || Number(participant.slot_no) === Number(winner.slot_no))
+  ));
+  const sliceAngle = 360 / count;
+  const spinSeed = `${spinKey || ''}:${winner?.user_id || ''}:${winner?.slot_no || ''}:${attemptCount}`;
+  let hash = 2166136261;
+  for (let index = 0; index < spinSeed.length; index += 1) {
+    hash ^= spinSeed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  const randomPosition = 0.18 + ((hash >>> 0) / 0xffffffff) * 0.64;
+  const stopPosition = (winnerIndex < 0 ? 0 : winnerIndex) + randomPosition;
+  const stopOffset = (360 - ((stopPosition * sliceAngle) % 360)) % 360;
+  const rotations = 5 + ((Math.max(1, attemptCount) - 1) % 4);
+  return rotations * 360 + stopOffset;
+}
+
 function participantSlotLabel(participant) {
   const name = participant?.full_name || 'Peserta';
   return Number(participant?.slot_count) > 1
@@ -64,7 +86,7 @@ const RouletteWheelGraphic = memo(function RouletteWheelGraphic({
       style={{
         '--wheel-angle': `${wheelAngle}deg`,
         '--wheel-transition': spinning && wheelAngle > 0 && wheelTransitionDuration > 0
-          ? `transform ${wheelTransitionDuration}ms cubic-bezier(0.12, 0.78, 0.12, 1)`
+          ? `transform ${wheelTransitionDuration}ms cubic-bezier(0.08, 0.82, 0.16, 1)`
           : 'none'
       }}
       aria-label="Mesin kocokan peserta"
@@ -279,8 +301,22 @@ export default function Roulette() {
       entry.slots.push(participant);
       participantsByUser.set(participant.user_id, entry);
     });
-    return [...participantsByUser.values()].sort((a, b) => a.full_name.localeCompare(b.full_name, 'id'));
-  }, [activeParticipants]);
+    const rosterOrder = new Map([...participantsByUser.keys()].map((userId, index) => [userId, index]));
+    const attendanceTimes = new Map(
+      (attendanceState.data || []).map((attendance) => [
+        attendance.user_id,
+        new Date(attendance.created_at).getTime(),
+      ])
+    );
+    return [...participantsByUser.values()].sort((a, b) => {
+      const aRegisteredAt = attendanceTimes.get(a.user_id);
+      const bRegisteredAt = attendanceTimes.get(b.user_id);
+      if (aRegisteredAt !== undefined && bRegisteredAt !== undefined) return aRegisteredAt - bRegisteredAt;
+      if (aRegisteredAt !== undefined) return -1;
+      if (bRegisteredAt !== undefined) return 1;
+      return rosterOrder.get(a.user_id) - rosterOrder.get(b.user_id);
+    });
+  }, [activeParticipants, attendanceState.data]);
   const remainingParticipants = activeParticipants.filter((participant) => (
     !previousWinnerIds.has(participant.user_id)
     && !previousWinnerSlots.has(`${participant.user_id}:${participant.slot_no}`)
@@ -347,8 +383,12 @@ export default function Roulette() {
       ? Math.max(0, Date.now() - new Date(session.spin_started_at).getTime())
       : 0;
     const remaining = Math.max(0, spinDuration - elapsed);
-    const selectedAngle = 0;
-    const targetAngle = 360 * 6 + selectedAngle;
+    const targetAngle = getWheelTargetAngle(
+      wheelParticipants,
+      session.draft_order?.[0],
+      session.attempt_count,
+      session.id
+    );
     setWheelAngle(0);
     setWheelTransitionDuration(remaining);
     if (remaining === 0) {
@@ -359,7 +399,7 @@ export default function Roulette() {
     }
     return undefined;
   }, [
-    participantNames.length,
+    wheelParticipants,
     session?.attempt_count,
     session?.id,
     session?.spin_started_at,
