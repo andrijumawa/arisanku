@@ -1,6 +1,45 @@
 -- Setiap slot keanggotaan menjadi satu entri peluang di rolet.
 -- Jalankan migration ini pada database aktif setelah deploy kode aplikasi terbaru.
 
+create table if not exists public.roulette_draw_winners (
+  draw_id  uuid primary key references public.roulette_draws(id) on delete cascade,
+  group_id uuid not null references public.groups(id) on delete cascade,
+  user_id  uuid not null references public.profiles(id) on delete cascade,
+  slot_no  integer
+);
+insert into public.roulette_draw_winners (draw_id, group_id, user_id, slot_no)
+select d.id,
+  d.group_id,
+  (winner.value->>'user_id')::uuid,
+  nullif(winner.value->>'slot_no', '')::integer
+from public.roulette_draws d
+cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
+where winner.ord = 1
+  and winner.value ? 'user_id'
+on conflict (draw_id) do nothing;
+alter table public.roulette_draw_winners enable row level security;
+revoke all on public.roulette_draw_winners from public, anon, authenticated;
+create index if not exists roulette_draw_winners_group_user_slot_idx
+  on public.roulette_draw_winners (group_id, user_id, slot_no);
+create or replace function public.sync_roulette_draw_winner()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.roulette_draw_winners (draw_id, group_id, user_id, slot_no)
+  select new.id,
+    new.group_id,
+    (winner.value->>'user_id')::uuid,
+    nullif(winner.value->>'slot_no', '')::integer
+  from jsonb_array_elements(new.participants) with ordinality winner(value, ord)
+  where winner.ord = 1 and winner.value ? 'user_id'
+  on conflict (draw_id) do nothing;
+  return new;
+end $$;
+drop trigger if exists sync_roulette_draw_winner on public.roulette_draws;
+create trigger sync_roulette_draw_winner
+  after insert on public.roulette_draws
+  for each row execute function public.sync_roulette_draw_winner();
+revoke all on function public.sync_roulette_draw_winner() from public, anon, authenticated;
+
 create table if not exists public.roulette_period_controls (
   group_id     uuid not null references public.groups(id) on delete cascade,
   period_no    integer not null check (period_no >= 1),
@@ -66,15 +105,10 @@ as $$
     and m.status = 'aktif'
     and not exists (
       select 1
-      from public.roulette_draws d
-      cross join lateral jsonb_array_elements(d.participants) with ordinality winner(value, ord)
-      where d.group_id = p_group
-        and winner.ord = 1
-        and winner.value->>'user_id' = m.user_id::text
-        and (
-          winner.value->>'slot_no' is null
-          or (winner.value->>'slot_no')::integer = slot.slot_no
-        )
+      from public.roulette_draw_winners winner
+      where winner.group_id = p_group
+        and winner.user_id = m.user_id
+        and (winner.slot_no is null or winner.slot_no = slot.slot_no)
     );
 $$;
 revoke all on function public.roulette_remaining_slots(uuid) from public, anon, authenticated;
@@ -508,9 +542,8 @@ begin
   if not found or s.status <> 'spinning' then
     return null;
   end if;
-  select count(*)::integer into total_rounds
+  select coalesce(sum(m.slot_count), 0)::integer into total_rounds
   from public.memberships m
-  cross join lateral generate_series(1, m.slot_count) as slot(slot_no)
   where m.group_id = s.group_id and m.status = 'aktif';
   elapsed_ms := extract(epoch from (now() - s.spin_started_at)) * 1000;
   if s.period_no <= 3 or coalesce(total_rounds, s.period_no) <= 3 then

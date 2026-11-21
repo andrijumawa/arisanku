@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../lib/auth.jsx';
 import { q, supabase } from '../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
@@ -25,6 +25,7 @@ function getSpinDuration(roundNo, totalRounds) {
 }
 
 const WHEEL_COLORS = ['#ee746e', '#e7b955', '#4fba9a', '#9b78d8', '#d96388', '#7566e8', '#5598d4', '#e58b61'];
+const REALTIME_PROFILE_FILTER_SIZE = 100;
 
 function wheelSectorPath(index, count) {
   const slice = 360 / count;
@@ -50,6 +51,73 @@ function participantSlotLabel(participant) {
     : name;
 }
 
+const RouletteWheelGraphic = memo(function RouletteWheelGraphic({
+  participantNames,
+  wheelAngle,
+  spinning,
+  wheelTransitionDuration,
+}) {
+  return (
+    <div
+      className="roulette-wheel"
+      role="img"
+      style={{
+        '--wheel-angle': `${wheelAngle}deg`,
+        '--wheel-transition': spinning && wheelAngle > 0 && wheelTransitionDuration > 0
+          ? `transform ${wheelTransitionDuration}ms cubic-bezier(0.12, 0.78, 0.12, 1)`
+          : 'none'
+      }}
+      aria-label="Mesin kocokan peserta"
+    >
+      <svg className="roulette-wheel-sectors" viewBox="0 0 100 100" aria-hidden="true">
+        {participantNames.map((name, index) => (
+          <path
+            key={`${name}-${index}`}
+            d={wheelSectorPath(index, participantNames.length)}
+            fill={WHEEL_COLORS[index % WHEEL_COLORS.length]}
+          />
+        ))}
+      </svg>
+      <div className="roulette-wheel-labels">
+        {participantNames.map((name, index) => {
+          const angle = participantNames.length
+            ? -90 + (360 / participantNames.length) * (index + 0.5)
+            : -90;
+          const radians = (angle * Math.PI) / 180;
+          const onLeftSide = Math.cos(radians) < 0;
+          const radius = onLeftSide ? 46 : 10;
+          const left = 50 + radius * Math.cos(radians);
+          const top = 50 + radius * Math.sin(radians);
+          const labelAngle = angle + (onLeftSide ? 180 : 0) + wheelAngle;
+          return (
+            <span
+              key={`${name}-${index}`}
+              className="roulette-wheel-name"
+              style={{
+                left: `${left}%`,
+                top: `${top}%`,
+                '--label-angle': `${labelAngle}deg`,
+                '--label-width': participantNames.length >= 10 ? '36%' : '46%',
+                '--label-font-size': participantNames.length >= 16
+                  ? 'clamp(5px, 1.65vw, 8px)'
+                  : participantNames.length >= 10
+                    ? 'clamp(6px, 1.9vw, 9px)'
+                    : 'clamp(7px, 2.4vw, 11px)'
+              }}
+              title={name}
+            >
+              {name}
+            </span>
+          );
+        })}
+      </div>
+      <div className="roulette-wheel-center" aria-hidden="true">
+        <img src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="" />
+      </div>
+    </div>
+  );
+});
+
 export default function Roulette() {
   const { isAdmin, session: authSession } = useAuth();
   const toast = useToast();
@@ -57,7 +125,6 @@ export default function Roulette() {
   const [groupId, setGroupId] = useState('');
   const [busy, setBusy] = useState(false);
   const [adminAttendanceBusyUser, setAdminAttendanceBusyUser] = useState('');
-  const [spinIndex, setSpinIndex] = useState(0);
   const [wheelAngle, setWheelAngle] = useState(0);
   const [wheelTransitionDuration, setWheelTransitionDuration] = useState(0);
   const [fallbackFullscreen, setFallbackFullscreen] = useState(false);
@@ -172,10 +239,23 @@ export default function Roulette() {
   );
 
   const participantsState = useAsync(loadRouletteParticipants, [groupId]);
+  const participantRealtimeSubscriptions = useMemo(() => {
+    const userIds = [...new Set((participantsState.data || []).map((participant) => participant.user_id).filter(Boolean))];
+    return [
+      { table: 'memberships', filter: `group_id=eq.${groupId}` },
+      ...Array.from({ length: Math.ceil(userIds.length / REALTIME_PROFILE_FILTER_SIZE) }, (_, index) => {
+        const batch = userIds.slice(
+          index * REALTIME_PROFILE_FILTER_SIZE,
+          (index + 1) * REALTIME_PROFILE_FILTER_SIZE
+        );
+        return { table: 'profiles', filter: `id=in.(${batch.join(',')})` };
+      }),
+    ];
+  }, [groupId, participantsState.data]);
   useRealtimeRefresh(
     participantsState.reload,
     `roulette-participants-${groupId || 'none'}`,
-    groupId ? [{ table: 'memberships', filter: `group_id=eq.${groupId}` }, { table: 'profiles' }] : []
+    groupId ? participantRealtimeSubscriptions : []
   );
 
   const activeParticipants = participantsState.loading ? [] : participantsState.data || [];
@@ -251,7 +331,6 @@ export default function Roulette() {
     && remainingParticipants.length === 1;
 
   const spinDuration = getSpinDuration(periodNo, activeParticipants.length || periodNo);
-  const spinIntervalMs = Math.max(65, Math.round(110 * (spinDuration / 7000)));
 
   useEffect(() => {
     if (session?.status !== 'spinning' || !participantNames.length) return undefined;
@@ -278,15 +357,6 @@ export default function Roulette() {
     session?.status,
     spinDuration
   ]);
-
-  useEffect(() => {
-    if (session?.status !== 'spinning' || !participantNames.length) return undefined;
-    setSpinIndex(0);
-    const timer = setInterval(() => {
-      setSpinIndex((index) => (index + 1) % participantNames.length);
-    }, spinIntervalMs);
-    return () => clearInterval(timer);
-  }, [participantNames.length, session?.status, session?.id, session?.attempt_count, spinIntervalMs]);
 
   useEffect(() => {
     if (!isAdmin || session?.status !== 'spinning') return undefined;
@@ -460,7 +530,6 @@ export default function Roulette() {
   const spinning = session?.status === 'spinning';
   const saved = session?.status === 'saved';
   const cancelled = session?.status === 'cancelled';
-  const displayedName = participantNames.length ? participantNames[spinIndex % participantNames.length] : 'Menunggu peserta';
   const countdown = countdownEndsAt ? Math.max(0, Math.ceil((countdownEndsAt - countdownNow) / 1000)) : null;
   const canStart = isAdmin && !rouletteComplete && !spinning
     && periodActivated
@@ -574,67 +643,12 @@ export default function Roulette() {
               </div>
               <div className="roulette-wheel-wrap">
                 <div className="roulette-pointer" aria-hidden="true"><span /></div>
-                <div
-                  className="roulette-wheel"
-                  role="img"
-                  style={{
-                    '--wheel-angle': `${wheelAngle}deg`,
-                    '--wheel-transition': spinning && wheelAngle > 0 && wheelTransitionDuration > 0
-                      ? `transform ${wheelTransitionDuration}ms cubic-bezier(0.12, 0.78, 0.12, 1)`
-                      : 'none'
-                  }}
-                  aria-label="Mesin kocokan peserta"
-                >
-                  <svg
-                    className="roulette-wheel-sectors"
-                    viewBox="0 0 100 100"
-                    aria-hidden="true"
-                  >
-                    {participantNames.map((name, index) => (
-                      <path
-                        key={`${name}-${index}`}
-                        d={wheelSectorPath(index, participantNames.length)}
-                        fill={WHEEL_COLORS[index % WHEEL_COLORS.length]}
-                      />
-                    ))}
-                  </svg>
-                  <div className="roulette-wheel-labels">
-                    {participantNames.map((name, index) => {
-                      const angle = participantNames.length
-                        ? -90 + (360 / participantNames.length) * (index + 0.5)
-                        : -90;
-                      const radians = (angle * Math.PI) / 180;
-                      const onLeftSide = Math.cos(radians) < 0;
-                      const radius = onLeftSide ? 46 : 10;
-                      const left = 50 + radius * Math.cos(radians);
-                      const top = 50 + radius * Math.sin(radians);
-                      const labelAngle = angle + (onLeftSide ? 180 : 0) + wheelAngle;
-                      return (
-                        <span
-                          key={`${name}-${index}`}
-                          className="roulette-wheel-name"
-                          style={{
-                            left: `${left}%`,
-                            top: `${top}%`,
-                            '--label-angle': `${labelAngle}deg`,
-                            '--label-width': participantNames.length >= 10 ? '36%' : '46%',
-                            '--label-font-size': participantNames.length >= 16
-                              ? 'clamp(5px, 1.65vw, 8px)'
-                              : participantNames.length >= 10
-                                ? 'clamp(6px, 1.9vw, 9px)'
-                                : 'clamp(7px, 2.4vw, 11px)'
-                          }}
-                          title={name}
-                        >
-                          {name}
-                        </span>
-                      );
-                    })}
-                  </div>
-                  <div className="roulette-wheel-center" aria-hidden="true">
-                    <img src={`${import.meta.env.BASE_URL}icons/arisanku-mark.png`} alt="" />
-                  </div>
-                </div>
+                <RouletteWheelGraphic
+                  participantNames={participantNames}
+                  wheelAngle={wheelAngle}
+                  spinning={spinning}
+                  wheelTransitionDuration={wheelTransitionDuration}
+                />
                 {canStart && (
                   <button
                     type="button"

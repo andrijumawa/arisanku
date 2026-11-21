@@ -3,56 +3,61 @@ import { q, supabase } from './supabase';
 const prefetchedChatData = new Map();
 
 export async function loadHomeData(uid) {
-  const ms = await q(
-    supabase
-      .from('memberships')
-      .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,max_slots,pay_period,package_type,start_date)')
-      .eq('user_id', uid)
-      .order('created_at', { ascending: false })
-  );
-  const [groups, groupsError] = await q(
-    supabase
-      .from('groups')
-      .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
-      .order('created_at', { ascending: false })
-  ).then((value) => [value, null]).catch((error) => {
-    console.error('Gagal memuat kelompok tersedia di Beranda:', error);
-    return [[], error];
-  });
-  const [availability, availabilityError] = await q(
-    supabase.rpc('group_availability')
-  ).then((value) => [value || [], null]).catch((error) => {
-    console.error('Gagal memuat ketersediaan slot kelompok:', error);
-    return [[], error];
-  });
+  const [ms, [groups, groupsError], [availability, availabilityError]] = await Promise.all([
+    q(
+      supabase
+        .from('memberships')
+        .select('id,status,slot_count,group_id,groups(id,name,type,nominal,durasi,max_slots,pay_period,package_type,start_date)')
+        .eq('user_id', uid)
+        .order('created_at', { ascending: false })
+    ),
+    q(
+      supabase
+        .from('groups')
+        .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
+        .order('created_at', { ascending: false })
+    ).then((value) => [value, null]).catch((error) => {
+      console.error('Gagal memuat kelompok tersedia di Beranda:', error);
+      return [[], error];
+    }),
+    q(supabase.rpc('group_availability'))
+      .then((value) => [value || [], null]).catch((error) => {
+        console.error('Gagal memuat ketersediaan slot kelompok:', error);
+        return [[], error];
+      }),
+  ]);
   const ids = ms.map((membership) => membership.id);
-  const pays = ids.length
-    ? await q(supabase.from('payments').select('membership_id,period_no,status').in('membership_id', ids))
-    : [];
   const groupIds = [...new Set(ms.map((membership) => membership.group_id).filter(Boolean))];
-  const rounds = groupIds.length
-    ? await q(supabase.from('rounds').select('id,group_id,round_no,winner_user_id,pickup_date,status').in('group_id', groupIds).order('round_no'))
-    : [];
-  const rouletteDraws = groupIds.length
-    ? await q(
+  const [pays, rounds, rouletteDraws] = await Promise.all([
+    ids.length
+      ? q(supabase.from('payments').select('membership_id,period_no,status').in('membership_id', ids))
+      : [],
+    groupIds.length
+      ? q(supabase.from('rounds').select('id,group_id,round_no,winner_user_id,pickup_date,status').in('group_id', groupIds).order('round_no'))
+      : [],
+    groupIds.length
+      ? q(
         supabase
           .from('roulette_draws')
           .select('id,group_id,period_no,participants')
           .in('group_id', groupIds)
           .order('period_no')
       )
-    : [];
+      : [],
+  ]);
   return { ms, groups, groupsError, availability, availabilityError, pays, rounds, rouletteDraws };
 }
 
 export async function loadBrowseData(uid) {
-  const groups = await q(
-    supabase
-      .from('groups')
-      .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
-      .order('created_at', { ascending: false })
-  );
-  const mine = await q(supabase.from('memberships').select('id,group_id,status').eq('user_id', uid));
+  const [groups, mine] = await Promise.all([
+    q(
+      supabase
+        .from('groups')
+        .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
+        .order('created_at', { ascending: false })
+    ),
+    q(supabase.from('memberships').select('id,group_id,status').eq('user_id', uid)),
+  ]);
   return { groups, mine: Object.fromEntries(mine.map((membership) => [membership.group_id, membership])) };
 }
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase } from '../lib/supabase';
@@ -10,6 +10,17 @@ import Icon from '../components/Icon.jsx';
 import Modal from '../components/Modal.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useConfirm } from '../components/Confirm.jsx';
+
+function realtimeListSubscription(table, field, values) {
+  const ids = [...new Set(values.filter(Boolean))];
+  if (!ids.length) return [];
+  const filter = ids.length === 1
+    ? `${field}=eq.${ids[0]}`
+    : ids.length <= 100
+      ? `${field}=in.(${ids.join(',')})`
+      : null;
+  return [{ table, ...(filter ? { filter } : {}) }];
+}
 
 function AvailableGroupCard({ group, membership, remainingSlots, availabilityError, onSelect }) {
   const isMoney = group.type === 'uang';
@@ -70,44 +81,114 @@ export default function Home() {
 
   const { data, loading, error, reload } = useAsync(loadHomeData, [uid]);
   const displayedData = data;
-  const realtimeSubscriptions = [
+  const homeData = useMemo(() => {
+    if (!displayedData) return null;
+    const {
+      ms = [],
+      groups = [],
+      availability = [],
+      pays = [],
+      rounds = [],
+      rouletteDraws = [],
+    } = displayedData;
+    const membershipByGroup = Object.fromEntries(ms.map((membership) => [membership.group_id, membership]));
+    const reservedSlotsByGroup = Object.fromEntries(
+      availability.map((item) => [item.group_id, Number(item.reserved_slots) || 0])
+    );
+    const paymentsByMembership = new Map();
+    pays.forEach((payment) => {
+      const membershipPayments = paymentsByMembership.get(payment.membership_id) || [];
+      membershipPayments.push(payment);
+      paymentsByMembership.set(payment.membership_id, membershipPayments);
+    });
+    const roundsByGroup = new Map();
+    rounds.forEach((round) => {
+      const groupRounds = roundsByGroup.get(round.group_id) || [];
+      groupRounds.push(round);
+      roundsByGroup.set(round.group_id, groupRounds);
+    });
+    const rouletteDrawsByGroup = new Map();
+    rouletteDraws.forEach((draw) => {
+      const groupDraws = rouletteDrawsByGroup.get(draw.group_id) || [];
+      groupDraws.push(draw);
+      rouletteDrawsByGroup.set(draw.group_id, groupDraws);
+    });
+    const activeMemberships = ms.filter((membership) => membership.status === 'aktif');
+    const offerGroups = groups.filter((group) => (
+      (group.is_open
+        && (group.type !== 'uang' || group.max_slots == null
+          || displayedData.availabilityError
+          || Number(group.max_slots) - (reservedSlotsByGroup[group.id] || 0) > 0))
+      || (membershipByGroup[group.id] && membershipByGroup[group.id].status !== 'aktif')
+    ));
+    return {
+      ms,
+      availabilityError: displayedData.availabilityError,
+      groupsError: displayedData.groupsError,
+      rounds,
+      membershipByGroup,
+      reservedSlotsByGroup,
+      paymentsByMembership,
+      roundsByGroup,
+      rouletteDrawsByGroup,
+      activeMemberships,
+      offerGroups,
+      aktif: activeMemberships.length,
+      menungguDaftar: ms.filter((membership) => membership.status === 'menunggu').length,
+      menungguBayar: pays.filter((payment) => payment.status === 'menunggu').length,
+    };
+  }, [displayedData]);
+  const availabilityGroupIds = useMemo(() => [...new Set([
+    ...(displayedData?.groups || []).filter((group) => group.is_open).map((group) => group.id),
+    ...(displayedData?.ms || [])
+      .filter((membership) => membership.status !== 'aktif')
+      .map((membership) => membership.group_id),
+  ].filter(Boolean))], [displayedData]);
+  const hasScopedAvailabilityFilter = availabilityGroupIds.length > 0 && availabilityGroupIds.length <= 100;
+  const availabilityFilter = hasScopedAvailabilityFilter
+    ? availabilityGroupIds.length === 1
+      ? `group_id=eq.${availabilityGroupIds[0]}`
+      : `group_id=in.(${availabilityGroupIds.join(',')})`
+    : null;
+  const memberGroupIds = useMemo(
+    () => [...new Set((displayedData?.ms || []).map((membership) => membership.group_id).filter(Boolean))],
+    [displayedData]
+  );
+  const realtimeSubscriptions = useMemo(() => [
     { table: 'memberships', filter: `user_id=eq.${uid}` },
+    ...(availabilityFilter
+      ? [{ table: 'memberships', filter: availabilityFilter }]
+      : availabilityGroupIds.length > 100 ? [{ table: 'memberships' }] : []),
     { table: 'groups' },
-    { table: 'slots' },
-    ...(displayedData?.ms || []).map((m) => ({ table: 'payments', filter: `membership_id=eq.${m.id}` })),
-    ...(displayedData?.ms || []).map((m) => ({ table: 'rounds', filter: `group_id=eq.${m.group_id}` })),
-    ...(displayedData?.ms || []).map((m) => ({ table: 'roulette_draws', filter: `group_id=eq.${m.group_id}` })),
-  ];
+    ...(availabilityFilter
+      ? [{ table: 'slots', filter: availabilityFilter }]
+      : availabilityGroupIds.length > 100 ? [{ table: 'slots' }] : []),
+    ...realtimeListSubscription('payments', 'membership_id', (displayedData?.ms || []).map((membership) => membership.id)),
+    ...realtimeListSubscription('rounds', 'group_id', memberGroupIds),
+    ...realtimeListSubscription('roulette_draws', 'group_id', memberGroupIds),
+  ], [availabilityFilter, availabilityGroupIds.length, displayedData, memberGroupIds, uid]);
   useRealtimeRefresh(reload, `home-${uid}`, realtimeSubscriptions);
 
   if (loading && !displayedData) return <Spinner />;
   if (error && !displayedData) return <ErrorBox error={error} onRetry={reload} />;
+  if (!homeData) return <Spinner />;
 
   const {
-    ms = [],
-    groups = [],
+    ms,
     groupsError,
-    availability = [],
     availabilityError,
-    pays = [],
-    rounds = [],
-    rouletteDraws = [],
-  } = displayedData;
-  const aktif = ms.filter((m) => m.status === 'aktif').length;
-  const menungguDaftar = ms.filter((m) => m.status === 'menunggu').length;
-  const menungguBayar = pays.filter((p) => p.status === 'menunggu').length;
-  const membershipByGroup = Object.fromEntries(ms.map((membership) => [membership.group_id, membership]));
-  const reservedSlotsByGroup = Object.fromEntries(
-    availability.map((item) => [item.group_id, Number(item.reserved_slots) || 0])
-  );
-  const activeMemberships = ms.filter((membership) => membership.status === 'aktif');
-  const offerGroups = groups.filter((group) => (
-    (group.is_open
-      && (group.type !== 'uang' || group.max_slots == null
-        || availabilityError
-        || Number(group.max_slots) - (reservedSlotsByGroup[group.id] || 0) > 0))
-    || (membershipByGroup[group.id] && membershipByGroup[group.id].status !== 'aktif')
-  ));
+    rounds,
+    membershipByGroup,
+    reservedSlotsByGroup,
+    paymentsByMembership,
+    roundsByGroup,
+    rouletteDrawsByGroup,
+    activeMemberships,
+    offerGroups,
+    aktif,
+    menungguDaftar,
+    menungguBayar,
+  } = homeData;
 
   async function submitRegistration() {
     if (!selectedGroup) return;
@@ -232,17 +313,16 @@ export default function Home() {
       ) : (
         activeMemberships.map((m) => {
           const g = m.groups;
-          const membershipPayments = pays.filter((payment) => payment.membership_id === m.id);
+            const membershipPayments = paymentsByMembership.get(m.id) || [];
           const paymentsByPeriod = bestPaymentByPeriod(membershipPayments);
           const done = Object.values(paymentsByPeriod).filter((payment) => payment.status === 'disetujui').length;
           const nextPeriod = Array.from({ length: g.durasi }, (_, index) => index + 1)
             .find((period) => paymentsByPeriod[period]?.status !== 'disetujui');
           const dueDate = nextPeriod ? paymentDueDate(g.start_date, g.pay_period, nextPeriod) : null;
-          const groupRounds = rounds
-            .filter((round) => round.group_id === g.id && round.winner_user_id === uid)
+          const groupRounds = (roundsByGroup.get(g.id) || [])
+            .filter((round) => round.winner_user_id === uid)
             .sort((a, b) => a.round_no - b.round_no);
-          const rouletteRounds = rouletteDraws
-            .filter((draw) => draw.group_id === g.id)
+          const rouletteRounds = (rouletteDrawsByGroup.get(g.id) || [])
             .flatMap((draw) => {
               const participants = draw.participants || [];
               return participants

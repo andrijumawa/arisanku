@@ -37,7 +37,7 @@ export default function GroupDetail() {
     let availability = [];
     let availabilityError = null;
     if (group.type === 'uang') {
-      const result = await supabase.rpc('group_availability');
+      const result = await supabase.rpc('group_availability_for_group', { p_group: id });
       availabilityError = result.error;
       if (availabilityError) {
         console.error('Gagal memuat ringkasan slot kelompok:', availabilityError);

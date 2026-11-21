@@ -4175,6 +4175,22 @@ input[type='checkbox'] {
  background: #fff0f4;
  color: #a52b45;
 }
+.admin-pagination {
+ display: grid;
+ gap: 10px;
+ justify-items: center;
+ padding: 8px 0 16px;
+}
+.admin-pagination-actions {
+ display: flex;
+ align-items: center;
+ justify-content: center;
+ gap: 10px;
+}
+.admin-pagination-actions > span {
+ min-width: 100px;
+ text-align: center;
+}
 .divider {
   border: 0;
   border-top: 1px solid var(--line);

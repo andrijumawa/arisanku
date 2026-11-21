@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../lib/auth.jsx';
 import { supabase, q } from '../../lib/supabase';
@@ -11,8 +11,10 @@ import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
 import Modal from '../../components/Modal.jsx';
 import { useConfirm } from '../../components/Confirm.jsx';
+import AdminPagination from '../../components/admin/AdminPagination.jsx';
 
 const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
+const ADMIN_PAGE_SIZE = 25;
 const sections = [
   ['daftar', 'Pendaftaran', 'Tinjau permintaan bergabung', 'inbox', 'admin-registration.webp'],
   ['bayar', 'Pembayaran', 'Periksa bukti transfer', 'coin', 'admin-payment.webp'],
@@ -118,21 +120,22 @@ function Registrations({ revision }) {
   const toast = useToast();
   const confirm = useConfirm();
   const [busyId, setBusyId] = useState(null);
-  const { data, loading, error, reload } = useAsync(
-    () =>
-      q(
-        supabase
-          .from('memberships')
-      .select('id,user_id,slot_count,status,created_at,profiles(full_name,phone,avatar_path),groups(name,type,nominal,package_type)')
-          .eq('status', 'menunggu')
-          .order('created_at')
-      ),
-    [revision]
-  );
+  const [page, setPage] = useState(0);
+  const { data: result, loading, error, reload } = useAsync(async () => {
+    const { data, error: queryError, count } = await supabase
+      .from('memberships')
+      .select('id,user_id,slot_count,status,created_at,profiles(full_name,phone,avatar_path),groups(name,type,nominal,package_type)', { count: 'exact' })
+      .eq('status', 'menunggu')
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(page * ADMIN_PAGE_SIZE, (page + 1) * ADMIN_PAGE_SIZE - 1);
+    if (queryError) throw queryError;
+    return { items: data || [], total: count || 0 };
+  }, [revision, page]);
   useRealtimeRefresh(
     reload,
     'admin-registrations',
-    [{ table: 'memberships' }, { table: 'profiles' }, { table: 'groups' }]
+    [{ table: 'groups' }]
   );
 
   async function approve(m) {
@@ -158,35 +161,40 @@ function Registrations({ revision }) {
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  if (!data.length) return <Empty icon="check" title="Tidak ada pendaftaran menunggu" />;
+  if (!result.total) return <Empty icon="check" title="Tidak ada pendaftaran menunggu" />;
 
-  return data.map((m) => (
-    <div key={m.id} className="card">
-      <div className="person">
-      {m.profiles?.avatar_path
-        ? <SignedImage bucket="profile-avatars" path={m.profiles.avatar_path} alt={`Foto ${m.profiles.full_name}`} className="avatar admin-person-photo" />
-        : <div className="avatar">{initial(m.profiles?.full_name)}</div>}
-        <div style={{ flex: 1 }}>
-          <b>{m.profiles?.full_name}</b>
-          <div className="muted small">{m.profiles?.phone}</div>
+  return (
+    <>
+      {result.items.map((m) => (
+        <div key={m.id} className="card">
+          <div className="person">
+            {m.profiles?.avatar_path
+              ? <SignedImage bucket="profile-avatars" path={m.profiles.avatar_path} alt={`Foto ${m.profiles.full_name}`} className="avatar admin-person-photo" />
+              : <div className="avatar">{initial(m.profiles?.full_name)}</div>}
+            <div style={{ flex: 1 }}>
+              <b>{m.profiles?.full_name}</b>
+              <div className="muted small">{m.profiles?.phone}</div>
+            </div>
+            <span className="muted small">{fmtDate(m.created_at)}</span>
+          </div>
+          <hr className="divider" />
+          <div className="small">
+            <b>{m.groups?.name}</b> · {typeLabel(m.groups || {})} · {rupiah(m.groups?.nominal)}
+            {m.groups?.type === 'uang' && <> · {m.slot_count} slot</>}
+          </div>
+          <div className="actions admin-review-actions">
+            <button type="button" className="btn primary sm" disabled={busyId === m.id} onClick={() => approve(m)}>
+              Setujui
+            </button>
+            <button type="button" className="btn danger sm" disabled={busyId === m.id} onClick={() => reject(m)}>
+              Tolak
+            </button>
+          </div>
         </div>
-        <span className="muted small">{fmtDate(m.created_at)}</span>
-      </div>
-      <hr className="divider" />
-      <div className="small">
-        <b>{m.groups?.name}</b> · {typeLabel(m.groups || {})} · {rupiah(m.groups?.nominal)}
-        {m.groups?.type === 'uang' && <> · {m.slot_count} slot</>}
-      </div>
-      <div className="actions admin-review-actions">
-        <button type="button" className="btn primary sm" disabled={busyId === m.id} onClick={() => approve(m)}>
-          Setujui
-        </button>
-        <button type="button" className="btn danger sm" disabled={busyId === m.id} onClick={() => reject(m)}>
-          Tolak
-        </button>
-      </div>
-    </div>
-  ));
+      ))}
+      <AdminPagination page={page} pageSize={ADMIN_PAGE_SIZE} total={result.total} onPageChange={setPage} />
+    </>
+  );
 }
 
 /* ---------------- Pembayaran ---------------- */
@@ -194,21 +202,22 @@ function Payments({ revision }) {
   const { session } = useAuth();
   const toast = useToast();
   const [busyId, setBusyId] = useState(null);
-  const { data, loading, error, reload } = useAsync(
-    () =>
-      q(
-        supabase
-          .from('payments')
-          .select('id,amount,period_no,created_at,proof_path,group_id,membership_id,status,groups(name,type,pay_period),memberships(slot_count,profiles(full_name,phone))')
-          .eq('status', 'menunggu')
-          .order('created_at')
-      ),
-    [revision]
-  );
+  const [page, setPage] = useState(0);
+  const { data: result, loading, error, reload } = useAsync(async () => {
+    const { data, error: queryError, count } = await supabase
+      .from('payments')
+      .select('id,amount,period_no,created_at,proof_path,group_id,membership_id,status,groups(name,type,pay_period),memberships(slot_count,profiles(full_name,phone))', { count: 'exact' })
+      .eq('status', 'menunggu')
+      .order('created_at', { ascending: true })
+      .order('id', { ascending: true })
+      .range(page * ADMIN_PAGE_SIZE, (page + 1) * ADMIN_PAGE_SIZE - 1);
+    if (queryError) throw queryError;
+    return { items: data || [], total: count || 0 };
+  }, [revision, page]);
   useRealtimeRefresh(
     reload,
     'admin-payments',
-    [{ table: 'payments' }, { table: 'groups' }, { table: 'profiles' }]
+    [{ table: 'groups' }]
   );
 
   async function review(p, status) {
@@ -229,35 +238,40 @@ function Payments({ revision }) {
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  if (!data.length) return <Empty icon="check" title="Tidak ada pembayaran menunggu" />;
+  if (!result.total) return <Empty icon="check" title="Tidak ada pembayaran menunggu" />;
 
-  return data.map((p) => {
-    const who = p.memberships?.profiles;
-    return (
-      <div key={p.id} className="card">
-        <div className="person">
-          <div className="avatar">{initial(who?.full_name)}</div>
-          <div style={{ flex: 1 }}>
-            <b>{who?.full_name}</b>
-            <div className="muted small">{who?.phone}</div>
+  return (
+    <>
+      {result.items.map((p) => {
+        const who = p.memberships?.profiles;
+        return (
+          <div key={p.id} className="card">
+            <div className="person">
+              <div className="avatar">{initial(who?.full_name)}</div>
+              <div style={{ flex: 1 }}>
+                <b>{who?.full_name}</b>
+                <div className="muted small">{who?.phone}</div>
+              </div>
+              <b>{rupiah(p.amount)}</b>
+            </div>
+            <div className="small" style={{ margin: '10px 0' }}>
+              {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
+            </div>
+            <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb" />
+            <div className="actions admin-review-actions">
+              <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => review(p, 'disetujui')}>
+                Setujui
+              </button>
+              <button type="button" className="btn danger sm" disabled={busyId === p.id} onClick={() => review(p, 'ditolak')}>
+                Tolak
+              </button>
+            </div>
           </div>
-          <b>{rupiah(p.amount)}</b>
-        </div>
-        <div className="small" style={{ margin: '10px 0' }}>
-          {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
-        </div>
-        <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb" />
-        <div className="actions admin-review-actions">
-          <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => review(p, 'disetujui')}>
-            Setujui
-          </button>
-          <button type="button" className="btn danger sm" disabled={busyId === p.id} onClick={() => review(p, 'ditolak')}>
-            Tolak
-          </button>
-        </div>
-      </div>
-    );
-  });
+        );
+      })}
+      <AdminPagination page={page} pageSize={ADMIN_PAGE_SIZE} total={result.total} onPageChange={setPage} />
+    </>
+  );
 }
 
 /* ---------------- Kelompok ---------------- */
@@ -301,22 +315,28 @@ function People({ revision }) {
   const toast = useToast();
   const confirm = useConfirm();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [page, setPage] = useState(0);
   const [busyId, setBusyId] = useState(null);
-  const { data, loading, error, reload } = useAsync(
-    () => q(supabase
-      .from('profiles')
-      .select('id,full_name,phone,avatar_path,role,account_status,created_at')
-      .order('created_at', { ascending: false })),
-    [revision]
-  );
-  useRealtimeRefresh(reload, 'admin-people', [{ table: 'profiles' }]);
+  const { data: result, loading, error, reload } = useAsync(async () => {
+    const rows = await q(supabase.rpc('admin_people_page', {
+      p_search: debouncedSearch,
+      p_offset: page * ADMIN_PAGE_SIZE,
+      p_limit: ADMIN_PAGE_SIZE,
+    }));
+    return {
+      items: rows.map(({ total_count: _totalCount, ...person }) => person),
+      total: Number(rows[0]?.total_count) || 0,
+    };
+  }, [revision, debouncedSearch, page]);
 
-  const list = useMemo(() => {
-    const s = search.trim().toLowerCase();
-    return (data || [])
-      .filter((p) => !s || p.full_name.toLowerCase().includes(s) || p.phone.includes(s))
-      .sort((a, b) => Number(b.account_status === 'menunggu') - Number(a.account_status === 'menunggu'));
-  }, [data, search]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setPage(0);
+      setDebouncedSearch(search.trim());
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   async function toggleRole(p) {
     const next = p.role === 'admin' ? 'peserta' : 'admin';
@@ -369,10 +389,7 @@ function People({ revision }) {
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
-      <div className="muted small">
-        {list.length} peserta
-      </div>
-      {list.length === 0 && (
+      {result.total === 0 && (
         <Empty
           icon="search"
           title={search.trim() ? 'Tidak ada peserta yang cocok' : 'Belum ada peserta'}
@@ -382,7 +399,7 @@ function People({ revision }) {
             : 'Belum ada akun peserta untuk ditampilkan.'}
         </Empty>
       )}
-      {list.map((p) => (
+      {result.items.map((p) => (
         <div key={p.id} className="card admin-person-card">
           <div className="admin-person-row">
             {p.avatar_path
@@ -427,6 +444,7 @@ function People({ revision }) {
           )}
         </div>
       ))}
+      <AdminPagination page={page} pageSize={ADMIN_PAGE_SIZE} total={result.total} onPageChange={setPage} />
     </>
   );
 }

@@ -6,6 +6,7 @@ import Icon from '../components/Icon.jsx';
 import { signedUrl } from '../components/SignedImage.jsx';
 import { useToast } from '../components/Toast.jsx';
 import { useAsync, useRealtimeRefresh } from '../lib/hooks';
+import { loadAdminCounts } from '../lib/menuData';
 
 const menuImageUrl = (image) => `${import.meta.env.BASE_URL}images/${image}`;
 
@@ -41,18 +42,11 @@ export default function Menu() {
   const rouletteAccess = rouletteAccessState.data?.hasAccess;
   const adminCountsState = useAsync(async () => {
     if (!isAdmin) return { registrations: 0, payments: 0, participants: 0 };
-    const [registrations, payments, participants] = await Promise.all([
-      supabase.from('memberships').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
-      supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'menunggu'),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('account_status', 'menunggu'),
-    ]);
-    if (registrations.error) throw registrations.error;
-    if (payments.error) throw payments.error;
-    if (participants.error) throw participants.error;
+    const counts = await loadAdminCounts();
     return {
-      registrations: registrations.count || 0,
-      payments: payments.count || 0,
-      participants: participants.count || 0,
+      registrations: counts.mem,
+      payments: counts.pay,
+      participants: counts.accounts,
     };
   }, [isAdmin]);
   useRealtimeRefresh(

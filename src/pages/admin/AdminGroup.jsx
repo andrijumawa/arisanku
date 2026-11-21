@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
@@ -8,6 +8,9 @@ import GroupInfo from '../../components/GroupInfo.jsx';
 import { useToast } from '../../components/Toast.jsx';
 import Icon from '../../components/Icon.jsx';
 import { useConfirm } from '../../components/Confirm.jsx';
+import AdminPagination from '../../components/admin/AdminPagination.jsx';
+
+const ADMIN_GROUP_PAGE_SIZE = 25;
 
 export default function AdminGroup() {
   const { id } = useParams();
@@ -15,27 +18,42 @@ export default function AdminGroup() {
   const toast = useToast();
   const confirm = useConfirm();
   const [busyId, setBusyId] = useState(null);
+  const [memberPage, setMemberPage] = useState(0);
 
   const { data, loading, error, reload } = useAsync(async () => {
-    const group = await q(
-      supabase
+    const [group, memberResult, rounds, rouletteDraws] = await Promise.all([
+      q(supabase
         .from('groups')
         .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
         .eq('id', id)
-        .single()
-    );
-    const members = await q(
-      supabase.from('memberships').select('id,user_id,slot_count,status,profiles(full_name,phone)').eq('group_id', id).order('created_at')
-    );
-    const rounds = await q(
-      supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')
-    );
-    const rouletteDraws = await q(
-      supabase.from('roulette_draws').select('id,period_no,participants').eq('group_id', id).order('period_no')
-    );
-    const pays = await q(supabase.from('payments').select('membership_id,period_no,status').eq('group_id', id));
-    return { group, members, rounds, rouletteDraws, pays };
-  }, [id]);
+        .single()),
+      supabase
+        .from('memberships')
+        .select('id,user_id,slot_count,status,created_at,profiles(full_name,phone)', { count: 'exact' })
+        .eq('group_id', id)
+        .order('created_at', { ascending: true })
+        .order('id', { ascending: true })
+        .range(memberPage * ADMIN_GROUP_PAGE_SIZE, (memberPage + 1) * ADMIN_GROUP_PAGE_SIZE - 1),
+      q(supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')),
+      q(supabase.from('roulette_draws').select('id,period_no,participants').eq('group_id', id).order('period_no')),
+    ]);
+    if (memberResult.error) throw memberResult.error;
+    const members = memberResult.data || [];
+    const pays = members.length
+      ? await q(
+        supabase
+          .from('payments')
+          .select('membership_id,period_no,status')
+          .in('membership_id', members.map((member) => member.id))
+      )
+      : [];
+    return { group, members, memberTotal: memberResult.count || 0, rounds, rouletteDraws, pays };
+  }, [id, memberPage]);
+
+  useEffect(() => {
+    const pageCount = Math.max(1, Math.ceil((data?.memberTotal || 0) / ADMIN_GROUP_PAGE_SIZE));
+    if (memberPage >= pageCount) setMemberPage(pageCount - 1);
+  }, [data?.memberTotal, memberPage]);
   const realtimeSubscriptions = useMemo(
     () => [
       { table: 'groups', filter: `id=eq.${id}` },
@@ -61,7 +79,7 @@ export default function AdminGroup() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { group: g, members, rounds, rouletteDraws, pays } = data;
+  const { group: g, members, memberTotal, rounds, rouletteDraws, pays } = data;
   const isUang = g.type === 'uang';
   const rouletteRounds = rouletteDraws.flatMap((draw) => {
     const participants = draw.participants || [];
@@ -247,12 +265,12 @@ export default function AdminGroup() {
       )}
 
       <div className="row between section-title">
-        <span>Peserta ({members.length})</span>
+        <span>Peserta ({memberTotal})</span>
         {overdueMemberCount > 0 && (
-          <span className="badge bad">{overdueMemberCount} menunggak</span>
+          <span className="badge bad">{overdueMemberCount} menunggak di halaman ini</span>
         )}
       </div>
-      {members.length === 0 && <Empty icon="users" title="Belum ada pendaftar" />}
+      {memberTotal === 0 && <Empty icon="users" title="Belum ada pendaftar" />}
       {members.map((m) => (
         <div key={m.id} className="card">
           <div className="person">
@@ -359,6 +377,12 @@ export default function AdminGroup() {
           </div>
         </div>
       ))}
+      <AdminPagination
+        page={memberPage}
+        pageSize={ADMIN_GROUP_PAGE_SIZE}
+        total={memberTotal}
+        onPageChange={setMemberPage}
+      />
 
       <p className="muted small center">
         Bukti transfer yang menunggu diperiksa di tab <b>Pembayaran</b> pada Panel Admin.

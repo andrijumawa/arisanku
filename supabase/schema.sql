@@ -4,6 +4,8 @@
 -- =====================================================================
 
 create extension if not exists pgcrypto;
+create schema if not exists extensions;
+create extension if not exists pg_trgm with schema extensions;
 
 -- ---------------------------------------------------------------------
 -- 1. PROFILES
@@ -18,6 +20,33 @@ create table public.profiles (
               check (account_status in ('menunggu','disetujui','ditolak')),
   created_at  timestamptz not null default now()
 );
+
+create index if not exists profiles_status_created_id_idx
+  on public.profiles (account_status, created_at desc, id);
+create index if not exists profiles_admin_priority_created_idx
+  on public.profiles ((case when account_status = 'menunggu' then 0 else 1 end), created_at desc, id);
+do $$
+declare
+  trgm_schema text;
+begin
+  select namespace.nspname into trgm_schema
+  from pg_opclass opclass
+  join pg_namespace namespace on namespace.oid = opclass.opcnamespace
+  join pg_am access_method on access_method.oid = opclass.opcmethod
+  where opclass.opcname = 'gin_trgm_ops' and access_method.amname = 'gin'
+  limit 1;
+  if trgm_schema is null then
+    raise exception 'Operator class gin_trgm_ops tidak tersedia';
+  end if;
+  execute format(
+    'create index if not exists profiles_full_name_trgm_idx on public.profiles using gin (full_name %I.gin_trgm_ops)',
+    trgm_schema
+  );
+  execute format(
+    'create index if not exists profiles_phone_trgm_idx on public.profiles using gin (phone %I.gin_trgm_ops)',
+    trgm_schema
+  );
+end $$;
 
 -- Otomatis buat profil saat user mendaftar.
 -- App mengirim metadata: { phone, full_name } lewat signUp(options.data)
@@ -42,6 +71,59 @@ create or replace function public.is_admin()
 returns boolean language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
 $$;
+
+create or replace function public.admin_people_page(
+  p_search text default '',
+  p_offset integer default 0,
+  p_limit integer default 25
+)
+returns table (
+  id uuid,
+  full_name text,
+  phone text,
+  avatar_path text,
+  role text,
+  account_status text,
+  created_at timestamptz,
+  total_count bigint
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin yang dapat melihat daftar peserta';
+  end if;
+
+  return query
+  with filtered_profiles as (
+    select p.id, p.full_name, p.phone, p.avatar_path, p.role, p.account_status, p.created_at
+    from public.profiles p
+    where coalesce(p_search, '') = ''
+      or p.full_name ilike '%' || replace(replace(replace(p_search, E'\\', E'\\\\'), '%', E'\\%'), '_', E'\\_') || '%' escape E'\\'
+      or p.phone ilike '%' || replace(replace(replace(p_search, E'\\', E'\\\\'), '%', E'\\%'), '_', E'\\_') || '%' escape E'\\'
+  )
+  select
+    p.id,
+    p.full_name,
+    p.phone,
+    p.avatar_path,
+    p.role,
+    p.account_status,
+    p.created_at,
+    count(*) over ()
+  from filtered_profiles p
+  order by case when p.account_status = 'menunggu' then 0 else 1 end,
+    p.created_at desc,
+    p.id
+  limit greatest(1, least(coalesce(p_limit, 25), 100))
+  offset greatest(coalesce(p_offset, 0), 0);
+end;
+$$;
+revoke all on function public.admin_people_page(text, integer, integer) from public, anon;
+grant execute on function public.admin_people_page(text, integer, integer) to authenticated;
 
 create or replace function public.is_verified()
 returns boolean language sql stable security definer set search_path = public as $$
@@ -124,6 +206,13 @@ create table public.memberships (
 );
 create index on public.memberships (user_id);
 create index on public.memberships (group_id);
+create index if not exists memberships_user_status_group_idx
+  on public.memberships (user_id, status, group_id);
+create index if not exists memberships_group_status_created_id_idx
+  on public.memberships (group_id, status, created_at, id);
+create index if not exists memberships_pending_created_id_idx
+  on public.memberships (created_at, id)
+  where status = 'menunggu';
 
 -- ---------------------------------------------------------------------
 -- 4. SLOTS (nomor undian per peserta di arisan uang)
@@ -135,10 +224,12 @@ create table public.slots (
   slot_no       int not null,
   unique (group_id, slot_no)
 );
+create index if not exists slots_membership_id_idx on public.slots (membership_id);
+create index if not exists groups_created_id_idx on public.groups (created_at desc, id);
 
 -- Total slot terpakai dan permintaan menunggu untuk menampilkan kapasitas
 -- tanpa membuka daftar membership atau slot milik peserta lain.
-create function public.group_availability()
+create or replace function public.group_availability_for_group(p_group uuid)
 returns table (
   group_id uuid,
   reserved_slots bigint,
@@ -150,33 +241,61 @@ stable
 security definer
 set search_path = public
 as $$
+  with target_groups as (
+    select g.id
+    from public.groups g
+    where (p_group is null or g.id = p_group)
+      and public.is_verified()
+  ),
+  slot_totals as (
+    select s.group_id, count(*)::bigint as total
+    from public.slots s
+    join target_groups g on g.id = s.group_id
+    group by s.group_id
+  ),
+  pending_totals as (
+    select m.group_id, sum(m.slot_count)::bigint as total
+    from public.memberships m
+    join target_groups g on g.id = m.group_id
+    where m.status = 'menunggu'
+    group by m.group_id
+  ),
+  active_totals as (
+    select m.group_id,
+      count(*)::bigint as participants,
+      coalesce(sum(m.slot_count), 0)::bigint as slots
+    from public.memberships m
+    join target_groups g on g.id = m.group_id
+    where m.status = 'aktif'
+    group by m.group_id
+  )
   select
     g.id,
-    coalesce((
-      select count(*)::bigint
-      from public.slots s
-      where s.group_id = g.id
-    ), 0) + coalesce((
-      select sum(m.slot_count)::bigint
-      from public.memberships m
-      where m.group_id = g.id
-        and m.status = 'menunggu'
-    ), 0),
-    (
-      select count(*)::bigint
-      from public.memberships m
-      where m.group_id = g.id
-        and m.status = 'aktif'
-    ),
-    coalesce((
-      select sum(m.slot_count)::bigint
-      from public.memberships m
-      where m.group_id = g.id
-        and m.status = 'aktif'
-    ), 0)
-  from public.groups g
-  where public.is_verified();
+    coalesce(st.total, 0) + coalesce(pt.total, 0),
+    coalesce(at.participants, 0),
+    coalesce(at.slots, 0)
+  from target_groups g
+  left join slot_totals st on st.group_id = g.id
+  left join pending_totals pt on pt.group_id = g.id
+  left join active_totals at on at.group_id = g.id;
 $$;
+
+create or replace function public.group_availability()
+returns table (
+  group_id uuid,
+  reserved_slots bigint,
+  active_participants bigint,
+  active_slots bigint
+)
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select * from public.group_availability_for_group(null);
+$$;
+revoke all on function public.group_availability_for_group(uuid) from public, anon;
+grant execute on function public.group_availability_for_group(uuid) to authenticated;
 revoke all on function public.group_availability() from public, anon;
 grant execute on function public.group_availability() to authenticated;
 
@@ -215,6 +334,13 @@ create table public.payments (
 );
 create index on public.payments (membership_id);
 create index on public.payments (group_id, status);
+create index if not exists payments_membership_created_period_idx
+  on public.payments (membership_id, created_at desc, period_no);
+create index if not exists payments_group_membership_period_idx
+  on public.payments (group_id, membership_id, period_no, status);
+create index if not exists payments_pending_created_id_idx
+  on public.payments (created_at, id)
+  where status = 'menunggu';
 
 -- ---------------------------------------------------------------------
 -- 7. CHAT (satu grup gabungan semua peserta)
