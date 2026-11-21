@@ -466,6 +466,25 @@ export default function Roulette() {
     && !participantsState.loading
     && savedDraws.length > 0
     && (remainingParticipants.length === 0 || autoFinalSlot !== null);
+  const rouletteResults = useMemo(() => {
+    const results = savedDraws.flatMap((draw) => (
+      (draw.participants || [])
+        .slice(0, draw.participants?.length === 2 ? 2 : 1)
+        .map((participant, index) => ({
+          participant,
+          positionNo: Number(draw.position_no || draw.period_no) + index,
+          key: `${draw.position_no || draw.period_no}-${participant.user_id}-${index}`,
+        }))
+    ));
+    if (autoFinalSlot) {
+      results.push({
+        participant: autoFinalSlot,
+        positionNo: nextPositionNo,
+        key: `automatic-${autoFinalSlot.user_id}-${autoFinalSlot.slot_no}`,
+      });
+    }
+    return results.sort((a, b) => a.positionNo - b.positionNo);
+  }, [savedDraws, autoFinalSlot, nextPositionNo]);
   const participantNames = useMemo(
     () => rouletteComplete ? [] : wheelParticipants.map(participantSlotLabel),
     [rouletteComplete, wheelParticipants]
@@ -968,24 +987,18 @@ export default function Roulette() {
 
             <section className="roulette-history" aria-label="Hasil kocokan tersimpan">
               <h2 className="section-title">Hasil kocokan</h2>
-              {drawsState.loading ? <Spinner text="Memuat hasil kocokan…" /> : savedDraws.length ? (
+              {drawsState.loading ? <Spinner text="Memuat hasil kocokan…" /> : rouletteResults.length ? (
                 <div className="roulette-results">
-                  {[...savedDraws]
-                    .sort((a, b) => (a.position_no || a.period_no) - (b.position_no || b.period_no))
-                    .flatMap((draw) => (
-                      (draw.participants || [])
-                        .slice(0, draw.participants?.length === 2 ? 2 : 1)
-                        .map((participant, index) => (
-                          <article className="card roulette-result" key={`${draw.position_no || draw.period_no}-${participant.user_id}-${index}`}>
-                            <ol>
-                              <li key={`${participant.user_id}-${index}`}>
-                                <span className="roulette-rank">{(draw.position_no || draw.period_no) + index}</span>
-                                <span>{participantSlotLabel(participant)}</span>
-                              </li>
-                            </ol>
-                          </article>
-                        ))
-                    ))}
+                  {rouletteResults.map(({ participant, positionNo, key }) => (
+                    <article className="card roulette-result" key={key}>
+                      <ol>
+                        <li>
+                          <span className="roulette-rank">{positionNo}</span>
+                          <span>{participantSlotLabel(participant)}</span>
+                        </li>
+                      </ol>
+                    </article>
+                  ))}
                 </div>
               ) : (
                 <Empty icon="dice" title="Belum ada hasil tersimpan">
