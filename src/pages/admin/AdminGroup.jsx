@@ -21,7 +21,7 @@ export default function AdminGroup() {
   const [memberPage, setMemberPage] = useState(0);
 
   const { data, loading, error, reload } = useAsync(async () => {
-    const [group, memberResult, rounds, rouletteDraws] = await Promise.all([
+    const [group, memberResult, rounds, rouletteDraws, pendingPaymentsResult] = await Promise.all([
       q(supabase
         .from('groups')
         .select('id,type,name,description,nominal,durasi,max_slots,draw_mode,pay_period,package_type,package_detail,start_date,end_date,pickup_date,is_open')
@@ -36,8 +36,14 @@ export default function AdminGroup() {
         .range(memberPage * ADMIN_GROUP_PAGE_SIZE, (memberPage + 1) * ADMIN_GROUP_PAGE_SIZE - 1),
       q(supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')),
       q(supabase.from('roulette_draws').select('id,period_no,participants').eq('group_id', id).order('period_no')),
+      supabase
+        .from('payments')
+        .select('id', { count: 'exact', head: true })
+        .eq('group_id', id)
+        .eq('status', 'menunggu'),
     ]);
     if (memberResult.error) throw memberResult.error;
+    if (pendingPaymentsResult.error) throw pendingPaymentsResult.error;
     const members = memberResult.data || [];
     const pays = members.length
       ? await q(
@@ -47,7 +53,15 @@ export default function AdminGroup() {
           .in('membership_id', members.map((member) => member.id))
       )
       : [];
-    return { group, members, memberTotal: memberResult.count || 0, rounds, rouletteDraws, pays };
+    return {
+      group,
+      members,
+      memberTotal: memberResult.count || 0,
+      rounds,
+      rouletteDraws,
+      pays,
+      pendingPayments: pendingPaymentsResult.count || 0,
+    };
   }, [id, memberPage]);
 
   useEffect(() => {
@@ -79,7 +93,7 @@ export default function AdminGroup() {
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
 
-  const { group: g, members, memberTotal, rounds, rouletteDraws, pays } = data;
+  const { group: g, members, memberTotal, rounds, rouletteDraws, pays, pendingPayments } = data;
   const isUang = g.type === 'uang';
   const rouletteRounds = rouletteDraws.flatMap((draw) => {
     const participants = draw.participants || [];
@@ -388,9 +402,11 @@ export default function AdminGroup() {
         onPageChange={setMemberPage}
       />
 
-      <p className="muted small center text-pending">
-        Bukti transfer yang menunggu diperiksa di tab <b>Pembayaran</b> pada Panel Admin.
-      </p>
+      {pendingPayments > 0 && (
+        <p className="muted small center">
+          Bukti transfer yang menunggu diperiksa di tab <b>Pembayaran</b> pada Panel Admin.
+        </p>
+      )}
     </>
   );
 }
