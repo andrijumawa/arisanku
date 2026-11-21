@@ -59,6 +59,15 @@ export default function SignedImage({ bucket, path, alt = '', className = '' }) 
     };
   }, [bucket, path, target]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
+
   if (failed) return <div ref={setTarget} className={`img-ph ${className}`}>Gambar tidak bisa dimuat</div>;
   if (!url) return <div ref={setTarget} className={`img-ph ${className}`}>…</div>;
 

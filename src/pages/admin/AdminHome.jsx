@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigationType, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../lib/auth.jsx';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
@@ -24,9 +24,13 @@ const sections = [
 
 export default function AdminHome() {
   const [params, setParams] = useSearchParams();
+  const location = useLocation();
+  const navigationType = useNavigationType();
   const [listRevisions, setListRevisions] = useState({ registrations: 0, payments: 0, accounts: 0 });
   const requestedTab = params.get('tab');
   const activeSection = sections.find(([key]) => key === requestedTab);
+  const restoreGroupSection = requestedTab === 'kelompok'
+    && (navigationType === 'POP' || location.state?.restoreAdminGroupModal === true);
   const { data, error, reload } = useAsync(loadAdminCounts, []);
   const onRealtimeChange = useCallback((tables) => {
     setListRevisions((current) => ({
@@ -102,7 +106,12 @@ export default function AdminHome() {
         })}
       </nav>
       {activeSection && (
-        <Modal title={activeSection[1]} onClose={closeSection} tall>
+        <Modal
+          title={activeSection[1]}
+          onClose={closeSection}
+          tall
+          animate={!restoreGroupSection}
+        >
           <div className="admin-content">
             {activeSection[0] === 'daftar' && <Registrations revision={listRevisions.registrations} />}
             {activeSection[0] === 'bayar' && <Payments revision={listRevisions.payments} />}

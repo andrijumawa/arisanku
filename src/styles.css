@@ -411,6 +411,9 @@ code {
   width: 100%;
   animation: page-enter 260ms cubic-bezier(0.2, 0.75, 0.3, 1) both;
 }
+.page-enter.page-enter-static {
+  animation: none;
+}
 .main-menu .page-enter {
   display: flex;
   flex: 1;
@@ -2944,6 +2947,9 @@ input[type='checkbox'] {
     animation-duration: 0.01ms;
   }
 }
+.sheet.sheet-no-enter-animation {
+  animation: none;
+}
 
 .confirm-backdrop {
   position: fixed;
@@ -4168,6 +4174,12 @@ input[type='checkbox'] {
  border-color: var(--admin-accent-pressed);
  background: var(--admin-accent-pressed);
  color: #fff;
+}
+.admin-content .admin-review-actions .btn.primary:disabled {
+ border-color: var(--admin-accent);
+ background: var(--admin-accent);
+ color: #fff;
+ opacity: 1;
 }
 .admin-content .admin-review-actions .btn.danger {
  flex: 0 0 72px;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigationType } from 'react-router-dom';
 import { useAuth } from '../lib/auth.jsx';
 import { supabase } from '../lib/supabase';
 import { useToast } from './Toast.jsx';
@@ -9,6 +9,7 @@ export default function Layout() {
   const { isAdmin, profile, session } = useAuth();
   const toast = useToast();
   const loc = useLocation();
+  const navigationType = useNavigationType();
   const isGroupDetail = /^\/g\/[^/]+$/.test(loc.pathname);
   const isAdminGroupDetail = /^\/admin\/kelompok\/[^/]+$/.test(loc.pathname);
   const backTarget = isAdminGroupDetail
@@ -277,14 +278,21 @@ export default function Layout() {
               : `main${loc.pathname === '/admin' ? ' main-admin' : ''}`
         }
       >
-        <div key={loc.pathname} className="page-enter">
+        <div
+          key={loc.pathname}
+          className={`page-enter${navigationType === 'POP' || loc.state?.restoreAdminGroupModal ? ' page-enter-static' : ''}`}
+        >
           <Outlet context={{ unread }} />
         </div>
       </main>
 
       {loc.pathname !== '/' && (
         <footer className="app-back">
-          <Link to={backTarget} className="app-back-button">
+          <Link
+            to={backTarget}
+            state={isAdminGroupDetail ? { restoreAdminGroupModal: true } : undefined}
+            className="app-back-button"
+          >
             <Icon name="back" size={19} /> {backLabel}
           </Link>
         </footer>
