@@ -108,7 +108,7 @@ function preloadMenuData(uid, isAdmin, pathname) {
       if (!groupId) return;
       const draws = await warm(loadRouletteDraws, [groupId], 'hasil kocokan');
       if (!draws) return;
-      const periodNo = draws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) + 1;
+      const periodNo = draws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) || 1;
       await Promise.all([
         warm(loadRouletteAttendance, [groupId, periodNo], 'daftar hadir kocokan'),
         warm(loadRoulettePeriodActivation, [groupId, periodNo], 'status aktivasi kocokan'),

@@ -39,7 +39,7 @@ export async function loadHomeData(uid) {
       ? q(
         supabase
           .from('roulette_draws')
-          .select('id,group_id,period_no,participants')
+          .select('id,group_id,period_no,position_no,participants')
           .in('group_id', groupIds)
           .order('period_no')
       )
@@ -89,7 +89,7 @@ export async function loadRouletteDraws(groupId) {
   return q(
     supabase
       .from('roulette_draws')
-      .select('period_no,participants')
+      .select('period_no,position_no,participants')
       .eq('group_id', groupId)
       .order('period_no')
   );

@@ -328,7 +328,7 @@ export default function Home() {
               return participants
                 .slice(0, participants.length === 2 ? 2 : 1)
                 .map((participant, index) => {
-                  const roundNo = draw.period_no + index;
+                  const roundNo = (draw.position_no || draw.period_no) + index;
                   const existingRound = rounds.find(
                     (round) => round.group_id === g.id && round.round_no === roundNo
                       && round.winner_user_id === participant.user_id

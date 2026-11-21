@@ -62,7 +62,7 @@ export default function GroupDetail() {
         supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')
       );
       rouletteDraws = await q(
-        supabase.from('roulette_draws').select('id,period_no,participants').eq('group_id', id).order('period_no')
+        supabase.from('roulette_draws').select('id,period_no,position_no,participants').eq('group_id', id).order('position_no')
       );
       const ids = [
         ...new Set([
@@ -119,7 +119,7 @@ export default function GroupDetail() {
     return participants
       .slice(0, participants.length === 2 ? 2 : 1)
       .map((participant, index) => {
-        const roundNo = draw.period_no + index;
+        const roundNo = (draw.position_no || draw.period_no) + index;
         return rounds.find(
           (round) => round.round_no === roundNo && round.winner_user_id === participant.user_id
         ) || {

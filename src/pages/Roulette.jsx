@@ -224,7 +224,14 @@ export default function Roulette() {
     Boolean(groupId)
   );
   const savedDraws = drawsState.loading ? [] : drawsState.data || [];
-  const periodNo = savedDraws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) + 1;
+  const periodNo = savedDraws.reduce((latest, draw) => Math.max(latest, draw.period_no), 0) || 1;
+  const nextPositionNo = savedDraws.reduce(
+    (latest, draw) => Math.max(
+      latest,
+      Number(draw.position_no || draw.period_no) + Math.max(0, (draw.participants || []).length - 1)
+    ),
+    0
+  ) + 1;
   const attendanceState = useAsync(loadRouletteAttendance, [groupId, periodNo]);
   useRealtimeRefresh(
     attendanceState.reload,
@@ -391,9 +398,13 @@ export default function Roulette() {
   const rouletteComplete = !drawsState.loading
     && !participantsState.loading
     && savedDraws.length > 0
-    && remainingParticipants.length === 1;
+    && remainingParticipants.length === 0;
 
-  const spinDuration = getSpinDuration(periodNo, activeParticipants.length || periodNo);
+  const totalRankingSlots = activeParticipants.length + savedDraws.reduce(
+    (total, draw) => total + (draw.participants || []).length,
+    0
+  );
+  const spinDuration = getSpinDuration(nextPositionNo, totalRankingSlots || nextPositionNo);
   const wheelTargetAngle = session?.draft_order?.[0]
     ? getWheelTargetAngle(
       wheelParticipants,
@@ -446,7 +457,11 @@ export default function Roulette() {
         setCountdownEndsAt(null);
         setBusy(true);
         try {
-          await q(supabase.rpc('start_roulette_session', { p_group: groupId, p_period: periodNo }));
+          await q(
+            session?.status === 'active'
+              ? supabase.rpc('run_roulette_attempt', { p_session: session.id })
+              : supabase.rpc('start_roulette_session', { p_group: groupId, p_period: periodNo })
+          );
           await liveState.reload();
           toast('Kocokan mulai berputar.', 'success');
         } catch (error) {
@@ -536,11 +551,11 @@ export default function Roulette() {
     setBusy(true);
     try {
       await q(supabase.rpc('save_roulette_attempt', { p_session: session.id }));
-      await Promise.all([liveState.reload(), drawsState.reload()]);
+      await Promise.all([liveState.reload(), drawsState.reload(), participantsState.reload()]);
       toast(
-        session.draft_order.length === 2
-          ? 'Pemenang tersimpan. Peserta yang tersisa mendapat nomor terakhir.'
-          : 'Pemenang tersimpan. Putaran berikutnya siap.',
+        remainingParticipants.length === 1
+          ? `Pemenang posisi ${nextPositionNo} tersimpan. Semua peserta sudah mendapat posisi.`
+          : `Pemenang posisi ${nextPositionNo} tersimpan. Siap mengocok posisi berikutnya.`,
         'success'
       );
     } catch (error) {
@@ -601,10 +616,37 @@ export default function Roulette() {
     : null;
   const canStart = isAdmin && !rouletteComplete && !spinning
     && periodActivated
-    && (!session || saved || cancelled)
+    && (
+      !session
+      || saved
+      || cancelled
+      || (session.status === 'active' && !session.draft_order?.length)
+    )
     && !busy;
   const hasRegistered = registeredUserIds.has(authSession.user.id);
   const isEligibleForPeriod = eligibleUserIds.has(authSession.user.id);
+  const adminControls = isAdmin && !rouletteComplete && session && !saved && !cancelled
+    && (spinning || session.draft_order?.length > 0) && (
+      <div className={`roulette-admin-controls${fallbackFullscreen ? ' is-fullscreen' : ''}`}>
+        {spinning ? (
+          <p className="muted small">Kocokan sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
+        ) : (
+          <div className="row wrap">
+            {session.status === 'active' && (
+              <button className="btn primary" onClick={rerunRoulette} disabled={busy}>
+                Putar ulang
+              </button>
+            )}
+            <button className="btn primary" onClick={saveResult} disabled={busy}>
+              Simpan posisi {nextPositionNo}
+            </button>
+            <button className="btn danger" onClick={cancelResult} disabled={busy}>
+              Batalkan hasil
+            </button>
+          </div>
+        )}
+      </div>
+    );
 
   return (
     <section className="roulette-page">
@@ -662,9 +704,9 @@ export default function Roulette() {
                   Menunggu admin mengaktifkan daftar hadir
                 </span>
               )}
-              {groupId && ((isAdmin && !fallbackFullscreen) || (!isAdmin && fallbackFullscreen)) && (
+              {groupId && (
                 <div className="roulette-attendance-controls">
-                  {isAdmin && !fallbackFullscreen ? (
+                  {isAdmin ? (
                     <button
                       type="button"
                       className={`roulette-attendance-toggle roulette-activation-toggle${periodActivated ? ' is-registered' : ''}`}
@@ -695,12 +737,23 @@ export default function Roulette() {
                       aria-label={
                         hasRegistered
                           ? 'Kehadiran sudah terdaftar'
-                          : isEligibleForPeriod
-                            ? 'Daftar hadir untuk kocokan'
-                            : `Tidak aktif: pembayaran periode ${periodNo} harus disetujui untuk ikut kocokan`
+                          : !periodActivated
+                            ? `Pendaftaran hadir putaran ${periodNo} belum dibuka admin`
+                            : !isEligibleForPeriod
+                              ? `Belum bisa daftar hadir: pembayaran periode ${periodNo} harus disetujui admin`
+                              : 'Daftar hadir untuk kocokan'
+                      }
+                      title={
+                        hasRegistered
+                          ? 'Kehadiran sudah terdaftar'
+                          : !periodActivated
+                            ? `Menunggu admin membuka pendaftaran putaran ${periodNo}`
+                            : !isEligibleForPeriod
+                              ? `Pembayaran periode ${periodNo} harus disetujui admin sebelum daftar hadir`
+                              : 'Daftar hadir untuk kocokan'
                       }
                     >
-                      <span>{hasRegistered ? 'Terdaftar' : isEligibleForPeriod ? 'Daftar hadir' : 'Tidak aktif'}</span>
+                      <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
                       <span className="roulette-attendance-count">{registeredUserIds.size}</span>
                     </button>
                   )}
@@ -733,10 +786,10 @@ export default function Roulette() {
                     className="roulette-center-start"
                     onClick={startRoulette}
                     disabled={countdown !== null}
-                    aria-label={`Mulai kocokan putaran ${periodNo}`}
+                    aria-label={`Mulai kocokan untuk posisi ${nextPositionNo}`}
                   >
                     <Icon name="shuffle" size={20} />
-                    <span>Mulai</span>
+                    <span>Mulai {nextPositionNo}</span>
                   </button>
                 )}
               </div>
@@ -748,7 +801,9 @@ export default function Roulette() {
                       ? 'Urutan peserta selesai'
                       : saved
                         ? 'Hasil sudah disimpan'
-                        : 'Hasil sementara · siap disimpan'}
+                        : session?.draft_order?.length
+                          ? 'Hasil sementara · siap disimpan'
+                          : `Posisi ${nextPositionNo - 1} tersimpan · siap mengocok posisi ${nextPositionNo}`}
                 </span>
               )}
               {fallbackFullscreen && (
@@ -810,6 +865,7 @@ export default function Roulette() {
                   </section>
                 </div>
               )}
+              {fallbackFullscreen && adminControls}
             </div>
 
             {!participantNames.length && !rouletteComplete && periodActivated && (
@@ -820,44 +876,20 @@ export default function Roulette() {
 
             <div className="roulette-live-meta">
               <span>{selectedGroup?.name}</span>
-              <span>{rouletteComplete ? 'Selesai' : `Putaran ${periodNo} · ${(spinDuration / 1000).toFixed(spinDuration % 1000 ? 1 : 0)} detik`}</span>
+              <span>{rouletteComplete ? 'Selesai' : `Posisi ${nextPositionNo} · ${(spinDuration / 1000).toFixed(spinDuration % 1000 ? 1 : 0)} detik`}</span>
             </div>
 
             {rouletteComplete && (
               <p className="muted small">
-                Urutan kocokan selesai. {participantSlotLabel(remainingParticipants[0])} otomatis mendapat nomor terakhir
-                {' '}({activeParticipants.length}).
+                Urutan kocokan selesai. Semua peserta yang memenuhi syarat sudah mendapat posisi.
               </p>
             )}
 
-            {isAdmin && !rouletteComplete && session && !saved && !cancelled && (
-              <div className="roulette-admin-controls">
-                {spinning ? (
-                  <p className="muted small">Kocokan sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
-                ) : (
-                  <div className="row wrap">
-                    {session?.status === 'active' && (
-                      <button className="btn primary" onClick={rerunRoulette} disabled={busy}>
-                        Putar ulang
-                      </button>
-                    )}
-                    <button className="btn primary" onClick={saveResult} disabled={busy}>
-                      Simpan pemenang putaran {periodNo}
-                    </button>
-                    <button className="btn danger" onClick={cancelResult} disabled={busy}>
-                      Batalkan hasil
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
+            {!fallbackFullscreen && adminControls}
 
             {!spinning && session?.status === 'active' && session.draft_order?.[0] && (
               <p className="roulette-round-winner">
-                Pemenang putaran {periodNo}: <strong>{participantSlotLabel(session.draft_order[0])}</strong>
-                {session.draft_order.length === 2 && (
-                  <> · Peserta terakhir: <strong>{participantSlotLabel(session.draft_order[1])}</strong></>
-                )}
+                Pemenang posisi {nextPositionNo}: <strong>{participantSlotLabel(session.draft_order[0])}</strong>
               </p>
             )}
 
@@ -866,15 +898,15 @@ export default function Roulette() {
               {drawsState.loading ? <Spinner text="Memuat hasil kocokan…" /> : savedDraws.length ? (
                 <div className="roulette-results">
                   {[...savedDraws]
-                    .sort((a, b) => a.period_no - b.period_no)
+                    .sort((a, b) => (a.position_no || a.period_no) - (b.position_no || b.period_no))
                     .flatMap((draw) => (
                       (draw.participants || [])
                         .slice(0, draw.participants?.length === 2 ? 2 : 1)
                         .map((participant, index) => (
-                          <article className="card roulette-result" key={`${draw.period_no}-${participant.user_id}-${index}`}>
+                          <article className="card roulette-result" key={`${draw.position_no || draw.period_no}-${participant.user_id}-${index}`}>
                             <ol>
                               <li key={`${participant.user_id}-${index}`}>
-                                <span className="roulette-rank">{draw.period_no + index}</span>
+                                <span className="roulette-rank">{(draw.position_no || draw.period_no) + index}</span>
                                 <span>{participantSlotLabel(participant)}</span>
                               </li>
                             </ol>

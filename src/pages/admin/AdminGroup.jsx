@@ -35,7 +35,7 @@ export default function AdminGroup() {
         .order('id', { ascending: true })
         .range(memberPage * ADMIN_GROUP_PAGE_SIZE, (memberPage + 1) * ADMIN_GROUP_PAGE_SIZE - 1),
       q(supabase.from('rounds').select('id,round_no,winner_user_id,pickup_date,status').eq('group_id', id).order('round_no')),
-      q(supabase.from('roulette_draws').select('id,period_no,participants').eq('group_id', id).order('period_no')),
+      q(supabase.from('roulette_draws').select('id,period_no,position_no,participants').eq('group_id', id).order('position_no')),
       supabase
         .from('payments')
         .select('id', { count: 'exact', head: true })
@@ -100,7 +100,7 @@ export default function AdminGroup() {
     return participants
       .slice(0, participants.length === 2 ? 2 : 1)
       .map((participant, index) => {
-        const roundNo = draw.period_no + index;
+        const roundNo = (draw.position_no || draw.period_no) + index;
         const existingRound = rounds.find(
           (round) => round.round_no === roundNo && round.winner_user_id === participant.user_id
         );

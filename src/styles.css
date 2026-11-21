@@ -4555,6 +4555,13 @@ input[type='checkbox'] {
   flex: 0 0 auto;
   font-size: clamp(16px, 3vmin, 22px);
 }
+.roulette-wheel-machine.is-fullscreen .roulette-admin-controls {
+  width: min(760px, 100%);
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
 .roulette-fullscreen-panels {
   display: grid;
   width: min(760px, 100%);
