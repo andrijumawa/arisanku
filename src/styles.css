@@ -2143,6 +2143,13 @@ input[type='checkbox'] {
   line-height: 1.4;
 }
 .admin-content {
+  --admin-accent: #3f5eac;
+  --admin-accent-pressed: #344f94;
+  --admin-accent-soft: #e8efff;
+  --admin-surface: #fff;
+  --admin-elevated: #f7f9ff;
+  --admin-border: #d6e0f5;
+  --admin-muted: #667085;
   display: grid;
   min-width: 0;
   gap: 12px;
