@@ -1,19 +1,19 @@
-// Service worker version: image-precache-2026-11-21
+// Service worker version: image-precache-2026-11-21-optimized
 // Service worker: Web Push + agar aplikasi bisa di-install (PWA)
-const IMAGE_CACHE = 'arisanku-image-cache-v2';
+const IMAGE_CACHE = 'arisanku-image-cache-v3';
 const IMAGE_PATHS = [
-  'images/app-background.jpg',
-  'images/initial-loading.jpeg',
-  'images/menu-home.png',
-  'images/menu-arisan.png',
-  'images/menu-kocokan.png',
-  'images/menu-chat.png',
-  'images/menu-admin.png',
-  'images/menu-akun.png',
-  'images/admin-registration.png',
-  'images/admin-payment.png',
-  'images/admin-group.png',
-  'images/admin-people.png',
+  'images/app-background.webp',
+  'images/initial-loading.webp',
+  'images/menu-home.webp',
+  'images/menu-arisan.webp',
+  'images/menu-kocokan.webp',
+  'images/menu-chat.webp',
+  'images/menu-admin.webp',
+  'images/menu-akun.webp',
+  'images/admin-registration.webp',
+  'images/admin-payment.webp',
+  'images/admin-group.webp',
+  'images/admin-people.webp',
   'icons/arisanku-mark.png',
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -60,18 +60,26 @@ self.addEventListener('fetch', (event) => {
   if (
     request.method !== 'GET'
     || url.origin !== self.location.origin
-    || (!url.pathname.includes('/images/') && !url.pathname.includes('/icons/'))
+    || (!url.pathname.includes('/images/') && !url.pathname.includes('/icons/') && !url.pathname.endsWith('/arisanku-wordmark.webp'))
   ) return;
 
   event.respondWith((async () => {
     const cache = await caches.open(IMAGE_CACHE);
+    const cached = await cache.match(request);
+    if (cached) {
+      event.waitUntil((async () => {
+        try {
+          const response = await fetch(request);
+          if (response.ok) await cache.put(request, response.clone());
+        } catch {}
+      })());
+      return cached;
+    }
     try {
       const response = await fetch(request);
       if (response.ok) await cache.put(request, response.clone());
       return response;
     } catch {
-      const cached = await cache.match(request);
-      if (cached) return cached;
       return new Response('', { status: 503, statusText: 'Offline' });
     }
   })());

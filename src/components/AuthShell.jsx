@@ -76,7 +76,7 @@ export default function AuthShell() {
     >
       <img
         className="auth-background-image"
-        src={`${import.meta.env.BASE_URL}images/app-background.jpg`}
+        src={`${import.meta.env.BASE_URL}images/app-background.webp`}
         alt=""
         aria-hidden="true"
         loading="eager"

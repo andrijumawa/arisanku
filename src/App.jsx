@@ -31,18 +31,35 @@ const loadAdminHome = () => import('./pages/admin/AdminHome.jsx');
 const loadGroupForm = () => import('./pages/admin/GroupForm.jsx');
 const loadAdminGroup = () => import('./pages/admin/AdminGroup.jsx');
 
-const Layout = lazy(loadLayout);
-const AuthShell = lazy(loadAuthShell);
-const Home = lazy(loadHome);
-const Browse = lazy(loadBrowse);
-const GroupDetail = lazy(loadGroupDetail);
-const Chat = lazy(loadChat);
-const Account = lazy(loadAccount);
-const Menu = lazy(loadMenu);
-const Roulette = lazy(loadRoulette);
-const AdminHome = lazy(loadAdminHome);
-const GroupForm = lazy(loadGroupForm);
-const AdminGroup = lazy(loadAdminGroup);
+function lazyWithRetry(loader, retries = 2) {
+  return lazy(async () => {
+    let lastError;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        return await loader();
+      } catch (error) {
+        lastError = error;
+        if (attempt < retries) {
+          await new Promise((resolve) => window.setTimeout(resolve, 350 * (attempt + 1)));
+        }
+      }
+    }
+    throw lastError;
+  });
+}
+
+const Layout = lazyWithRetry(loadLayout);
+const AuthShell = lazyWithRetry(loadAuthShell);
+const Home = lazyWithRetry(loadHome);
+const Browse = lazyWithRetry(loadBrowse);
+const GroupDetail = lazyWithRetry(loadGroupDetail);
+const Chat = lazyWithRetry(loadChat);
+const Account = lazyWithRetry(loadAccount);
+const Menu = lazyWithRetry(loadMenu);
+const Roulette = lazyWithRetry(loadRoulette);
+const AdminHome = lazyWithRetry(loadAdminHome);
+const GroupForm = lazyWithRetry(loadGroupForm);
+const AdminGroup = lazyWithRetry(loadAdminGroup);
 
 function loadInitialRoute(pathname, hasSession, isAdmin) {
   if (!hasSession || pathname === '/masuk' || pathname === '/daftar') {
@@ -220,7 +237,7 @@ export default function App() {
   const [startupError, setStartupError] = useState(null);
   const startedAt = useRef(Date.now());
   const exitTimerRef = useRef(null);
-  const imageUrl = `${import.meta.env.BASE_URL}images/initial-loading.jpeg`;
+  const imageUrl = `${import.meta.env.BASE_URL}images/initial-loading.webp`;
 
   useEffect(() => subscribeToInitialLoad(setInitialPending), []);
 
@@ -259,6 +276,34 @@ export default function App() {
   }, [isAdmin, pathname, ready, session, showSplash]);
 
   useEffect(() => {
+    if (!configured || !routeModulesReady || !ready) return undefined;
+    const loaders = [
+      loadMenu,
+      loadHome,
+      loadBrowse,
+      loadChat,
+      loadAccount,
+      loadRoulette,
+      ...(isAdmin ? [loadAdminHome] : []),
+    ];
+    const prefetch = () => {
+      void Promise.all([...new Set(loaders)].map((loader) => loader().catch((error) => {
+        console.error('Gagal memuat modul kartu menu:', error);
+      })));
+    };
+    const idleId = typeof window.requestIdleCallback === 'function'
+      ? window.requestIdleCallback(prefetch, { timeout: 1500 })
+      : window.setTimeout(prefetch, 500);
+    return () => {
+      if (typeof window.cancelIdleCallback === 'function' && typeof idleId === 'number') {
+        window.cancelIdleCallback(idleId);
+      } else {
+        window.clearTimeout(idleId);
+      }
+    };
+  }, [isAdmin, ready, routeModulesReady]);
+
+  useEffect(() => {
     if (!configured || !showSplash) return undefined;
     const timer = window.setTimeout(() => {
       setStartupError((current) => current || new Error('Persiapan awal terlalu lama.'));
@@ -277,7 +322,7 @@ export default function App() {
       || initialPending > 0
     ) return undefined;
 
-    const minimumVisibleTime = 3000;
+    const minimumVisibleTime = 1800;
     const exitDuration = 320;
     const delay = Math.max(0, minimumVisibleTime - (Date.now() - startedAt.current));
     const prepareExit = window.setTimeout(() => {

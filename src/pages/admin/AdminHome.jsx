@@ -14,10 +14,10 @@ import { useConfirm } from '../../components/Confirm.jsx';
 
 const initial = (s) => (s || '?').trim().charAt(0).toUpperCase();
 const sections = [
-  ['daftar', 'Pendaftaran', 'Tinjau permintaan bergabung', 'inbox', 'admin-registration.png'],
-  ['bayar', 'Pembayaran', 'Periksa bukti transfer', 'coin', 'admin-payment.png'],
-  ['kelompok', 'Kelompok', 'Atur kelompok arisan', 'folder', 'admin-group.png'],
-  ['peserta', 'Peserta', 'Kelola akun dan verifikasi', 'users', 'admin-people.png'],
+  ['daftar', 'Pendaftaran', 'Tinjau permintaan bergabung', 'inbox', 'admin-registration.webp'],
+  ['bayar', 'Pembayaran', 'Periksa bukti transfer', 'coin', 'admin-payment.webp'],
+  ['kelompok', 'Kelompok', 'Atur kelompok arisan', 'folder', 'admin-group.webp'],
+  ['peserta', 'Peserta', 'Kelola akun dan verifikasi', 'users', 'admin-people.webp'],
 ];
 
 export default function AdminHome() {

@@ -30,6 +30,11 @@ export default function Layout() {
   const pullDistanceRef = useRef(0);
   const uid = session.user.id;
   const onChat = loc.pathname.startsWith('/chat');
+  const mainRef = useRef(null);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo?.({ top: 0, left: 0, behavior: 'instant' });
+  }, [loc.pathname]);
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -225,7 +230,7 @@ export default function Layout() {
     <div className={`app${loc.pathname === '/' ? ' is-menu' : ''}`}>
       <img
         className="app-background-image"
-        src={`${import.meta.env.BASE_URL}images/app-background.jpg`}
+        src={`${import.meta.env.BASE_URL}images/app-background.webp`}
         alt=""
         aria-hidden="true"
         loading="eager"
@@ -263,6 +268,7 @@ export default function Layout() {
       )}
 
       <main
+        ref={mainRef}
         className={
           onChat
             ? 'main-chat'

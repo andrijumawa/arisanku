@@ -71,12 +71,12 @@ export default function Menu() {
     ? `${adminNotifications.registrations} pendaftaran · ${adminNotifications.payments} pembayaran · ${adminNotifications.participants} peserta menunggu`
     : 'Kelola akun dan kelompok';
   const items = [
-    { to: '/beranda', icon: 'home', image: 'menu-home.png', label: 'Arisan', description: 'Ringkasan aktivitas\narisan', disabled: accountPending || accountRejected },
-    { to: '/chat', icon: 'message', image: 'menu-chat.png', label: 'Chat', description: 'Obrolan bersama\npeserta', count: unread, disabled: accountPending || accountRejected },
+    { to: '/beranda', icon: 'home', image: 'menu-home.webp', label: 'Arisan', description: 'Ringkasan aktivitas\narisan', disabled: accountPending || accountRejected },
+    { to: '/chat', icon: 'message', image: 'menu-chat.webp', label: 'Chat', description: 'Obrolan bersama\npeserta', count: unread, disabled: accountPending || accountRejected },
     {
       to: '/rolet',
       icon: 'dice',
-      image: 'menu-kocokan.png',
+      image: 'menu-kocokan.webp',
       label: 'Kocokan',
       description: 'Pantau pengacakan peserta',
       loading: !isAdmin && rouletteAccessState.loading && !accountPending && !accountRejected,
@@ -85,13 +85,13 @@ export default function Menu() {
     ...(isAdmin ? [{
       to: '/admin',
       icon: 'tools',
-      image: 'menu-admin.png',
+      image: 'menu-admin.webp',
       label: 'Admin',
       description: adminDescription,
       count: adminPendingCount,
       adminNotifications,
     }] : []),
-    { to: '/akun', icon: 'user', image: 'menu-akun.png', label: 'Akun', description: 'Atur informasi profil', disabled: accountPending || accountRejected },
+    { to: '/akun', icon: 'user', image: 'menu-akun.webp', label: 'Akun', description: 'Atur informasi profil', disabled: accountPending || accountRejected },
     { action: 'logout', icon: 'logout', label: signingOut ? 'Keluar…' : 'Keluar', description: 'Akhiri sesi akun' },
   ];
 
@@ -204,10 +204,11 @@ export default function Menu() {
         <h1>Menu</h1>
         <img
           className="menu-heading-character"
-          src={menuImageUrl('menu-arisan.png')}
+          src={menuImageUrl('menu-arisan.webp')}
           alt=""
           aria-hidden="true"
           loading="eager"
+          fetchPriority="high"
           decoding="async"
         />
       </div>
