@@ -379,18 +379,29 @@ export default function Roulette() {
     }
   }
 
-  async function activatePeriod() {
-    if (!isAdmin || !groupId || periodActivated || busy) return;
+  async function togglePeriodActivation() {
+    if (!isAdmin || !groupId || busy) return;
     setBusy(true);
     try {
-      await q(supabase.rpc('activate_roulette_period', {
+      const rpcName = periodActivated
+        ? 'deactivate_roulette_period'
+        : 'activate_roulette_period';
+      await q(supabase.rpc(rpcName, {
         p_group: groupId,
         p_period: periodNo,
       }));
-      await activationState.reload();
-      toast(`Pendaftaran hadir putaran ${periodNo} dibuka.`, 'success');
+      await Promise.all([
+        activationState.reload(),
+        ...(periodActivated ? [attendanceState.reload()] : []),
+      ]);
+      toast(
+        periodActivated
+          ? `Pendaftaran hadir putaran ${periodNo} ditutup.`
+          : `Pendaftaran hadir putaran ${periodNo} dibuka.`,
+        'success'
+      );
     } catch (error) {
-      toast(error.message || 'Gagal mengaktifkan periode kocokan.', 'error');
+      toast(error.message || 'Gagal mengubah status periode kocokan.', 'error');
     } finally {
       setBusy(false);
     }
@@ -507,11 +518,11 @@ export default function Roulette() {
                     <button
                       type="button"
                       className={`roulette-attendance-toggle roulette-activation-toggle${periodActivated ? ' is-registered' : ''}`}
-                      onClick={activatePeriod}
-                      disabled={busy || periodActivated || activationState.loading || saved || rouletteComplete}
-                      aria-label={periodActivated ? `Pendaftaran putaran ${periodNo} sudah dibuka` : `Aktifkan pendaftaran putaran ${periodNo}`}
+                      onClick={togglePeriodActivation}
+                      disabled={busy || activationState.loading || spinning || session?.status === 'active' || saved || rouletteComplete}
+                      aria-label={periodActivated ? `Nonaktifkan pendaftaran putaran ${periodNo}` : `Aktifkan pendaftaran putaran ${periodNo}`}
                     >
-                      <span>{periodActivated ? 'Pendaftaran dibuka' : 'Aktifkan'}</span>
+                      <span>{periodActivated ? 'Nonaktifkan' : 'Aktifkan'}</span>
                       <span className="roulette-attendance-count">{periodNo}</span>
                     </button>
                   ) : (

@@ -176,6 +176,40 @@ end $$;
 revoke all on function public.activate_roulette_period(uuid, integer) from public, anon;
 grant execute on function public.activate_roulette_period(uuid, integer) to authenticated;
 
+create or replace function public.deactivate_roulette_period(p_group uuid, p_period integer)
+returns boolean language plpgsql security definer set search_path = public as $$
+declare
+  deleted_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Hanya admin yang dapat menonaktifkan periode Rolet';
+  end if;
+  if p_period is null or p_period < 1 or not exists (
+    select 1 from public.groups g
+    where g.id = p_group and g.type = 'uang' and g.draw_mode = 'acak'
+  ) then
+    raise exception 'Kelompok atau periode Rolet tidak valid';
+  end if;
+  if exists (
+    select 1 from public.roulette_sessions s
+    where s.group_id = p_group
+      and s.period_no = p_period
+      and s.status in ('active', 'spinning', 'saved')
+  ) then
+    raise exception 'Periode tidak dapat dinonaktifkan setelah kocokan dimulai';
+  end if;
+
+  delete from public.roulette_attendance
+  where group_id = p_group and period_no = p_period;
+
+  delete from public.roulette_period_controls
+  where group_id = p_group and period_no = p_period;
+  get diagnostics deleted_count = row_count;
+  return deleted_count > 0;
+end $$;
+revoke all on function public.deactivate_roulette_period(uuid, integer) from public, anon;
+grant execute on function public.deactivate_roulette_period(uuid, integer) to authenticated;
+
 drop function if exists public.start_roulette_session(uuid);
 drop function if exists public.run_roulette_attempt(uuid, uuid[]);
 
