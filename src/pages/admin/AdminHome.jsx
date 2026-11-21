@@ -212,17 +212,18 @@ function Payments({ revision }) {
   const toast = useToast();
   const [busyId, setBusyId] = useState(null);
   const [page, setPage] = useState(0);
+  const [paymentView, setPaymentView] = useState('menunggu');
   const { data: result, loading, error, reload } = useAsync(async () => {
     const { data, error: queryError, count } = await supabase
       .from('payments')
-      .select('id,amount,period_no,created_at,proof_path,group_id,membership_id,status,groups(name,type,pay_period),memberships(slot_count,profiles(full_name,phone))', { count: 'exact' })
-      .eq('status', 'menunggu')
-      .order('created_at', { ascending: true })
+      .select('id,amount,period_no,created_at,reviewed_at,proof_path,group_id,membership_id,status,groups(name,type,pay_period),memberships(slot_count,profiles(full_name,phone))', { count: 'exact' })
+      .eq('status', paymentView === 'menunggu' ? 'menunggu' : 'disetujui')
+      .order(paymentView === 'menunggu' ? 'created_at' : 'reviewed_at', { ascending: paymentView === 'menunggu', nullsFirst: false })
       .order('id', { ascending: true })
       .range(page * ADMIN_PAGE_SIZE, (page + 1) * ADMIN_PAGE_SIZE - 1);
     if (queryError) throw queryError;
     return { items: data || [], total: count || 0 };
-  }, [revision, page]);
+  }, [revision, page, paymentView]);
   useRealtimeRefresh(
     reload,
     'admin-payments',
@@ -247,10 +248,39 @@ function Payments({ revision }) {
 
   if (loading) return <Spinner />;
   if (error) return <ErrorBox error={error} onRetry={reload} />;
-  if (!result.total) return <Empty icon="check" title="Tidak ada pembayaran menunggu" />;
 
   return (
     <>
+      <nav className="admin-payment-tabs" aria-label="Daftar pembayaran">
+        <button
+          type="button"
+          className={`btn sm${paymentView === 'menunggu' ? ' primary' : ''}`}
+          aria-pressed={paymentView === 'menunggu'}
+          onClick={() => {
+            setPage(0);
+            setPaymentView('menunggu');
+          }}
+        >
+          Menunggu
+        </button>
+        <button
+          type="button"
+          className={`btn sm${paymentView === 'riwayat' ? ' primary' : ''}`}
+          aria-pressed={paymentView === 'riwayat'}
+          onClick={() => {
+            setPage(0);
+            setPaymentView('riwayat');
+          }}
+        >
+          Riwayat pembayaran
+        </button>
+      </nav>
+      {!result.total && (
+        <Empty
+          icon="check"
+          title={paymentView === 'menunggu' ? 'Tidak ada pembayaran menunggu' : 'Belum ada pembayaran disetujui'}
+        />
+      )}
       {result.items.map((p) => {
         const who = p.memberships?.profiles;
         return (
@@ -267,16 +297,20 @@ function Payments({ revision }) {
               <div className="small">
                 {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
               </div>
-              <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb sm admin-payment-proof" />
+              {paymentView === 'menunggu'
+                ? <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb sm admin-payment-proof" />
+                : <span className="badge ok">Disetujui {fmtDate(p.reviewed_at)}</span>}
             </div>
-            <div className="actions admin-review-actions">
-              <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => review(p, 'disetujui')}>
-                Setujui
-              </button>
-              <button type="button" className="btn danger sm" disabled={busyId === p.id} onClick={() => review(p, 'ditolak')}>
-                Tolak
-              </button>
-            </div>
+            {paymentView === 'menunggu' && (
+              <div className="actions admin-review-actions">
+                <button type="button" className="btn primary sm" disabled={busyId === p.id} onClick={() => review(p, 'disetujui')}>
+                  Setujui
+                </button>
+                <button type="button" className="btn danger sm" disabled={busyId === p.id} onClick={() => review(p, 'ditolak')}>
+                  Tolak
+                </button>
+              </div>
+            )}
           </div>
         );
       })}
