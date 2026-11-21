@@ -128,8 +128,8 @@ export async function loadRouletteSession(groupId, periodNo) {
   return data;
 }
 
-export async function loadRouletteParticipants(groupId) {
-  if (!groupId) return [];
+export async function loadRouletteParticipants(groupId, periodNo) {
+  if (!groupId || !periodNo) return [];
   return q(supabase.rpc('get_roulette_participants', { p_group: groupId }));
 }
 

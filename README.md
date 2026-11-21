@@ -31,9 +31,11 @@ Stack: React + Vite + Supabase, deploy ke GitHub Pages.
 
 `realtime.sql` aman dijalankan berulang kali. Untuk project yang sudah memakai aplikasi, jalankan file itu sekali agar perubahan kelompok, slot, putaran, dan profil juga tersedia lewat Realtime.
 
-`roulette.sql` menambahkan fitur Rolet terpisah dari undian resmi. Peserta aktif di kelompok terpilih otomatis ikut pengacakan. Admin dan peserta dapat memantau layar Rolet yang sama; hanya admin yang dapat memulai, mengulang, atau menyimpan hasilnya. Satu periode dapat diacak hingga tiga kali, dengan penyimpanan otomatis pada percobaan ketiga. Hasil tersimpan tersedia di tab **Hasil Rolet** di Menu.
+`roulette.sql` menambahkan fitur Rolet terpisah dari undian resmi. Hanya peserta aktif yang pembayarannya untuk periode tersebut telah disetujui admin yang dapat mendaftar hadir dan masuk ke pengacakan. Admin dan peserta dapat memantau layar Rolet yang sama; hanya admin yang dapat memulai, mengulang, atau menyimpan hasilnya. Satu periode dapat diacak hingga tiga kali, dengan penyimpanan otomatis pada percobaan ketiga. Hasil tersimpan tersedia di tab **Hasil Rolet** di Menu.
 
 Untuk project yang sudah berjalan, jalankan `supabase/scaling_optimizations.sql` satu kali setelah skema Rolet tersedia dan sebelum deploy versi aplikasi ini. Skrip ini menambah indeks untuk daftar besar, pencarian peserta, ringkasan kapasitas, serta menyimpan indeks relasional pemenang Rolet dan mengisi ulang data hasil yang sudah ada. Backfill dapat membaca seluruh riwayat Rolet; jalankan saat aktivitas rendah jika riwayat sudah besar.
+
+Jalankan `supabase/roulette_payment_eligibility.sql` setelah `roulette.sql` pada project baru. Untuk project yang sudah berjalan, jalankan file itu setelah `scaling_optimizations.sql` dan sebelum deploy versi aplikasi ini. Migration ini memastikan peserta hanya dapat mendaftar hadir dan masuk ke roda setelah pembayaran periode yang sedang dikocok disetujui admin, mulai periode pertama.
 
 Subscription hanya aktif untuk layar yang sedang dibuka dan dijeda saat aplikasi masuk ke latar. Event beruntun digabung sebelum data dimuat ulang; daftar admin dan anggota kelompok dimuat per halaman, daftar chat dibatasi ke 150 pesan terakhir, dan unggahan gambar dikompres di perangkat sebelum dikirim. Ini mengurangi query dan transfer yang tidak diperlukan, tetapi pemakaian egress aktual tetap bergantung pada jumlah pengguna, perubahan data, dan gambar yang dibuka.
 

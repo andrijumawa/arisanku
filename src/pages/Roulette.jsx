@@ -209,7 +209,7 @@ export default function Roulette() {
     Boolean(groupId)
   );
   const periodActivated = activationState.data === true;
-  const registeredUserIds = useMemo(
+  const attendanceUserIds = useMemo(
     () => new Set(periodActivated
       ? (attendanceState.data || []).map((attendance) => attendance.user_id)
       : []),
@@ -238,11 +238,12 @@ export default function Roulette() {
     Boolean(groupId)
   );
 
-  const participantsState = useAsync(loadRouletteParticipants, [groupId]);
+  const participantsState = useAsync(loadRouletteParticipants, [groupId, periodNo]);
   const participantRealtimeSubscriptions = useMemo(() => {
     const userIds = [...new Set((participantsState.data || []).map((participant) => participant.user_id).filter(Boolean))];
     return [
       { table: 'memberships', filter: `group_id=eq.${groupId}` },
+      { table: 'payments', filter: `group_id=eq.${groupId}` },
       ...Array.from({ length: Math.ceil(userIds.length / REALTIME_PROFILE_FILTER_SIZE) }, (_, index) => {
         const batch = userIds.slice(
           index * REALTIME_PROFILE_FILTER_SIZE,
@@ -251,14 +252,22 @@ export default function Roulette() {
         return { table: 'profiles', filter: `id=in.(${batch.join(',')})` };
       }),
     ];
-  }, [groupId, participantsState.data]);
+  }, [groupId, participantsState.data, periodNo]);
   useRealtimeRefresh(
     participantsState.reload,
-    `roulette-participants-${groupId || 'none'}`,
+    `roulette-participants-${groupId || 'none'}-${periodNo}`,
     groupId ? participantRealtimeSubscriptions : []
   );
 
   const activeParticipants = participantsState.loading ? [] : participantsState.data || [];
+  const eligibleUserIds = useMemo(
+    () => new Set(activeParticipants.map((participant) => participant.user_id)),
+    [activeParticipants]
+  );
+  const registeredUserIds = useMemo(
+    () => new Set([...attendanceUserIds].filter((userId) => eligibleUserIds.has(userId))),
+    [attendanceUserIds, eligibleUserIds]
+  );
   const adminRoster = useMemo(() => {
     const participantsByUser = new Map();
     activeParticipants.forEach((participant) => {
@@ -536,6 +545,7 @@ export default function Roulette() {
     && (!session || saved || cancelled)
     && !busy;
   const hasRegistered = registeredUserIds.has(authSession.user.id);
+  const isEligibleForPeriod = eligibleUserIds.has(authSession.user.id);
 
   return (
     <section className="roulette-page">
@@ -615,15 +625,23 @@ export default function Roulette() {
                         !periodActivated
                         || busy
                         || attendanceState.loading
+                        || participantsState.loading
+                        || !isEligibleForPeriod
                         || hasRegistered
                         || countdown !== null
                         || spinning
                         || saved
                         || rouletteComplete
                       }
-                      aria-label={hasRegistered ? 'Kehadiran sudah terdaftar' : 'Daftar hadir untuk kocokan'}
+                      aria-label={
+                        hasRegistered
+                          ? 'Kehadiran sudah terdaftar'
+                          : isEligibleForPeriod
+                            ? 'Daftar hadir untuk kocokan'
+                            : `Tidak aktif: pembayaran periode ${periodNo} harus disetujui untuk ikut kocokan`
+                      }
                     >
-                      <span>{hasRegistered ? 'Terdaftar' : 'Daftar hadir'}</span>
+                      <span>{hasRegistered ? 'Terdaftar' : isEligibleForPeriod ? 'Daftar hadir' : 'Tidak aktif'}</span>
                       <span className="roulette-attendance-count">{registeredUserIds.size}</span>
                     </button>
                   )}
@@ -680,7 +698,7 @@ export default function Roulette() {
                     <section className="roulette-participant-roster" aria-label="Daftar peserta rolet">
                       <div className="roulette-participant-roster-heading">
                         <strong>Peserta</strong>
-                        <span>{registeredUserIds.size} hadir · {adminRoster.length} peserta</span>
+                        <span>{registeredUserIds.size} hadir · {adminRoster.length} peserta lunas</span>
                       </div>
                       <div className="roulette-participant-roster-list">
                         {adminRoster.length ? adminRoster.map((participant) => {
@@ -731,7 +749,7 @@ export default function Roulette() {
 
             {!participantNames.length && !rouletteComplete && periodActivated && (
               <p className="roulette-attendance-empty" role="status">
-                Peserta yang sudah daftar hadir akan muncul di roda rolet.
+                Hanya peserta dengan pembayaran periode {periodNo} yang sudah disetujui yang dapat ikut. Peserta yang sudah daftar hadir akan muncul di roda rolet.
               </p>
             )}
 

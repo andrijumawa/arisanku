@@ -249,6 +249,17 @@ as $$
   cross join lateral generate_series(1, m.slot_count) as slot(slot_no)
   where m.group_id = p_group
     and m.status = 'aktif'
+    and exists (
+      select 1
+      from public.payments payment
+      where payment.membership_id = m.id
+        and payment.group_id = p_group
+        and payment.period_no = coalesce(
+          (select max(d.period_no) + 1 from public.roulette_draws d where d.group_id = p_group),
+          1
+        )
+        and payment.status = 'disetujui'
+    )
     and not exists (
       select 1
       from public.roulette_draw_winners winner
