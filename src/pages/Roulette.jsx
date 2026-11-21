@@ -679,7 +679,7 @@ export default function Roulette() {
                   Menunggu admin mengaktifkan daftar hadir
                 </span>
               )}
-              {groupId && (
+              {groupId && (isAdmin || (!isAdmin && fallbackFullscreen)) && (
                 <div className="roulette-attendance-controls">
                   {isAdmin ? (
                     <button
