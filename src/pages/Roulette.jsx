@@ -449,8 +449,13 @@ export default function Roulette() {
   }
 
   function toggleFullscreen() {
+    if (!periodActivated) return;
     setFallbackFullscreen((current) => !current);
   }
+
+  useEffect(() => {
+    if (!periodActivated) setFallbackFullscreen(false);
+  }, [periodActivated]);
 
   const spinning = session?.status === 'spinning';
   const saved = session?.status === 'saved';
@@ -560,8 +565,9 @@ export default function Roulette() {
                   type="button"
                   className="roulette-fullscreen-toggle"
                   onClick={toggleFullscreen}
-                  aria-label={fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
-                  title={fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
+                  disabled={!periodActivated}
+                  aria-label={!periodActivated ? 'Perbesar rolet belum tersedia sampai periode diaktifkan' : fallbackFullscreen ? 'Kecilkan tampilan kocokan' : 'Tampilkan kocokan layar penuh'}
+                  title={!periodActivated ? 'Aktifkan periode untuk memperbesar rolet' : fallbackFullscreen ? 'Kecilkan rolet' : 'Layar penuh'}
                 >
                   <Icon name={fallbackFullscreen ? 'fullscreenExit' : 'fullscreen'} size={19} />
                 </button>

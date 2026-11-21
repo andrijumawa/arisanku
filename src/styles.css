@@ -4460,10 +4460,18 @@ input[type='checkbox'] {
   transition: background 160ms ease, transform 160ms ease;
 }
 @media (hover: hover) and (pointer: fine) {
-  .roulette-fullscreen-toggle:hover {
+  .roulette-fullscreen-toggle:hover:not(:disabled) {
     background: #fff;
     transform: scale(1.04);
   }
+}
+.roulette-fullscreen-toggle:disabled {
+  border-color: rgba(113, 127, 150, 0.16);
+  background: rgba(232, 236, 241, 0.82);
+  color: #98a1af;
+  cursor: not-allowed;
+  opacity: 0.72;
+  box-shadow: none;
 }
 .roulette-fullscreen-toggle:focus-visible {
   outline: 2px solid var(--brand);
