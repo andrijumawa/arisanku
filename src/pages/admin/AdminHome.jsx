@@ -294,12 +294,15 @@ function Payments({ revision }) {
               <b>{rupiah(p.amount)}</b>
             </div>
             <div className="admin-payment-summary">
-              <div className="small">
-                {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
+              <div className="admin-payment-meta">
+                <div className="small">
+                  {p.groups?.name} · periode ke-{p.period_no} · {fmtDate(p.created_at)}
+                </div>
+                {paymentView === 'riwayat' && (
+                  <span className="badge ok">Disetujui {fmtDate(p.reviewed_at)}</span>
+                )}
               </div>
-              {paymentView === 'menunggu'
-                ? <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti transfer" className="thumb sm admin-payment-proof" />
-                : <span className="badge ok">Disetujui {fmtDate(p.reviewed_at)}</span>}
+              <SignedImage bucket="bukti-transfer" path={p.proof_path} alt="Bukti pembayaran" className="thumb sm admin-payment-proof" />
             </div>
             {paymentView === 'menunggu' && (
               <div className="actions admin-review-actions">

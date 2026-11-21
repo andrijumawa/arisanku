@@ -2826,6 +2826,21 @@ input[type='checkbox'] {
   gap: 12px;
   margin: 10px 0;
 }
+.admin-payment-meta {
+  display: grid;
+  min-width: 0;
+  justify-items: start;
+  gap: 6px;
+}
+.admin-payment-meta .small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.admin-payment-meta .badge {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 .admin-payment-proof {
   display: block;
   border: 0;

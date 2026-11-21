@@ -282,6 +282,15 @@ export default function AdminGroup() {
                 {isUang && ` · ${m.slot_count} slot`}
               </div>
             </div>
+            {m.status === 'aktif' && (
+              <button
+                className="btn sm"
+                disabled={busyId === m.id}
+                onClick={() => setStatus(m, 'nonaktif')}
+              >
+                Nonaktifkan
+              </button>
+            )}
             <Badge status={m.status} />
           </div>
 
@@ -362,11 +371,6 @@ export default function AdminGroup() {
             {m.status === 'menunggu' && (
               <button className="btn danger sm" disabled={busyId === m.id} onClick={() => setStatus(m, 'ditolak')}>
                 Tolak
-              </button>
-            )}
-            {m.status === 'aktif' && (
-              <button className="btn sm" disabled={busyId === m.id} onClick={() => setStatus(m, 'nonaktif')}>
-                Nonaktifkan
               </button>
             )}
             {m.status === 'nonaktif' && (
