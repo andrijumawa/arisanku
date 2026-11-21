@@ -2179,12 +2179,38 @@ input[type='checkbox'] {
 }
 .admin-payment-tabs {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 .admin-payment-tabs .btn {
   min-width: 0;
   padding-inline: 8px;
+  font-size: 12px;
+}
+.admin-unpaid-group {
+  display: grid;
+  gap: 10px;
+}
+.admin-unpaid-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.admin-unpaid-group-heading h3 {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.admin-unpaid-person {
+  display: grid;
+  gap: 3px;
+  padding-top: 9px;
+  border-top: 1px solid var(--admin-border);
+  overflow-wrap: anywhere;
+}
+.admin-unpaid-person > span {
+  color: var(--admin-muted);
   font-size: 12px;
 }
 .admin-content > .empty .empty-ico {

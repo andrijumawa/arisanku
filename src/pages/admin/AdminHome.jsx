@@ -4,7 +4,7 @@ import { useAuth } from '../../lib/auth.jsx';
 import { supabase, q } from '../../lib/supabase';
 import { useAsync, useRealtimeRefresh } from '../../lib/hooks';
 import { loadAdminCounts } from '../../lib/menuData';
-import { fmtDate, rupiah, typeLabel } from '../../lib/format';
+import { bestPaymentByPeriod, fmtDate, paymentDueDate, periodName, rupiah, typeLabel } from '../../lib/format';
 import { Empty, ErrorBox, Spinner } from '../../components/Ui.jsx';
 import SignedImage, { signedUrls } from '../../components/SignedImage.jsx';
 import { useToast } from '../../components/Toast.jsx';
@@ -214,6 +214,57 @@ function Payments({ revision }) {
   const [page, setPage] = useState(0);
   const [paymentView, setPaymentView] = useState('menunggu');
   const { data: result, loading, error, reload } = useAsync(async () => {
+    if (paymentView === 'belum-bayar') {
+      const memberships = [];
+      const batchSize = 500;
+      let offset = 0;
+      while (true) {
+        const { data, error: queryError } = await supabase
+          .from('memberships')
+          .select('id,status,profiles(full_name),groups(id,name,durasi,pay_period,start_date),payments(period_no,status)')
+          .eq('status', 'aktif')
+          .order('id', { ascending: true })
+          .range(offset, offset + batchSize - 1);
+        if (queryError) throw queryError;
+        memberships.push(...(data || []));
+        if ((data || []).length < batchSize) break;
+        offset += batchSize;
+      }
+
+      const today = new Date();
+      const todayString = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      const groupsById = new Map();
+      memberships.forEach((membership) => {
+        const group = membership.groups;
+        if (!group) return;
+        const paymentsByPeriod = bestPaymentByPeriod(membership.payments);
+        const overduePeriods = Array.from({ length: Number(group.durasi) || 0 }, (_, index) => index + 1)
+          .filter((periodNo) => {
+            const payment = paymentsByPeriod[periodNo];
+            if (payment?.status === 'disetujui' || payment?.status === 'menunggu') return false;
+            const dueDate = paymentDueDate(group.start_date, group.pay_period, periodNo);
+            return dueDate && dueDate < todayString;
+          });
+        if (!overduePeriods.length) return;
+
+        const groupEntry = groupsById.get(group.id) || { ...group, participants: [] };
+        groupEntry.participants.push({
+          id: membership.id,
+          name: membership.profiles?.full_name || 'Peserta',
+          overduePeriods,
+        });
+        groupsById.set(group.id, groupEntry);
+      });
+
+      const items = [...groupsById.values()]
+        .map((group) => ({
+          ...group,
+          participants: group.participants.sort((a, b) => a.name.localeCompare(b.name, 'id')),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'id'));
+      return { items, total: items.length };
+    }
+
     const { data, error: queryError, count } = await supabase
       .from('payments')
       .select('id,amount,period_no,created_at,reviewed_at,proof_path,group_id,membership_id,status,groups(name,type,pay_period),memberships(slot_count,profiles(full_name,phone))', { count: 'exact' })
@@ -254,6 +305,17 @@ function Payments({ revision }) {
       <nav className="admin-payment-tabs" aria-label="Daftar pembayaran">
         <button
           type="button"
+          className={`btn sm${paymentView === 'belum-bayar' ? ' primary' : ''}`}
+          aria-pressed={paymentView === 'belum-bayar'}
+          onClick={() => {
+            setPage(0);
+            setPaymentView('belum-bayar');
+          }}
+        >
+          Belum bayar
+        </button>
+        <button
+          type="button"
           className={`btn sm${paymentView === 'menunggu' ? ' primary' : ''}`}
           aria-pressed={paymentView === 'menunggu'}
           onClick={() => {
@@ -278,10 +340,34 @@ function Payments({ revision }) {
       {!result.total && (
         <Empty
           icon="check"
-          title={paymentView === 'menunggu' ? 'Tidak ada pembayaran menunggu' : 'Belum ada pembayaran disetujui'}
+          title={
+            paymentView === 'belum-bayar'
+              ? 'Tidak ada peserta yang menunggak'
+              : paymentView === 'menunggu'
+                ? 'Tidak ada pembayaran menunggu'
+                : 'Belum ada pembayaran disetujui'
+          }
         />
       )}
-      {result.items.map((p) => {
+      {paymentView === 'belum-bayar' && result.items.map((group) => (
+        <section key={group.id} className="card admin-unpaid-group">
+          <div className="admin-unpaid-group-heading">
+            <h3>{group.name}</h3>
+            <span className="badge bad">{group.participants.length} peserta</span>
+          </div>
+          {group.participants.map((participant) => (
+            <div key={participant.id} className="admin-unpaid-person">
+              <b>{participant.name}</b>
+              <span>
+                Belum bayar: {participant.overduePeriods
+                  .map((periodNo) => `${periodName(group).toLowerCase()} ke-${periodNo}`)
+                  .join(', ')}
+              </span>
+            </div>
+          ))}
+        </section>
+      ))}
+      {paymentView !== 'belum-bayar' && result.items.map((p) => {
         const who = p.memberships?.profiles;
         return (
           <div key={p.id} className="card">
@@ -317,7 +403,9 @@ function Payments({ revision }) {
           </div>
         );
       })}
-      <AdminPagination page={page} pageSize={ADMIN_PAGE_SIZE} total={result.total} onPageChange={setPage} />
+      {paymentView !== 'belum-bayar' && (
+        <AdminPagination page={page} pageSize={ADMIN_PAGE_SIZE} total={result.total} onPageChange={setPage} />
+      )}
     </>
   );
 }
