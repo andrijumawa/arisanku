@@ -1,5 +1,5 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react';
-import { Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from './lib/auth.jsx';
 import { finishInitialLoad, getInitialLoadPending, prefetchAsync, subscribeToInitialLoad } from './lib/hooks';
 import {
@@ -228,7 +228,9 @@ function SetupNotice() {
 
 export default function App() {
   const { ready, session, isAdmin } = useAuth();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
+  const navigate = useNavigate();
+  const lastAppRouteRef = useRef(`${pathname}${search}`);
   const [routeModulesReady, setRouteModulesReady] = useState(false);
   const [initialPending, setInitialPending] = useState(getInitialLoadPending());
   const [imageReady, setImageReady] = useState(false);
@@ -240,6 +242,37 @@ export default function App() {
   const imageUrl = `${import.meta.env.BASE_URL}images/initial-loading.webp`;
 
   useEffect(() => subscribeToInitialLoad(setInitialPending), []);
+
+  useEffect(() => {
+    lastAppRouteRef.current = `${pathname}${search}`;
+  }, [pathname, search]);
+
+  useEffect(() => {
+    if (!window.history.state?.arisankuBackGuard) {
+      window.history.replaceState(
+        { ...window.history.state, arisankuBackGuard: true },
+        '',
+        window.location.href
+      );
+    }
+    window.history.pushState(
+      { arisankuBackGuard: true },
+      '',
+      window.location.href
+    );
+
+    const onPopState = () => {
+      window.history.pushState(
+        { arisankuBackGuard: true },
+        '',
+        window.location.href
+      );
+      navigate(lastAppRouteRef.current, { replace: true });
+    };
+
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [navigate]);
 
   useEffect(() => {
     let active = true;
