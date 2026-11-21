@@ -160,7 +160,7 @@ export default function Browse() {
       .insert({ group_id: g.id, user_id: uid, slot_count: g.type === 'uang' ? Math.max(1, Number(slots) || 1) : 1 });
     setBusy(false);
     if (error) return toast(error.message, 'error');
-    toast('Pendaftaran terkirim. Menunggu persetujuan admin.', 'success');
+    toast('Pendaftaran terkirim untuk diperiksa admin.', 'success');
     setJoining(null);
     setSlots(1);
   }

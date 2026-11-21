@@ -261,7 +261,7 @@ export default function Menu() {
                   <strong>{item.label}</strong>
                   <span>{item.description}</span>
                 </span>
-                <span className="menu-tile-locked">
+                <span className={`menu-tile-locked${accountPending ? ' is-pending' : ''}`}>
                   {accountRejected ? 'Belum disetujui' : 'Menunggu verifikasi'}
                 </span>
               </button>

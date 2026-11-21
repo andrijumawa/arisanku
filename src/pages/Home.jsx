@@ -64,7 +64,7 @@ function AvailableGroupCard({ group, membership, remainingSlots, availabilityErr
       </span>
       <span className="home-offer-state">
         {membership ? <Badge status={membership.status} /> : <Icon name="arrowRight" size={18} />}
-        <small>{action}</small>
+        <small className={membership?.status === 'menunggu' ? 'text-pending' : ''}>{action}</small>
       </span>
     </button>
   );
@@ -200,7 +200,7 @@ export default function Home() {
         slot_count: selectedGroup.group.type === 'uang' ? Math.max(1, Number(slots) || 1) : 1,
       });
       if (joinError) throw joinError;
-      toast('Pendaftaran terkirim. Menunggu persetujuan admin.', 'success');
+      toast('Pendaftaran terkirim untuk diperiksa admin.', 'success');
       setSelectedGroup(null);
       setSlots(1);
       reload();
@@ -249,7 +249,7 @@ export default function Home() {
           <b>{aktif}</b>
           <span>Arisan aktif</span>
         </div>
-        <div className="stat">
+        <div className="stat is-pending">
           <b>{menungguDaftar}</b>
           <span>Menunggu persetujuan</span>
         </div>
@@ -370,7 +370,7 @@ export default function Home() {
                     Lunas {done} dari {g.durasi} {periodName(g).toLowerCase()}
                   </span>
                   {membershipPayments.filter((payment) => payment.status === 'menunggu').length > 0 && (
-                    <span>{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
+                    <span className="text-pending">{membershipPayments.filter((payment) => payment.status === 'menunggu').length} menunggu verifikasi</span>
                   )}
                 </div>
               </div>
@@ -393,7 +393,7 @@ export default function Home() {
                             <th scope="row">Status</th>
                             <td>
                               {nextPayment.status === 'menunggu'
-                                ? 'Bukti menunggu verifikasi'
+                                ? <span className="text-pending">Bukti menunggu verifikasi</span>
                                 : nextPayment.status === 'ditolak'
                                   ? 'Bukti ditolak'
                                   : 'Belum dibayar'}

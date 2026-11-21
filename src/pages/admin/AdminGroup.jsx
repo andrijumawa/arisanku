@@ -314,7 +314,7 @@ export default function AdminGroup() {
                   {paymentScheduleByMember.get(m.id).payment && (
                     <tr>
                       <th scope="row">Status</th>
-                      <td>
+                      <td className={paymentScheduleByMember.get(m.id).payment.status === 'menunggu' ? 'text-pending' : ''}>
                         {paymentScheduleByMember.get(m.id).payment.status === 'menunggu'
                           ? 'Bukti menunggu verifikasi'
                           : 'Bukti ditolak'}
@@ -384,7 +384,7 @@ export default function AdminGroup() {
         onPageChange={setMemberPage}
       />
 
-      <p className="muted small center">
+      <p className="muted small center text-pending">
         Bukti transfer yang menunggu diperiksa di tab <b>Pembayaran</b> pada Panel Admin.
       </p>
     </>

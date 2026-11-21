@@ -162,7 +162,7 @@ export default function GroupDetail() {
         proof_path: path,
       });
       if (error) throw error;
-      toast('Bukti terkirim. Menunggu verifikasi admin.', 'success');
+      toast('Bukti terkirim untuk diverifikasi admin.', 'success');
       closeUpload();
     } catch (x) {
       toast(x.message || 'Gagal mengunggah bukti', 'error');
@@ -247,7 +247,7 @@ export default function GroupDetail() {
       {!mem && <div className="alert warn">Kamu belum terdaftar di kelompok ini. Daftar lewat menu Arisan.</div>}
 
       {mem?.status === 'menunggu' && (
-        <div className="alert info">
+        <div className="alert info is-pending">
           Pendaftaran sedang diperiksa admin. Kamu bisa membayar setelah disetujui.
           <div style={{ marginTop: 8 }}>
             <button className="btn sm danger" onClick={cancelJoin}>

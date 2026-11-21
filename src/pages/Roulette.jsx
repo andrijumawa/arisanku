@@ -639,7 +639,7 @@ export default function Roulette() {
                 </span>
               )}
               {!periodActivated && (
-                <span className="roulette-machine-status" role="status">
+                <span className="roulette-machine-status is-pending" role="status">
                   Menunggu admin mengaktifkan daftar hadir
                 </span>
               )}
