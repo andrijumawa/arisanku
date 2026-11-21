@@ -1,7 +1,14 @@
 import { createContext, useCallback, useContext, useState } from 'react';
+import Icon from './Icon.jsx';
 
 const Ctx = createContext(() => {});
 export const useToast = () => useContext(Ctx);
+
+const toastPresentation = {
+  success: { icon: 'check', label: 'Berhasil' },
+  error: { icon: 'close', label: 'Perlu diperiksa' },
+  info: { icon: 'target', label: 'Informasi' },
+};
 
 export function ToastProvider({ children }) {
   const [items, setItems] = useState([]);
@@ -17,8 +24,18 @@ export function ToastProvider({ children }) {
       {children}
       <div className="toasts" aria-live="polite">
         {items.map((t) => (
-          <div key={t.id} className={`toast ${t.type}`}>
-            {t.message}
+          <div
+            key={t.id}
+            className={`toast ${t.type}`}
+            role={t.type === 'error' ? 'alert' : 'status'}
+          >
+            <span className="toast-icon">
+              <Icon name={toastPresentation[t.type]?.icon || 'target'} size={19} />
+            </span>
+            <span className="toast-copy">
+              <strong>{toastPresentation[t.type]?.label || toastPresentation.info.label}</strong>
+              <span>{t.message}</span>
+            </span>
           </div>
         ))}
       </div>
