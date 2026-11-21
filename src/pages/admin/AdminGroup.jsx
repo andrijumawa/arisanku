@@ -267,7 +267,7 @@ export default function AdminGroup() {
                     </div>
                   </div>
                   {r.status !== 'diserahkan' && (
-                    <button className="btn sm" disabled={busyId === (r.id || `round-${r.round_no}`)} onClick={() => setRound(r, { status: 'diserahkan' }, 'Ditandai diserahkan.')}>
+                    <button className="btn sm" disabled={busyId === (r.id || `round-${r.round_no}`)} onClick={() => setRound(r, { status: 'diserahkan', pickup_date: todayString }, 'Ditandai diserahkan.')}>
                       Diserahkan
                     </button>
                   )}
