@@ -547,6 +547,20 @@ export default function Roulette() {
     }
   }
 
+  async function rerunRoulette() {
+    if (!session?.id || !isAdmin || busy) return;
+    setBusy(true);
+    try {
+      await q(supabase.rpc('run_roulette_attempt', { p_session: session.id }));
+      await liveState.reload();
+      toast('Kocokan diulang.', 'success');
+    } catch (error) {
+      toast(error.message || 'Gagal mengulang kocokan.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function cancelResult() {
     if (!session?.id) return;
     const accepted = await confirm({
@@ -812,6 +826,11 @@ export default function Roulette() {
                   <p className="muted small">Kocokan sedang berputar. Peserta lain melihat animasi ini secara realtime.</p>
                 ) : (
                   <div className="row wrap">
+                    {session?.status === 'active' && (
+                      <button className="btn primary" onClick={rerunRoulette} disabled={busy}>
+                        Putar ulang
+                      </button>
+                    )}
                     <button className="btn primary" onClick={saveResult} disabled={busy}>
                       Simpan pemenang putaran {periodNo}
                     </button>
